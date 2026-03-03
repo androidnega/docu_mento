@@ -13,10 +13,17 @@ class CheckUpdateMode
     /**
      * When update mode is on: only allow staff login routes and already-logged-in staff.
      * Everyone else sees the maintenance page.
+     * If the database is unavailable (e.g. wrong .env), allow the request so maintenance URLs still work.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $updateMode = Setting::getValue(Setting::KEY_UPDATE_MODE, '0') === '1';
+        try {
+            $updateMode = Setting::getValue(Setting::KEY_UPDATE_MODE, '0') === '1';
+        } catch (\Throwable $e) {
+            // Database missing or misconfigured: allow request so /clear-cache, /run-migrations etc. can run
+            return $next($request);
+        }
+
         if (! $updateMode) {
             return $next($request);
         }
@@ -36,8 +43,13 @@ class CheckUpdateMode
             }
         }
 
-        $startedAt = Setting::getValue(Setting::KEY_UPDATE_STARTED_AT);
-        $estimatedEnd = Setting::getValue(Setting::KEY_UPDATE_ESTIMATED_END);
+        try {
+            $startedAt = Setting::getValue(Setting::KEY_UPDATE_STARTED_AT);
+            $estimatedEnd = Setting::getValue(Setting::KEY_UPDATE_ESTIMATED_END);
+        } catch (\Throwable $e) {
+            $startedAt = null;
+            $estimatedEnd = null;
+        }
         return response()->view('maintenance', [
             'update_started_at' => $startedAt ? \Carbon\Carbon::parse($startedAt) : null,
             'update_estimated_end' => $estimatedEnd ? \Carbon\Carbon::parse($estimatedEnd) : null,
