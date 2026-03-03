@@ -4,6 +4,7 @@
 @php $dashboardTitle = 'Profile'; @endphp
 
 @section('dashboard_content')
+<div class="max-w-2xl mx-auto">
 <header class="mb-6">
     <h1 class="text-xl font-semibold text-gray-800">Profile & account</h1>
     <p class="text-sm text-gray-500 mt-1">Keep your details up to date so supervisors can reach you. Update your name; phone is tied to your account for login.</p>
@@ -48,7 +49,7 @@
             @endif
         </dl>
     </div>
-</section>
+      </section>
 @endif
 
 <section class="mb-8" aria-label="Account">
@@ -105,6 +106,7 @@
     </div>
 </section>
 @endif
+</div>
 
 @push('scripts')
 <script>
