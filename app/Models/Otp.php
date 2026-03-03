@@ -26,7 +26,7 @@ class Otp extends Model
     public const TYPE_SUPERVISOR_FALLBACK = 'supervisor_fallback';
 
     /** Validity window for student login OTP (days). */
-    public const STUDENT_LOGIN_VALID_DAYS = 14;
+    public const STUDENT_LOGIN_VALID_DAYS = 90;
 
     /** Supervisor fallback OTP validity (days). */
     public const SUPERVISOR_FALLBACK_VALID_DAYS = 12;
@@ -43,7 +43,7 @@ class Otp extends Model
     }
 
     /**
-     * Check if this OTP is still within the 14-day validity window (for student_login).
+     * Check if this OTP is still within the validity window (for student_login).
      */
     public function isWithinValidityWindow(): bool
     {
@@ -60,7 +60,7 @@ class Otp extends Model
     }
 
     /**
-     * Days remaining until this OTP expires (uses expires_at when set, else created_at + 14 days).
+     * Days remaining until this OTP expires (uses expires_at when set, else created_at + STUDENT_LOGIN_VALID_DAYS days).
      * Carbon's diffInDays(now(), false) returns negative when $this is in the future, so we take the absolute value.
      */
     public function daysRemaining(): int

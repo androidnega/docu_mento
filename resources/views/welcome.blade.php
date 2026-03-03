@@ -12,7 +12,12 @@
         <header class="absolute top-0 left-0 right-0 z-10 border-b border-white/20">
             <div class="dm-container">
                 <div class="flex h-14 md:h-16 items-center justify-between">
-                    <a href="{{ route('student.landing') }}" class="text-white font-semibold text-lg tracking-tight no-underline hover:text-white">Docu Mento</a>
+                    <a href="{{ route('student.landing') }}" class="text-white font-semibold text-lg tracking-tight no-underline hover:text-white flex items-center gap-2">
+                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 text-slate-900">
+                            <i class="fas fa-file-alt text-sm"></i>
+                        </span>
+                        <span>Docu Mento</span>
+                    </a>
                     <nav class="flex items-center gap-4 md:gap-6">
                         <a href="{{ route('about-system') }}" class="text-sm font-medium text-white hover:text-white/90 no-underline">About</a>
                         @if(isset($student) && $student)
@@ -27,7 +32,12 @@
 
         {{-- Centered hero content --}}
         <div class="relative z-10 px-4 dm-container">
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">Docu Mento</h1>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3 flex items-center justify-center gap-3">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-400 text-slate-900 shadow">
+                    <i class="fas fa-file-alt"></i>
+                </span>
+                <span>Docu Mento</span>
+            </h1>
             <p class="text-xl md:text-2xl text-white/95 font-medium mb-2">Academic & Final Year Project Management System</p>
             <p class="text-base md:text-lg text-white/90 max-w-xl mx-auto mb-8">Manage schools, departments, projects, proposals, and submissions in one place—with optional AI reviews and SMS notifications.</p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">

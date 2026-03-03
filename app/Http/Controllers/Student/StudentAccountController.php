@@ -144,7 +144,7 @@ class StudentAccountController extends Controller
             ]);
         }
 
-        // CASE B — No OTP or older than 14 days: generate new OTP, save, send (even if no supervisor with balance)
+        // CASE B — No OTP or older than validity window: generate new OTP, save, send (even if no supervisor with balance)
         $code = (string) random_int(100000, 999999);
         Otp::create([
             'index_number_hash' => $indexHash,
@@ -152,7 +152,7 @@ class StudentAccountController extends Controller
             'code' => $code,
             'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
         ]);
-        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 14 days.';
+        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 90 days.';
         $result = ArkeselService::sendSms($student->phone_contact, $message);
         if (!$result['success']) {
             $msg = $result['message'] ?? 'We couldn\'t send the code.';
@@ -168,7 +168,7 @@ class StudentAccountController extends Controller
             'success' => true,
             'step' => 'otp',
             'index_number' => $student->index_number,
-            'message' => 'A code has been sent to your registered number. This code is valid for 14 days.',
+            'message' => 'A code has been sent to your registered number. This code is valid for 90 days.',
             'has_name' => !empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
@@ -248,7 +248,7 @@ class StudentAccountController extends Controller
             'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
         ]);
 
-        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 14 days.';
+        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 90 days.';
         $result = ArkeselService::sendSms($phone, $message);
         if (!$result['success']) {
             $msg = $result['message'] ?? 'We couldn\'t send the code.';
@@ -264,7 +264,7 @@ class StudentAccountController extends Controller
             'success' => true,
             'step' => 'otp',
             'index_number' => $student->index_number,
-            'message' => 'A code has been sent to your number. It is valid for 14 days.',
+            'message' => 'A code has been sent to your number. It is valid for 90 days.',
             'has_name' => !empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
@@ -327,6 +327,14 @@ class StudentAccountController extends Controller
             ], 422);
         }
         $indexNumber = $student->index_number;
+
+        // For first-time students, name is required at OTP stage (including demo index).
+        if ($student->isFirstTimeLogin() && ($name === null || $name === '')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter your full name before continuing.',
+            ], 422);
+        }
 
         // Demo index: accept any 6-digit OTP to access student dashboard
         if (strtoupper(trim($indexNumber)) === 'BC/ITS/24/047' && strlen($code) === 6 && ctype_digit($code)) {

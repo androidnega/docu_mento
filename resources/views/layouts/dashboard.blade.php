@@ -37,7 +37,9 @@
                         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-lg shadow-sm">C</span>
                         <span class="staff-sidebar-brand-text truncate text-lg font-bold text-white">Coordinator</span>
                     @else
-                        <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-lg shadow-sm">D</span>
+                        <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+                            <i class="fas fa-file-alt text-lg"></i>
+                        </span>
                         <span class="staff-sidebar-brand-text truncate text-lg font-bold text-white">Docu Mento</span>
                     @endif
                 </a>

@@ -9,7 +9,9 @@
     <header class="flex h-14 flex-shrink-0 items-center border-b border-gray-200 bg-white z-10">
         <div class="w-full px-4 md:px-6 flex h-14 items-center gap-4">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 min-w-0 flex-shrink-0">
-                <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 font-semibold text-sm">D</span>
+                <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
+                    <i class="fas fa-file-alt text-base"></i>
+                </span>
                 <span class="text-base font-semibold text-gray-900 truncate hidden sm:block">Docu Mento Admin</span>
             </a>
             <h1 class="min-w-0 flex-1 truncate text-lg font-semibold text-gray-900">@yield('admin_heading', 'Admin')</h1>

@@ -9,7 +9,7 @@
     .landing-header { background: #fff; border-bottom: 1px solid #e2e8f0; }
     .landing-container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
     .landing-logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; display: inline-flex; align-items: center; gap: 0.375rem; text-decoration: none; }
-    .landing-logo-mark { width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
+    .landing-logo-mark { width: 1.75rem; height: 1.75rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; }
     .landing-logo-docu { color: #059669; }
     .landing-logo-mento { color: #1e40af; }
     .landing-nav-link { font-size: 0.875rem; font-weight: 500; color: #475569; text-decoration: none; transition: color 0.2s; }
@@ -46,11 +46,8 @@
         <div class="landing-container">
             <div class="flex h-14 items-center justify-between">
                 <a href="{{ route('student.landing') }}" class="landing-logo">
-                    <span class="landing-logo-mark" aria-hidden="true">
-                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                            <rect width="40" height="40" rx="8" fill="#059669"/>
-                            <path d="M12 14h16v2H12v-2zm0 6h12v2H12v-2zm0 6h10v2H12v-2z" fill="#1e40af"/>
-                        </svg>
+                    <span class="landing-logo-mark bg-amber-400 text-slate-900" aria-hidden="true">
+                        <i class="fas fa-file-alt"></i>
                     </span>
                     <span class="landing-logo-docu">Docu</span><span class="landing-logo-mento"> Mento</span>
                 </a>

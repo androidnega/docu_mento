@@ -639,7 +639,7 @@ class ClassGroupController extends Controller
                         'code' => $code,
                         'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
                     ]);
-                    $smsMessage = 'Your Docu Mento login code is: ' . $code . '. Valid for 14 days. Do not share.';
+                    $smsMessage = 'Your Docu Mento login code is: ' . $code . '. Valid for 90 days. Do not share.';
                     $result = ArkeselService::sendSms($studentAccount->phone_contact, $smsMessage);
                     if ($result['success']) {
                         $smsOwner->increment('sms_used');

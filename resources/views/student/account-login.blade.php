@@ -48,10 +48,7 @@
             {{-- Step 3: OTP --}}
             <div id="step-otp" class="space-y-4 hidden">
                 <p class="text-sm text-gray-500" id="otp-step-message">Enter the 6-digit code sent to your phone.</p>
-                <div id="otp-enter-code-wrap">
-                    <button type="button" id="btn-show-otp-code" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors">Enter code</button>
-                </div>
-                <div id="otp-code-fields" class="space-y-4 hidden">
+                <div id="otp-code-fields" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Code</label>
                         <div class="flex justify-center gap-2" id="otp-boxes-wrap">
@@ -63,8 +60,8 @@
                         <input type="hidden" id="otp_code" name="code" value="">
                     </div>
                     <div>
-                        <label for="otp_name" class="block text-sm font-medium text-gray-700 mb-1">Your name (optional)</label>
-                        <input type="text" id="otp_name" name="student_name" placeholder="Full name" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name" style="text-transform: capitalize;">
+                        <label for="otp_name" class="block text-sm font-medium text-gray-700 mb-1">Your name</label>
+                        <input type="text" id="otp_name" name="student_name" placeholder="Full name (required for first-time login)" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name" style="text-transform: capitalize;">
                     </div>
                     <div id="otp-error" class="hidden">
                         <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="otp-error-text"></div>
@@ -124,10 +121,7 @@
         else if (step === 'phone') stepPhone.classList.remove('hidden');
         else if (step === 'otp') {
             stepOtp.classList.remove('hidden');
-            var enterWrap = document.getElementById('otp-enter-code-wrap');
-            var codeFields = document.getElementById('otp-code-fields');
-            if (enterWrap) enterWrap.classList.remove('hidden');
-            if (codeFields) codeFields.classList.add('hidden');
+            initOtpBoxes();
         }
         else if (step === 'password' && stepPassword) {
             stepPassword.classList.remove('hidden');
@@ -142,13 +136,7 @@
         }
     }
 
-    document.getElementById('btn-show-otp-code').addEventListener('click', function() {
-        var enterWrap = document.getElementById('otp-enter-code-wrap');
-        var codeFields = document.getElementById('otp-code-fields');
-        if (enterWrap) enterWrap.classList.add('hidden');
-        if (codeFields) codeFields.classList.remove('hidden');
-        initOtpBoxes();
-    });
+    // Initialize OTP fields when needed
 
     var whatsappNumber = '233552477942';
     function supportMessage(errorText, indexNumber) {
@@ -252,6 +240,18 @@
         if (sendBtn) { sendBtn.dataset.originalText = 'Send code'; sendBtn.textContent = 'Send code'; }
     });
 
+    if (indexInput) {
+        indexInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var btn = document.getElementById('btn-index');
+                if (btn && !btn.disabled) {
+                    btn.click();
+                }
+            }
+        });
+    }
+
     function showPasswordError(text) {
         var wrap = document.getElementById('password-error');
         var textEl = document.getElementById('password-error-text');
@@ -343,7 +343,7 @@
     });
 
     document.getElementById('btn-back-to-phone').addEventListener('click', function() {
-        showStep('phone');
+        showStep('index');
         showError('otp-error', '');
         var sendBtn = document.getElementById('btn-send-otp');
         if (sendBtn) { sendBtn.dataset.originalText = 'Send code'; sendBtn.textContent = 'Send code'; }
@@ -373,7 +373,7 @@
             if (data.success) {
                 document.getElementById('otp-step-message').textContent = data.message || 'A new code has been sent. Enter it above.';
                 resendBtn.disabled = true;
-                resendBtn.textContent = 'Resend available in ' + (data.days_remaining || 14) + ' day(s)';
+                resendBtn.textContent = 'Resend available in ' + (data.days_remaining || 90) + ' day(s)';
                 var daysEl = document.getElementById('otp-days-remaining');
                 if (daysEl && data.days_remaining != null) {
                     daysEl.textContent = 'Valid for ' + data.days_remaining + ' more day(s).';
@@ -456,6 +456,10 @@
         var code = getOtpCode();
         if (!code || code.length !== 6) {
             showError('otp-error', 'Please enter the 6-digit code.');
+            return;
+        }
+        if (nameInput && nameInput.closest('div') && nameInput.closest('div').style.display !== 'none' && !nameInput.value.trim()) {
+            showError('otp-error', 'Please enter your full name.');
             return;
         }
         showError('otp-error', '');
