@@ -24,7 +24,9 @@ class RunMigrationsController extends Controller
             $secret = self::DEFAULT_SECRET;
         }
         if ($request->query('key') !== $secret) {
-            return response('Invalid or missing key. Try: ' . $request->getSchemeAndHttpHost() . '/migration?key=' . urlencode(self::DEFAULT_SECRET) . "\nSet MIGRATION_RUN_KEY in .env to use your own secret.", 403, [
+            $base = $request->getSchemeAndHttpHost();
+            $tryUrl = $base . '/run-migrations?key=' . urlencode(self::DEFAULT_SECRET) . '&action=fixpull';
+            return response("Invalid or missing key. Try: {$tryUrl}\nSet MIGRATION_RUN_KEY in .env to use your own secret.", 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
