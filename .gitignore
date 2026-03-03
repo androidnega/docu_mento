@@ -8,3 +8,4 @@ vendor/
 /storage/logs/*
 .idea/
 .vscode/
+vendor.zip

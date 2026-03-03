@@ -31,7 +31,7 @@
             <p class="text-xl md:text-2xl text-white/95 font-medium mb-2">Academic & Final Year Project Management System</p>
             <p class="text-base md:text-lg text-white/90 max-w-xl mx-auto mb-8">Manage schools, departments, projects, proposals, and submissions in one place—with optional AI reviews and SMS notifications.</p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                <a href="{{ route('student.account.login.form') }}" class="dm-btn-primary min-w-[160px]">Student Login</a>
+                <a href="{{ route('student.account.login.form') }}" class="dm-btn-primary min-w-[160px] bg-amber-400 text-gray-900 hover:bg-amber-500 border-none">Student Login</a>
                 <a href="{{ route('about-system') }}" class="dm-btn-secondary min-w-[160px]">Explore Features</a>
             </div>
         </div>

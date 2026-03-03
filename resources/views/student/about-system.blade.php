@@ -13,8 +13,7 @@
                 @if(isset($student) && $student)
                     <a href="{{ route('dashboard') }}" class="dm-btn-primary text-sm py-2 px-4">Dashboard</a>
                 @else
-                    <a href="{{ route('student.account.login.form') }}" class="text-sm font-medium text-dm-text hover:text-dm-primary no-underline">Student</a>
-                    <a href="{{ route('login') }}" class="dm-btn-primary text-sm py-2 px-4">Login</a>
+                    <a href="{{ route('student.account.login.form') }}" class="dm-btn-primary text-sm py-2 px-4">Student Login</a>
                 @endif
             </nav>
         </div>
@@ -102,8 +101,8 @@
     <section class="dm-section bg-dm-secondary" aria-labelledby="cta-heading">
         <div class="dm-container text-center">
             <h2 id="cta-heading" class="text-2xl md:text-3xl font-bold text-white mb-4">Ready to get started?</h2>
-            <p class="text-white/95 max-w-xl mx-auto mb-6">Sign in as staff or student and start managing your projects with Docu Mento.</p>
-            <a href="{{ route('login') }}" class="dm-btn-primary bg-dm-primary hover:opacity-90">Go to Login</a>
+            <p class="text-white/95 max-w-xl mx-auto mb-6">Sign in as a student and start managing your projects with Docu Mento.</p>
+            <a href="{{ route('student.account.login.form') }}" class="dm-btn-primary bg-dm-primary hover:opacity-90">Student Login</a>
         </div>
     </section>
 
@@ -119,7 +118,7 @@
                 <nav class="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">
                     <a href="{{ route('student.landing') }}" class="text-white/90 hover:text-white no-underline">Home</a>
                     <a href="{{ route('about-system') }}" class="text-white/90 hover:text-white no-underline">About</a>
-                    <a href="{{ route('login') }}" class="text-white/90 hover:text-white no-underline">Login</a>
+                    <a href="{{ route('student.account.login.form') }}" class="text-white/90 hover:text-white no-underline">Student Login</a>
                     <a href="{{ route('public.projects.index') }}" class="text-white/90 hover:text-white no-underline">Projects</a>
                 </nav>
             </div>

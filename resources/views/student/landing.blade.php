@@ -59,7 +59,6 @@
                 </button>
                 <nav class="landing-nav-desktop flex items-center gap-6">
                     <a href="{{ route('about-system') }}" class="landing-nav-link">About</a>
-                    <a href="{{ route('login') }}" class="landing-nav-link">Staff Login</a>
                     @if(isset($student) && $student)
                         <a href="{{ route('dashboard') }}" class="landing-cta">Dashboard</a>
                     @else
@@ -89,7 +88,6 @@
         <div class="flex justify-end mb-2"><button type="button" id="landing-drawer-close" class="p-2 text-slate-500 hover:text-slate-700" aria-label="Close">&times;</button></div>
         <a href="{{ route('student.landing') }}">Home</a>
         <a href="{{ route('about-system') }}">About</a>
-        <a href="{{ route('login') }}">Staff Login</a>
         @if(isset($student) && $student)
             <a href="{{ route('dashboard') }}">Dashboard</a>
         @else
