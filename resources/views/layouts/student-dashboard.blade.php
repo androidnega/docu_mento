@@ -35,7 +35,7 @@
             @if($yearLabel)
                 <span class="text-gray-500 hidden sm:inline">Academic Year: <strong class="text-gray-700">{{ $yearLabel }}</strong></span>
             @endif
-            <form action="{{ (isset($student) && $student) ? route('student.account.logout') : route('logout') }}" method="post" class="hidden sm:block">
+            <form action="{{ ($user && method_exists($user, 'isDocuMentorStudent') && $user->isDocuMentorStudent()) ? route('student.account.logout') : route('logout') }}" method="post" class="hidden sm:block">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
                     <i class="fas fa-sign-out-alt text-xs"></i>
