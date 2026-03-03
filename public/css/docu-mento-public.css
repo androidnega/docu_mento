@@ -1,0 +1,102 @@
+/**
+ * Docu Mento – Public design system
+ * Strict palette: off-white, navy, soft green. No gradients. Flat, calm, institutional.
+ */
+
+:root {
+  --dm-bg: #F8F9F6;
+  --dm-primary: #0B1F3A;
+  --dm-secondary: #2E7D5B;
+  --dm-text: #1E1E1E;
+  --dm-border: #E5E7EB;
+  --dm-card: #FFFFFF;
+}
+
+/* Base */
+.dm-public body {
+  background-color: var(--dm-bg);
+  color: var(--dm-text);
+}
+
+/* Buttons – no gradients */
+.dm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background-color: var(--dm-primary);
+  color: #FFFFFF;
+  border: 0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  box-shadow: none;
+}
+.dm-btn-primary:hover {
+  opacity: 0.92;
+  color: #FFFFFF;
+}
+
+.dm-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background-color: var(--dm-secondary);
+  color: #FFFFFF;
+  border: 0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  box-shadow: none;
+}
+.dm-btn-secondary:hover {
+  opacity: 0.92;
+  color: #FFFFFF;
+}
+
+/* Cards – white, light border, no heavy shadow */
+.dm-card {
+  background-color: var(--dm-card);
+  border: 1px solid var(--dm-border);
+  border-radius: 0.375rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: none;
+}
+.dm-card-accent-top {
+  border-top: 3px solid var(--dm-primary);
+}
+
+/* Container */
+.dm-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .dm-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .dm-container { padding-left: 2rem; padding-right: 2rem; }
+}
+
+/* Hero overlay – navy at 70% */
+.dm-hero-overlay {
+  background-color: rgba(11, 31, 58, 0.7);
+}
+
+/* Section spacing */
+.dm-section {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+@media (min-width: 768px) {
+  .dm-section { padding-top: 4rem; padding-bottom: 4rem; }
+}
