@@ -69,6 +69,7 @@ class StudentAccountController extends Controller
 
         $indexNumber = null;
         $indexHash = null;
+        $cgStudent = null;
 
         if (\Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
             $cgStudent = ClassGroupStudent::whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])->first();
@@ -124,7 +125,8 @@ class StudentAccountController extends Controller
         }
 
         // Coordinator (who has the student's class groups) or supervisor with SMS balance (for deducting); if none, we still send OTP so students can log in
-        $smsOwner = $this->smsOwnerForIndex($cgStudent->index_number);
+        $smsIndexNumber = $cgStudent?->index_number ?? $indexNumber ?? $student->index_number;
+        $smsOwner = $smsIndexNumber ? $this->smsOwnerForIndex($smsIndexNumber) : null;
 
         // STEP 1 — Check last OTP for this index (type = student_login)
         $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
