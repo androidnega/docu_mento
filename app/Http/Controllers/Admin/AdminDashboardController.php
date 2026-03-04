@@ -29,7 +29,8 @@ class AdminDashboardController extends Controller
     public function adminDashboard(): View
     {
         $overview = [
-            'users' => User::count(),
+            // Staff = Super Admin, Supervisors, Coordinators (no students)
+            'users' => User::whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_SUPERVISOR, User::DM_ROLE_COORDINATOR])->count(),
             'students' => User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])->count(),
             'schools' => \App\Models\School::count(),
         ];

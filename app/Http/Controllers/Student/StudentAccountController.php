@@ -276,6 +276,10 @@ class StudentAccountController extends Controller
     /** User whose SMS balance is deducted for this index: coordinator first, then class group supervisor. */
     private function smsOwnerForIndex(string $indexNumber): ?\App\Models\User
     {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
+            return null;
+        }
+
         $cgStudents = ClassGroupStudent::whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper(trim($indexNumber))])
             ->with('classGroup.supervisor')
             ->get();
