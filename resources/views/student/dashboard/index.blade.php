@@ -6,12 +6,32 @@
 @section('dashboard_content')
 <header class="mb-6 sm:mb-8">
     <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">Your dashboard</h1>
-    <p class="mt-1 text-sm text-gray-700">
-        {{ $greeting ?? 'Good day' }}, {{ $displayName ?? ($user->name ?? $user->username ?? 'Student') }}
-        @if($isGroupLeader ?? false)
-            <span class="text-amber-600 font-semibold">(Leader)</span>
-        @endif
-    </p>
+    @php
+        $fallbackName = $displayName ?? ($user->name ?? $user->username ?? 'Student');
+    @endphp
+    @if(!empty($greeting ?? null))
+        <p class="mt-1 text-sm text-gray-700">
+            {{ $greeting }}
+            @if($isGroupLeader ?? false)
+                <span class="text-amber-600 font-semibold">(Leader)</span>
+            @endif
+        </p>
+    @else
+        <p class="mt-1 text-sm text-gray-700">
+            Good day, {{ $fallbackName }}
+            @if($isGroupLeader ?? false)
+                <span class="text-amber-600 font-semibold">(Leader)</span>
+            @endif
+        </p>
+    @endif
+    @if(!empty($holidayBadge['message'] ?? null))
+        <div class="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs sm:text-sm {{ $holidayBadge['bg'] ?? 'bg-emerald-50' }} {{ $holidayBadge['text'] ?? 'text-emerald-800' }}">
+            @if(!empty($holidayBadge['icon'] ?? null))
+                <i class="{{ $holidayBadge['icon'] }} text-xs"></i>
+            @endif
+            <span class="font-medium">{{ $holidayBadge['message'] }}</span>
+        </div>
+    @endif
     @if(isset($student) && $student)
         <p class="mt-1.5 text-xs text-gray-400 font-mono">Index: {{ $student->index_number }}</p>
     @endif
