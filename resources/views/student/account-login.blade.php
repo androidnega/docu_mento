@@ -206,12 +206,9 @@
                 var phoneNameInput = document.getElementById('phone_name');
                 if (phoneNameInput) phoneNameInput.value = '';
                 if (phoneInput) phoneInput.value = '';
+                // Always show the name field in this step
                 if (phoneNameWrap) {
-                    if (data.has_name) {
-                        phoneNameWrap.style.display = 'none';
-                    } else {
-                        phoneNameWrap.style.display = '';
-                    }
+                    phoneNameWrap.style.display = '';
                 }
             } else if (data.step === 'otp') {
                 document.getElementById('otp-step-message').textContent = data.message || 'Enter the 6-digit code sent to your phone.';
@@ -314,7 +311,7 @@
 
     document.getElementById('btn-send-otp').addEventListener('click', function() {
         var phoneNameInput = document.getElementById('phone_name');
-        var fullName = (phoneNameInput && phoneNameInput.offsetParent !== null) ? phoneNameInput.value.trim() : '';
+        var fullName = phoneNameInput ? phoneNameInput.value.trim() : '';
         var phone = (phoneInput && phoneInput.value) ? phoneInput.value.trim() : '';
         if (!fullName) {
             showError('phone-error', 'Please enter your full name.');
