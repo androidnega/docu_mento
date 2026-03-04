@@ -78,37 +78,7 @@ class SettingsController extends Controller
 
             'can_manage_backup' => $canManageBackup,
             'show_backup_tab' => $canManageBackup,
-            'study_guide_unlocked' => session('study_guide_unlocked', false),
-            'class_groups_for_study_guide' => ($isSuperAdmin && session('study_guide_unlocked', false) && \Illuminate\Support\Facades\Schema::hasTable('class_groups'))
-                ? ClassGroup::orderBy('name')->get(['id', 'name'])
-                : collect(),
         ]);
-    }
-
-    /**
-     * Validate study guide password and unlock access (Settings → Study guide). Super admin only.
-     */
-    public function studyGuideUnlock(Request $request): RedirectResponse
-    {
-        $currentUser = auth()->user();
-        $isSuperAdmin = ($currentUser && $currentUser->isSuperAdmin()) || session('admin_role') === User::ROLE_SUPER_ADMIN;
-
-        if (! $isSuperAdmin) {
-            return redirect()->route('dashboard.settings.index')->with('error', 'Access denied.')->withFragment('backup');
-        }
-
-        $request->validate(['study_guide_password' => 'required|string']);
-
-        $expected = trim((string) (config('study-guide.unlock_password') ?? env('STUDY_GUIDE_UNLOCK_PASSWORD', 'Atomic2@2020^') ?? ''));
-        $given = trim((string) $request->input('study_guide_password', ''));
-        if ($expected === '' || ! hash_equals($expected, $given)) {
-            return redirect()->route('dashboard.settings.index')->with('error', 'Invalid password.')->withFragment('backup');
-        }
-
-        session(['study_guide_unlocked' => true]);
-        session()->forget('error');
-
-        return redirect()->route('dashboard.settings.index')->with('success', 'Unlocked.')->withFragment('backup');
     }
 
     /**

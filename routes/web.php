@@ -288,7 +288,6 @@ Route::middleware('admin.auth')->group(function () {
             Route::post('/system/reset', [\App\Http\Controllers\Admin\SystemResetController::class, 'reset'])->name('system.reset');
             Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
-            Route::post('/settings/study-guide/unlock', [SettingsController::class, 'studyGuideUnlock'])->name('settings.study-guide.unlock');
             if (! app()->environment('production')) {
                 Route::get('/settings/ai-test', [SettingsController::class, 'aiTest'])->name('settings.ai-test');
                 Route::get('/settings/cloudinary-test', [SettingsController::class, 'cloudinaryTest'])->name('settings.cloudinary-test');

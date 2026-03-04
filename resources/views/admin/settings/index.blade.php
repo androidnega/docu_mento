@@ -49,12 +49,6 @@
                             <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                             OTP (SMS)
                         </button>
-                        @if($show_backup_tab ?? false)
-                        <button type="button" class="settings-tab-btn whitespace-nowrap px-4 py-3 sm:px-6 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm touch-manipulation min-h-[44px]" data-tab="backup" id="tab-btn-backup">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            Study guide
-                        </button>
-                        @endif
                     </nav>
                 </div>
 
@@ -443,40 +437,6 @@
                 </div>
                 </div>
 
-                @if($show_backup_tab ?? false)
-                <!-- Tab: Study guide (super admins only) -->
-                <div class="settings-tab-content p-6 hidden" data-tab-content="backup" id="tab-content-backup">
-                    <div class="rounded-lg border border-gray-200 bg-gray-50/50 p-5 space-y-4">
-                        <h2 class="text-base font-semibold text-gray-900 mb-1">Study guide</h2>
-                        @if($study_guide_unlocked ?? false)
-                            <p class="text-sm text-gray-600">Cohort study guides (links valid 1 hour).</p>
-                            @if(($class_groups_for_study_guide ?? collect())->isEmpty())
-                                <p class="text-sm text-gray-500">No class groups.</p>
-                            @else
-                                <ul class="list-none space-y-1.5 text-sm">
-                                    @foreach($class_groups_for_study_guide as $cg)
-                                        <li>
-                                            <a href="{{ \Illuminate\Support\Facades\URL::temporarySignedRoute('dashboard.study-guide.show', now()->addHours(1), ['classGroup' => $cg->id]) }}" class="text-gray-700 hover:text-gray-900" style="text-decoration: none;">{{ $cg->name }}</a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-                        @else
-                            <p class="text-sm text-gray-600">Enter the password to view study guide links.</p>
-                            <div class="flex flex-wrap items-end gap-3" id="study-guide-unlock-wrap">
-                                <div>
-                                    <label for="study_guide_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                    <input type="password" id="study_guide_password" autocomplete="off" class="block w-full min-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none" placeholder="Password">
-                                </div>
-                                <button type="button" id="study-guide-unlock-btn" class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">Unlock</button>
-                            </div>
-                            @if(session('error'))
-                                <p class="text-sm text-red-600 mt-1">{{ session('error') }}</p>
-                            @endif
-                        @endif
-                    </div>
-                </div>
-                @endif
             </div>
 
             <div class="flex justify-end">
@@ -489,14 +449,6 @@
             </div>
         </form>
 
-        {{-- Standalone form for study guide unlock (cannot nest form inside settings form) --}}
-        @if($show_backup_tab ?? false)
-        <form id="study-guide-unlock-form" action="{{ route('dashboard.settings.study-guide.unlock') }}" method="post" class="hidden">
-            @csrf
-            <input type="hidden" name="study_guide_password" id="study_guide_password_hidden">
-        </form>
-        @endif
-
     </div>
 </div>
 
@@ -506,7 +458,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const tabBtns = document.querySelectorAll('.settings-tab-btn');
     const tabContents = document.querySelectorAll('.settings-tab-content');
-    const validTabs = ['general', 'email', 'ai', 'cloudinary', 'supabase', 'otp', 'backup'];
+    const validTabs = ['general', 'email', 'ai', 'cloudinary', 'supabase', 'otp'];
 
     function switchToTab(targetTab) {
         if (!validTabs.includes(targetTab)) targetTab = 'general';
@@ -546,21 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    var unlockBtn = document.getElementById('study-guide-unlock-btn');
-    var unlockForm = document.getElementById('study-guide-unlock-form');
-    var passwordInput = document.getElementById('study_guide_password');
-    var passwordHidden = document.getElementById('study_guide_password_hidden');
-    if (unlockBtn && unlockForm && passwordInput && passwordHidden) {
-        unlockBtn.addEventListener('click', function() {
-            var pwd = (passwordInput.value || '').trim();
-            if (!pwd) {
-                passwordInput.focus();
-                return;
-            }
-            passwordHidden.value = pwd;
-            unlockForm.submit();
-        });
-    }
 });
 
 @unless(app()->environment('production'))
