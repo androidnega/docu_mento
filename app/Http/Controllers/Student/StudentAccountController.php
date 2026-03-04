@@ -50,6 +50,8 @@ class StudentAccountController extends Controller
         $indexNumber = null;
         $indexHash = null;
         $cgStudent = null;
+        $valid = null;
+        $dmUser = null;
 
         // Primary source: academic-year index list (valid_indices)
         if (\Illuminate\Support\Facades\Schema::hasTable('valid_indices')) {
@@ -94,11 +96,41 @@ class StudentAccountController extends Controller
                 'index_number_hash' => $indexHash,
             ]
         );
+        // Enrich student record with coordinator data (name/phone) when available,
+        // so returning students are not asked for their full name/phone again.
+        $sourceName = $student->student_name;
+        if (empty($sourceName)) {
+            if ($valid && !empty($valid->student_name)) {
+                $sourceName = $valid->student_name;
+            } elseif ($cgStudent && !empty($cgStudent->student_name)) {
+                $sourceName = $cgStudent->student_name;
+            } elseif ($dmUser && !empty($dmUser->name)) {
+                $sourceName = $dmUser->name;
+            }
+        }
+        $sourcePhone = $student->phone_contact;
+        if (empty($sourcePhone) && $dmUser && !empty($dmUser->phone)) {
+            $sourcePhone = Student::normalizePhoneForStorage($dmUser->phone);
+        }
+        $dirty = false;
+        if (!empty($sourceName) && empty($student->student_name)) {
+            $student->student_name = ucwords(strtolower($sourceName));
+            $dirty = true;
+        }
+        if (!empty($sourcePhone) && empty($student->phone_contact)) {
+            $student->phone_contact = $sourcePhone;
+            $dirty = true;
+        }
+        if ($dirty) {
+            $student->save();
+        }
+
         $hasName = !empty($student->student_name);
         $hasPhone = $student->hasPhone();
 
-        // If name or phone is missing, or student is first-time: go through onboarding.
-        if (!$hasPhone || !$hasName || $student->isFirstTimeLogin()) {
+        // If name or phone is missing, go through onboarding to capture them
+        // before sending the first OTP.
+        if (!$hasPhone || !$hasName) {
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
