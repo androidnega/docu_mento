@@ -16,13 +16,13 @@ class EnsureDashboardAuthenticated
     public function handle(Request $request, Closure $next): Response
     {
         if (! auth()->check()) {
-            return redirect()->route('login')->with('info', 'Please log in to access the dashboard.');
+            return redirect()->route('student.landing')->with('info', 'Your session has ended. Start again from the student page.');
         }
 
         $user = auth()->user();
         if (! $user instanceof User) {
             auth()->logout();
-            return redirect()->route('login')->with('error', 'Invalid session. Please log in again.');
+            return redirect()->route('student.landing')->with('error', 'Invalid session. Start again from the student page.');
         }
 
         // Student-side: role student/group_leader or group_leader flag (Docu Mento leaders)

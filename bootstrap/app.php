@@ -40,14 +40,29 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // On 419 (CSRF token mismatch): send to login with a clear message so user never sees raw "419 Page Expired"
+        // On 419 (CSRF token mismatch): send to an appropriate entry page with a clear message so user never sees raw "419 Page Expired"
         $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
             $message = 'Your session has ended. Please log in again.';
             if ($request->expectsJson() || $request->ajax()) {
                 return \Illuminate\Support\Facades\Response::json(['message' => $message], 419);
             }
+            $path = $request->path() ?? '';
+            $user = \Illuminate\Support\Facades\Auth::user();
+            $isStudentUser = $user instanceof \App\Models\User
+                && ($user->isDocuMentorStudent() || $user->isStudentRole());
+            $isLikelyStudentPath = str_starts_with($path, 'student')
+                || str_starts_with($path, 'dashboard/projects')
+                || str_starts_with($path, 'dashboard/documents')
+                || str_starts_with($path, 'dashboard/my-profile')
+                || str_starts_with($path, 'dashboard/calendar')
+                || str_starts_with($path, 'dashboard/materials');
+
+            $redirectTarget = ($isStudentUser || $isLikelyStudentPath)
+                ? route('student.landing')
+                : route('login');
+
             return redirect()
-                ->to('/login')
+                ->to($redirectTarget)
                 ->exceptInput('password', 'password_confirmation')
                 ->with('error', $message);
         });

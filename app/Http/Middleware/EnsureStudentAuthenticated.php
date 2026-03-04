@@ -15,13 +15,14 @@ class EnsureStudentAuthenticated
     public function handle(Request $request, Closure $next): Response
     {
         if (! auth()->check()) {
-            return redirect()->guest(route('login'))
-                ->with('error', 'Please log in to access the student dashboard.');
+            return redirect()->guest(route('student.landing'))
+                ->with('error', 'Your session has ended. Start again from the student page.');
         }
 
         $user = auth()->user();
         if (! $user instanceof User) {
-            return redirect()->guest(route('login'))->with('error', 'Invalid session.');
+            auth()->logout();
+            return redirect()->guest(route('student.landing'))->with('error', 'Invalid session. Start again from the student page.');
         }
 
         if (! in_array($user->roleName(), [User::ROLE_NAME_STUDENT, User::ROLE_NAME_GROUP_LEADER], true)) {
