@@ -18,6 +18,11 @@ class Setting extends Model
     protected $fillable = ['key', 'value'];
 
     /**
+     * The settings table does not have created_at/updated_at columns.
+     */
+    public $timestamps = false;
+
+    /**
      * Get a setting value by key.
      * AI keys bypass cache so changes apply immediately after save.
      * Decrypts if key is sensitive.
