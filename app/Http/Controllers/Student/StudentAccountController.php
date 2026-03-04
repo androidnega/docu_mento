@@ -348,8 +348,8 @@ class StudentAccountController extends Controller
         }
         $indexNumber = $student->index_number;
 
-        // For first-time students, name is required at OTP stage (including demo index).
-        if ($student->isFirstTimeLogin() && ($name === null || $name === '')) {
+        // For first-time students, name is required at OTP stage only if it hasn't already been saved.
+        if ($student->isFirstTimeLogin() && empty($student->student_name) && ($name === null || $name === '')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please enter your full name before continuing.',
