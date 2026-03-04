@@ -31,14 +31,14 @@
                 <button type="button" id="btn-index" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 transition-colors">Continue</button>
             </div>
 
-            {{-- Step 2: Name & Phone --}}
+            {{-- Step 2: Name & Phone (only what's missing) --}}
             <div id="step-phone" class="space-y-4 hidden">
                 <p class="text-sm text-gray-500" id="phone-step-message">Enter your full name and active phone number to receive a one-time code (e.g. 233XXXXXXXXX).</p>
                 <div id="phone-name-wrap">
                     <label for="phone_name" class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
                     <input type="text" id="phone_name" name="phone_name" placeholder="Your full name" class="w-full px-3 py-2.5 rounded-[14px] bg-[#e0e5ec] text-gray-800 placeholder-gray-400 shadow-[inset_4px_4px_8px_#c3c8d0,inset_-4px_-4px_8px_#ffffff] focus:outline-none focus:ring-2 focus:ring-emerald-500" autocomplete="name" style="text-transform: capitalize;">
                 </div>
-                <div>
+                <div id="phone-number-wrap">
                     <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
                     <input type="tel" id="phone" name="phone" placeholder="233XXXXXXXXX" class="w-full px-3 py-2.5 rounded-[14px] bg-[#e0e5ec] text-gray-800 placeholder-gray-400 shadow-[inset_4px_4px_8px_#c3c8d0,inset_-4px_-4px_8px_#ffffff] focus:outline-none focus:ring-2 focus:ring-emerald-500" autocomplete="tel">
                 </div>
@@ -113,8 +113,11 @@
     var phoneInput = document.getElementById('phone');
     var otpInput = document.getElementById('otp_code');
     var nameInput = document.getElementById('otp_name');
+    var phoneNameInput = document.getElementById('phone_name');
     var currentIndexNumber = '';
     var lastPhoneUsed = '';
+    var stepHasName = false;
+    var stepHasPhone = false;
 
     function showStep(step) {
         stepIndex.classList.add('hidden');
@@ -201,15 +204,15 @@
             currentIndexNumber = data.index_number || index;
             if (data.step === 'phone') {
                 document.getElementById('phone-step-message').textContent = data.message || 'Enter your full name and active phone number to receive a one-time code.';
-                showStep('phone');
+                stepHasName = !!data.has_name;
+                stepHasPhone = !!data.has_phone;
                 var phoneNameWrap = document.getElementById('phone-name-wrap');
-                var phoneNameInput = document.getElementById('phone_name');
-                if (phoneNameInput) phoneNameInput.value = '';
-                if (phoneInput) phoneInput.value = '';
-                // Always show the name field in this step
-                if (phoneNameWrap) {
-                    phoneNameWrap.style.display = '';
-                }
+                var phoneNumberWrap = document.getElementById('phone-number-wrap');
+                if (phoneNameInput) { phoneNameInput.value = ''; }
+                if (phoneInput) { phoneInput.value = ''; }
+                if (phoneNameWrap) phoneNameWrap.style.display = stepHasName ? 'none' : '';
+                if (phoneNumberWrap) phoneNumberWrap.style.display = stepHasPhone ? 'none' : '';
+                showStep('phone');
             } else if (data.step === 'otp') {
                 document.getElementById('otp-step-message').textContent = data.message || 'Enter the 6-digit code sent to your phone.';
                 if (data.can_resend) {
@@ -310,14 +313,13 @@
     });
 
     document.getElementById('btn-send-otp').addEventListener('click', function() {
-        var phoneNameInput = document.getElementById('phone_name');
         var fullName = phoneNameInput ? phoneNameInput.value.trim() : '';
         var phone = (phoneInput && phoneInput.value) ? phoneInput.value.trim() : '';
-        if (!fullName) {
+        if (!stepHasName && !fullName) {
             showError('phone-error', 'Please enter your full name.');
             return;
         }
-        if (!phone) {
+        if (!stepHasPhone && !phone) {
             showError('phone-error', 'Please enter your phone number.');
             return;
         }
@@ -327,7 +329,7 @@
         fetch('{{ route("student.account.send-otp") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-            body: JSON.stringify({ index_number: currentIndexNumber, phone: phone, student_name: fullName })
+            body: JSON.stringify({ index_number: currentIndexNumber, phone: phone || undefined, student_name: fullName || undefined })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

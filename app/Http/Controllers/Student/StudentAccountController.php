@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use App\Models\User;
 
@@ -54,7 +55,7 @@ class StudentAccountController extends Controller
         $dmUser = null;
 
         // Primary source: academic-year index list (valid_indices)
-        if (\Illuminate\Support\Facades\Schema::hasTable('valid_indices')) {
+        if (Schema::hasTable('valid_indices')) {
             $valid = ValidIndex::whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])->first();
             if ($valid) {
                 $indexNumber = strtoupper(trim($valid->index_number));
@@ -62,8 +63,8 @@ class StudentAccountController extends Controller
             }
         }
 
-        // Legacy / fallback: class_group_students
-        if ($indexNumber === null && \Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
+        // Fallback: class_group_students (legacy)
+        if ($indexNumber === null && Schema::hasTable('class_group_students')) {
             $cgStudent = ClassGroupStudent::whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])->first();
             if ($cgStudent) {
                 $indexNumber = strtoupper(trim($cgStudent->index_number));
@@ -71,8 +72,8 @@ class StudentAccountController extends Controller
             }
         }
 
-        // Existing Docu Mentor user (student/leader)
-        if ($indexNumber === null && \Illuminate\Support\Facades\Schema::hasTable('users')) {
+        // Fallback: existing Docu Mentor user (student/leader)
+        if ($indexNumber === null && Schema::hasTable('users')) {
             $dmUser = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
                 ->whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])
                 ->first();
@@ -80,6 +81,13 @@ class StudentAccountController extends Controller
                 $indexNumber = strtoupper(trim($dmUser->index_number ?? $inputIndex));
                 $indexHash = Student::hashIndexNumber($indexNumber);
             }
+        }
+
+        // When index came from valid_indices/class_group, still try to get phone/name from users
+        if ($indexNumber !== null && $dmUser === null && Schema::hasTable('users')) {
+            $dmUser = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
+                ->whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper($indexNumber)])
+                ->first();
         }
 
         if ($indexNumber === null) {
@@ -127,14 +135,21 @@ class StudentAccountController extends Controller
         $hasPhone = $student->hasPhone();
 
         // If name or phone is missing, go through onboarding to capture them
-        // before sending the first OTP.
+        // before sending the first OTP. Only ask for what's missing.
         if (!$hasPhone || !$hasName) {
+            $message = 'Enter your full name and mobile number to receive a one-time code.';
+            if ($hasName && !$hasPhone) {
+                $message = 'Enter your mobile number to receive a one-time code.';
+            } elseif (!$hasName && $hasPhone) {
+                $message = 'Enter your full name to continue.';
+            }
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
                 'index_number' => $student->index_number,
-                'message' => 'Enter your full name and mobile number to receive a one-time code.',
+                'message' => $message,
                 'has_name' => $hasName,
+                'has_phone' => $hasPhone,
             ]);
         }
 
