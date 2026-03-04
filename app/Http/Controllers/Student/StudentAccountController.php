@@ -102,8 +102,6 @@ class StudentAccountController extends Controller
         if (empty($sourceName)) {
             if ($valid && !empty($valid->student_name)) {
                 $sourceName = $valid->student_name;
-            } elseif ($cgStudent && !empty($cgStudent->student_name)) {
-                $sourceName = $cgStudent->student_name;
             } elseif ($dmUser && !empty($dmUser->name)) {
                 $sourceName = $dmUser->name;
             }
