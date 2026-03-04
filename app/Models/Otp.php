@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Otp extends Model
 {
@@ -36,6 +37,10 @@ class Otp extends Model
      */
     public static function latestStudentLoginForIndex(string $indexNumberHash): ?self
     {
+        if (!Schema::hasTable('otps')) {
+            return null;
+        }
+
         return self::where('index_number_hash', $indexNumberHash)
             ->where('type', self::TYPE_STUDENT_LOGIN)
             ->orderByDesc('created_at')
@@ -79,6 +84,10 @@ class Otp extends Model
      */
     public static function latestValidSupervisorFallbackForIndex(string $indexNumberHash): ?self
     {
+        if (!Schema::hasTable('otps')) {
+            return null;
+        }
+
         return self::where('index_number_hash', $indexNumberHash)
             ->where('type', self::TYPE_SUPERVISOR_FALLBACK)
             ->whereNull('used_at')
