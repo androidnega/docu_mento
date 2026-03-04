@@ -107,7 +107,7 @@
     {{-- Main content --}}
     <main id="student-main" class="flex-1 w-full min-w-0 pt-14 lg:pt-14 lg:pl-56 overflow-x-hidden bg-gray-50 pb-6 sm:pb-10">
         <div class="w-full min-w-0 px-4 py-6 sm:px-6 sm:py-6">
-            <div class="w-full max-w-4xl mx-auto">
+            <div class="w-full">
                 @if(!request()->routeIs('dashboard') && !request()->routeIs('dashboard.projects.show'))
                 <div class="mb-4">
                     <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 no-underline">
