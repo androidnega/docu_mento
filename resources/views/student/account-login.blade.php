@@ -4,44 +4,48 @@
 @section('body_class', 'bg-gray-50')
 
 @section('content')
-<div class="min-h-[100dvh] min-h-screen flex items-center justify-center px-4 py-8">
+<div class="min-h-[100dvh] min-h-screen flex items-center justify-center px-4 py-6">
     <div class="max-w-md w-full">
-        <div class="bg-white border border-gray-100 rounded-lg p-6 sm:p-8 shadow-sm">
+        <div class="bg-white border border-gray-100 rounded-lg p-5 sm:p-6 shadow-sm">
             <div class="flex items-center gap-3 mb-6">
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-white"><i class="fas fa-graduation-cap text-sm"></i></span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white"><i class="fas fa-graduation-cap text-sm"></i></span>
                 <div>
                     <h1 class="text-xl font-semibold text-gray-800">Student login</h1>
                     <p class="text-sm text-gray-500 mt-0.5">Docu Mento</p>
                 </div>
             </div>
-            <p class="text-sm text-gray-500 mb-6">Enter your index number. First-time users get a code by SMS and complete account setup; returning users sign in with their password.</p>
+            <p class="text-sm text-gray-500 mb-5">Enter your index number. First-time users complete a quick setup with name, phone, and OTP; returning users sign in with a code.</p>
 
             {{-- Step 1: Index number --}}
             <div id="step-index" class="space-y-4">
                 <div>
                     <label for="index_number" class="block text-sm font-medium text-gray-700 mb-1">Index number</label>
-                    <input type="text" id="index_number" name="index_number" required placeholder="e.g. BC/ITS/24/047" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" style="text-transform: uppercase;" autocomplete="off">
+                    <input type="text" id="index_number" name="index_number" required placeholder="e.g. BC/ITS/24/047" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" style="text-transform: uppercase;" autocomplete="off">
                 </div>
                 <div id="index-error" class="hidden">
                     <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="index-error-text"></div>
                     <p id="index-error-support-wrap" class="hidden mt-2 text-sm text-gray-500">
-                        <a id="index-error-support" href="#" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-700 font-medium">Get in touch</a>
+                        <a id="index-error-support" href="#" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-700 font-medium">Get in touch</a>
                     </p>
                 </div>
-                <button type="button" id="btn-index" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors">Continue</button>
+                <button type="button" id="btn-index" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Continue</button>
             </div>
 
-            {{-- Step 2: Phone --}}
+            {{-- Step 2: Name & Phone --}}
             <div id="step-phone" class="space-y-4 hidden">
-                <p class="text-sm text-gray-500" id="phone-step-message">Enter your active phone number to receive a one-time code (e.g. 233XXXXXXXXX).</p>
+                <p class="text-sm text-gray-500" id="phone-step-message">Enter your full name and active phone number to receive a one-time code (e.g. 233XXXXXXXXX).</p>
+                <div id="phone-name-wrap">
+                    <label for="phone_name" class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+                    <input type="text" id="phone_name" name="phone_name" placeholder="Your full name" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
+                </div>
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
-                    <input type="tel" id="phone" name="phone" placeholder="233XXXXXXXXX" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="tel">
+                    <input type="tel" id="phone" name="phone" placeholder="233XXXXXXXXX" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="tel">
                 </div>
                 <div id="phone-error" class="hidden">
                     <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="phone-error-text"></div>
                 </div>
-                <button type="button" id="btn-send-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors">Send code</button>
+                <button type="button" id="btn-send-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Send code</button>
                 <button type="button" id="btn-back-to-index" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
             </div>
 
@@ -54,20 +58,20 @@
                         <div class="flex justify-center gap-2" id="otp-boxes-wrap">
                             @for($i = 0; $i < 6; $i++)
                             <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" data-otp-index="{{ $i }}" autocomplete="off"
-                                class="w-11 h-12 text-center text-xl font-semibold border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 otp-digit">
+                                class="w-11 h-12 text-center text-xl font-semibold border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 otp-digit">
                             @endfor
                         </div>
                         <input type="hidden" id="otp_code" name="code" value="">
                     </div>
                     <div>
                         <label for="otp_name" class="block text-sm font-medium text-gray-700 mb-1">Your name</label>
-                        <input type="text" id="otp_name" name="student_name" placeholder="Full name (required for first-time login)" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name" style="text-transform: capitalize;">
+                        <input type="text" id="otp_name" name="student_name" placeholder="Full name (required for first-time login)" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
                     </div>
                     <div id="otp-error" class="hidden">
                         <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="otp-error-text"></div>
                     </div>
-                    <button type="button" id="btn-verify-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors">Verify and sign in</button>
-                    <p class="text-center text-sm text-gray-500">Didn't get the code? <button type="button" id="btn-resend-otp" class="text-amber-600 hover:text-amber-700 font-medium">Resend code</button></p>
+                    <button type="button" id="btn-verify-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Verify and sign in</button>
+                    <p class="text-center text-sm text-gray-500">Didn't get the code? <button type="button" id="btn-resend-otp" class="text-emerald-600 hover:text-emerald-700 font-medium">Resend code</button></p>
                     <p id="otp-days-remaining" class="text-center text-sm text-gray-500 mt-1 hidden" aria-live="polite"></p>
                     <button type="button" id="btn-back-to-phone" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
                 </div>
@@ -82,12 +86,12 @@
                 </div>
                 <div>
                     <label for="login_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="login_password" placeholder="Your password" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="current-password">
+                    <input type="password" id="login_password" placeholder="Your password" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="current-password">
                 </div>
                 <div id="password-error" class="hidden">
                     <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="password-error-text"></div>
                 </div>
-                <button type="button" id="btn-password-login" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors">Sign in</button>
+                <button type="button" id="btn-password-login" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Sign in</button>
                 <button type="button" id="btn-back-to-index-from-password" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
             </div>
         </div>
@@ -195,14 +199,20 @@
             var btnIndex = document.getElementById('btn-index');
             if (btnIndex) btnIndex.dataset.originalText = 'Continue';
             currentIndexNumber = data.index_number || index;
-            if (data.step === 'password') {
-                var msgEl = document.getElementById('password-step-message');
-                if (msgEl) msgEl.textContent = data.message || 'Enter your password to sign in.';
-                showStep('password');
-            } else if (data.step === 'phone') {
-                document.getElementById('phone-step-message').textContent = data.message || 'Enter your active phone number to receive a one-time code.';
+            if (data.step === 'phone') {
+                document.getElementById('phone-step-message').textContent = data.message || 'Enter your full name and active phone number to receive a one-time code.';
                 showStep('phone');
+                var phoneNameWrap = document.getElementById('phone-name-wrap');
+                var phoneNameInput = document.getElementById('phone_name');
+                if (phoneNameInput) phoneNameInput.value = '';
                 if (phoneInput) phoneInput.value = '';
+                if (phoneNameWrap) {
+                    if (data.has_name) {
+                        phoneNameWrap.style.display = 'none';
+                    } else {
+                        phoneNameWrap.style.display = '';
+                    }
+                }
             } else if (data.step === 'otp') {
                 document.getElementById('otp-step-message').textContent = data.message || 'Enter the 6-digit code sent to your phone.';
                 if (data.can_resend) {
@@ -303,7 +313,13 @@
     });
 
     document.getElementById('btn-send-otp').addEventListener('click', function() {
+        var phoneNameInput = document.getElementById('phone_name');
+        var fullName = (phoneNameInput && phoneNameInput.offsetParent !== null) ? phoneNameInput.value.trim() : '';
         var phone = (phoneInput && phoneInput.value) ? phoneInput.value.trim() : '';
+        if (!fullName) {
+            showError('phone-error', 'Please enter your full name.');
+            return;
+        }
         if (!phone) {
             showError('phone-error', 'Please enter your phone number.');
             return;
@@ -314,7 +330,7 @@
         fetch('{{ route("student.account.send-otp") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-            body: JSON.stringify({ index_number: currentIndexNumber, phone: phone })
+            body: JSON.stringify({ index_number: currentIndexNumber, phone: phone, student_name: fullName })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

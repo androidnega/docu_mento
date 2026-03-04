@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassGroupStudent;
 use App\Models\Otp;
 use App\Models\Student;
+use App\Models\ValidIndex;
 use App\Services\ArkeselService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,7 +32,7 @@ class StudentAccountController extends Controller
     }
 
     /**
-     * Step 1: Verify index number. Index must exist in at least one class group.
+     * Step 1: Verify index number. Index must exist in the academic-year index list or as a Docu Mentor user.
      * Returns: need_phone (and student), or sends OTP and returns need_otp.
      */
     public function verifyIndex(Request $request): JsonResponse
@@ -71,7 +72,17 @@ class StudentAccountController extends Controller
         $indexHash = null;
         $cgStudent = null;
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
+        // Primary source: academic-year index list (valid_indices)
+        if (\Illuminate\Support\Facades\Schema::hasTable('valid_indices')) {
+            $valid = ValidIndex::whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])->first();
+            if ($valid) {
+                $indexNumber = strtoupper(trim($valid->index_number));
+                $indexHash = Student::hashIndexNumber($indexNumber);
+            }
+        }
+
+        // Legacy / fallback: class_group_students
+        if ($indexNumber === null && \Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
             $cgStudent = ClassGroupStudent::whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])->first();
             if ($cgStudent) {
                 $indexNumber = strtoupper(trim($cgStudent->index_number));
@@ -79,6 +90,7 @@ class StudentAccountController extends Controller
             }
         }
 
+        // Existing Docu Mentor user (student/leader)
         if ($indexNumber === null && \Illuminate\Support\Facades\Schema::hasTable('users')) {
             $dmUser = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
                 ->whereRaw('LOWER(TRIM(index_number)) = ?', [$inputNormalized])
@@ -103,24 +115,16 @@ class StudentAccountController extends Controller
                 'index_number_hash' => $indexHash,
             ]
         );
+        $hasName = !empty($student->student_name);
 
-        // Subsequent login: go straight to password step (no OTP).
-        if (!$student->isFirstTimeLogin()) {
-            return response()->json([
-                'success' => true,
-                'step' => 'password',
-                'index_number' => $student->index_number,
-                'message' => 'Enter your password to sign in.',
-            ]);
-        }
-
-        // First-time login: OTP flow. If no phone yet, show phone step.
+        // First-time login: if no phone yet, show name + phone step.
         if (!$student->hasPhone()) {
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
                 'index_number' => $student->index_number,
-                'message' => 'Enter your active phone number to receive a one-time code.',
+                'message' => 'Enter your full name and mobile number to receive a one-time code.',
+                'has_name' => $hasName,
             ]);
         }
 
@@ -128,25 +132,7 @@ class StudentAccountController extends Controller
         $smsIndexNumber = $cgStudent?->index_number ?? $indexNumber ?? $student->index_number;
         $smsOwner = $smsIndexNumber ? $this->smsOwnerForIndex($smsIndexNumber) : null;
 
-        // STEP 1 — Check last OTP for this index (type = student_login)
-        $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
-
-        // CASE A — OTP exists AND not expired: do not generate/send; allow use of existing OTP
-        if ($lastOtp && !$lastOtp->isExpired()) {
-            $daysRemaining = $lastOtp->daysRemaining();
-            $dayText = $daysRemaining === 1 ? '1 day' : $daysRemaining . ' days';
-            return response()->json([
-                'success' => true,
-                'step' => 'otp',
-                'index_number' => $student->index_number,
-                'message' => 'Your existing OTP is still valid. Please use the OTP previously sent to you. It expires in ' . $dayText . '.',
-                'has_name' => !empty($student->student_name),
-                'can_resend' => false,
-                'days_remaining' => $daysRemaining,
-            ]);
-        }
-
-        // CASE B — No OTP or older than validity window: generate new OTP, save, send (even if no supervisor with balance)
+        // Generate a fresh OTP, save, send (even if no supervisor with balance)
         $code = (string) random_int(100000, 999999);
         Otp::create([
             'index_number_hash' => $indexHash,
@@ -185,6 +171,7 @@ class StudentAccountController extends Controller
         $request->validate([
             'index_number' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
+            'student_name' => 'nullable|string|max:255',
         ]);
         $inputIndex = trim((string) $request->index_number);
 
@@ -193,6 +180,7 @@ class StudentAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid session. Start again.'], 422);
         }
         $indexNumber = $student->index_number;
+        $name = $request->filled('student_name') ? trim((string) $request->student_name) : null;
         $inputPhone = trim((string) ($request->phone ?? ''));
         $phone = Student::normalizePhoneForStorage($inputPhone);
 
@@ -203,6 +191,13 @@ class StudentAccountController extends Controller
                 $phone = $storedNormalized;
             }
         }
+        if ($student->isFirstTimeLogin() && (empty($student->student_name) && ($name === null || $name === ''))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter your full name.',
+            ], 422);
+        }
+
         if (!$phone || strlen($phone) < 10) {
             return response()->json([
                 'success' => false,
@@ -218,6 +213,13 @@ class StudentAccountController extends Controller
                 'message' => 'This phone number is already registered to another student. Use a different number or ask your supervisor for help.',
             ], 422);
         }
+
+        // Save name/phone for first-time onboarding
+        if ($name !== null && $name !== '') {
+            $student->student_name = ucwords(strtolower($name));
+        }
+        $student->phone_contact = $phone;
+        $student->save();
 
         // Supervisor with SMS balance (for deducting); if none, we still send OTP so students can log in
         $smsOwner = $this->smsOwnerForIndex($student->index_number);
