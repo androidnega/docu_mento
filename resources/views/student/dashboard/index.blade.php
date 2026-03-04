@@ -101,7 +101,7 @@
                 ? 'Rejected'
                 : ($leaderProject->approved ? 'Approved' : 'Pending approval');
         @endphp
-        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 text-sm">
+        <div class="rounded-lg border border-sky-100 bg-sky-50 px-4 py-4 text-sm">
             <div class="flex items-center gap-2 mb-2">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-xs">
                     <i class="fas fa-info-circle"></i>
@@ -141,7 +141,7 @@
                 $stageText = 'All milestones completed';
             }
         @endphp
-        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 text-sm">
+        <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm">
             <div class="flex items-center gap-2 mb-2">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs">
                     <i class="fas fa-flag-checkered"></i>
@@ -160,7 +160,7 @@
                 ->first();
         @endphp
         @if($leaderProject->supervisors->isNotEmpty() || $latestFeedback)
-        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 text-sm">
+        <div class="rounded-lg border border-violet-100 bg-violet-50 px-4 py-4 text-sm">
             <div class="flex items-center gap-2 mb-2">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-violet-100 text-violet-700 text-xs">
                     <i class="fas fa-comments"></i>
@@ -184,7 +184,7 @@
         @endif
 
         {{-- Deadlines --}}
-        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 text-sm">
+        <div class="rounded-lg border border-amber-100 bg-amber-50 px-4 py-4 text-sm">
             <div class="flex items-center gap-2 mb-2">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs">
                     <i class="fas fa-calendar-alt"></i>
