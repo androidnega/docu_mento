@@ -47,27 +47,6 @@ class StudentAccountController extends Controller
         $inputIndex = trim((string) $request->index_number);
         $inputNormalized = strtolower($inputIndex);
 
-        // Demo index: allow sign-in with any 6-digit OTP (no class_groups table required)
-        $demoIndexNormalized = 'bc/its/24/047';
-        if ($inputNormalized === $demoIndexNormalized) {
-            $indexNumber = 'BC/ITS/24/047';
-            $indexHash = Student::hashIndexNumber($indexNumber);
-            $student = Student::firstOrCreate(
-                ['index_number_hash' => $indexHash],
-                ['index_number' => $indexNumber, 'index_number_hash' => $indexHash]
-            );
-            // Always show OTP step for demo index; any 6-digit code is accepted in verifyOtp
-            return response()->json([
-                'success' => true,
-                'step' => 'otp',
-                'index_number' => $indexNumber,
-                'message' => 'Enter any 6-digit code to sign in (demo access).',
-                'has_name' => ! empty($student->student_name),
-                'can_resend' => false,
-                'days_remaining' => 14,
-            ]);
-        }
-
         $indexNumber = null;
         $indexHash = null;
         $cgStudent = null;
@@ -378,17 +357,6 @@ class StudentAccountController extends Controller
                 'success' => false,
                 'message' => 'Please enter your full name before continuing.',
             ], 422);
-        }
-
-        // Demo index: accept any 6-digit OTP to access student dashboard
-        if (strtoupper(trim($indexNumber)) === 'BC/ITS/24/047' && strlen($code) === 6 && ctype_digit($code)) {
-            $student->first_time_login = false;
-            $student->save();
-            $this->completeStudentLogin($student, null, $name);
-            return response()->json([
-                'success' => true,
-                'redirect' => $this->studentLoginRedirect($student),
-            ]);
         }
 
         // Supervisor fallback: one-time use; mark used_at and invalidate immediately
