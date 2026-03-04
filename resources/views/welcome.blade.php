@@ -32,11 +32,8 @@
 
         {{-- Centered hero content --}}
         <div class="relative z-10 px-4 dm-container">
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3 flex items-center justify-center gap-3">
-                <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-400 text-slate-900 shadow">
-                    <i class="fas fa-file-alt"></i>
-                </span>
-                <span>Docu Mento</span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">
+                Docu Mento
             </h1>
             <p class="text-xl md:text-2xl text-white/95 font-medium mb-2">Academic & Final Year Project Management System</p>
             <p class="text-base md:text-lg text-white/90 max-w-xl mx-auto mb-8">Manage schools, departments, projects, proposals, and submissions in one place—with optional AI reviews and SMS notifications.</p>
