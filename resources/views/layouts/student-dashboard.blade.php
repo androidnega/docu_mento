@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $dashboardTitle ?? 'My Dashboard')
-@section('body_class', 'bg-gray-50')
+@section('body_class', 'bg-gray-50 dark:bg-slate-900')
 @section('body_extra_class', 'min-h-screen')
 
 @section('content')
@@ -17,9 +17,9 @@
     $navActiveClass = 'bg-slate-100 text-slate-900';
     $navInactiveClass = 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900';
 @endphp
-<div class="min-h-screen flex bg-gray-50" id="student-dashboard-wrap">
+<div class="min-h-screen flex bg-gray-50 dark:bg-slate-900" id="student-dashboard-wrap">
     {{-- Top bar: Menu | Academic Year | Logout --}}
-    <div class="fixed top-0 left-0 right-0 z-20 h-12 lg:h-14 flex items-center justify-between px-4 lg:pl-4 lg:pr-4 bg-white border-b border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] lg:left-56">
+    <div class="fixed top-0 left-0 right-0 z-20 h-12 lg:h-14 flex items-center justify-between px-4 lg:pl-4 lg:pr-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.05)] lg:left-56">
         <div class="flex items-center gap-3">
             {{-- Mobile: open sidebar --}}
             <button type="button" id="student-sidebar-open" class="lg:hidden flex items-center justify-center h-9 w-9 rounded-lg text-gray-600 hover:bg-gray-100" aria-label="Open menu">
@@ -30,14 +30,17 @@
                 <i class="fas fa-bars"></i>
             </button>
         </div>
-        <div class="flex items-center gap-4 text-sm">
+        <div class="flex items-center gap-3 text-sm">
             @php $yearLabel = optional($academicYear ?? null)->year ?? optional($project ?? null)->academicYear?->year ?? null; @endphp
             @if($yearLabel)
-                <span class="text-gray-500 hidden sm:inline">Academic Year: <strong class="text-gray-700">{{ $yearLabel }}</strong></span>
+                <span class="text-gray-500 dark:text-gray-300 hidden sm:inline">Academic Year: <strong class="text-gray-700 dark:text-gray-100">{{ $yearLabel }}</strong></span>
             @endif
+            <button type="button" id="student-theme-toggle" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-gray-200 dark:border-slate-600 bg-white/80 dark:bg-slate-800 text-gray-600 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900" aria-label="Toggle theme">
+                <i class="fas fa-sun text-xs" id="student-theme-icon"></i>
+            </button>
             <form action="{{ ($user && method_exists($user, 'isDocuMentorStudent') && $user->isDocuMentorStudent()) ? route('student.account.logout') : route('logout') }}" method="post" class="hidden sm:block">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-800">
                     <i class="fas fa-sign-out-alt text-xs"></i>
                     <span>Log out</span>
                 </button>
@@ -47,28 +50,28 @@
     {{-- Sidebar overlay (mobile) --}}
     <div id="student-sidebar-overlay" class="fixed inset-0 z-30 bg-black/20 hidden lg:hidden" aria-hidden="true"></div>
     {{-- Left sidebar --}}
-    <aside id="student-sidebar" class="fixed top-0 left-0 z-40 h-full w-56 bg-white border-r border-gray-200 flex flex-col shadow-[0_0_8px_rgba(0,0,0,0.06)] -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out">
-        <div class="h-12 lg:h-14 flex items-center px-4 border-b border-gray-100 shrink-0">
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 no-underline text-gray-900">
+    <aside id="student-sidebar" class="fixed top-0 left-0 z-40 h-full w-56 bg-white dark:bg-slate-950 border-r border-gray-200 dark:border-slate-800 flex flex-col shadow-[0_0_8px_rgba(0,0,0,0.06)] -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out">
+        <div class="h-12 lg:h-14 flex items-center px-4 border-b border-gray-100 dark:border-slate-800 shrink-0">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 no-underline text-gray-900 dark:text-gray-50">
                 <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700"><i class="fas fa-graduation-cap text-sm"></i></span>
-                <span class="text-sm font-semibold text-gray-900">Docu Mento</span>
+                <span class="text-sm font-semibold text-gray-900 dark:text-gray-50">Docu Mento</span>
             </a>
         </div>
         <nav class="flex-1 py-4 px-3 space-y-0.5" aria-label="Main navigation">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $navDashboard ? $navActiveClass : $navInactiveClass }}">
-                <i class="fas fa-home w-4 text-center {{ $navDashboard ? 'text-slate-600' : 'text-gray-500' }}"></i>
+                <i class="fas fa-home w-4 text-center {{ $navDashboard ? 'text-slate-600 dark:text-slate-100' : 'text-gray-500 dark:text-gray-400' }}"></i>
                 <span>Dashboard</span>
             </a>
             @if($docuMentorGroup ?? null)
             <a href="{{ route('dashboard.group.show', $docuMentorGroup) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $navGroup ? $navActiveClass : $navInactiveClass }}">
-                <i class="fas fa-users w-4 text-center {{ $navGroup ? 'text-slate-600' : 'text-gray-500' }}"></i>
+                <i class="fas fa-users w-4 text-center {{ $navGroup ? 'text-slate-600 dark:text-slate-100' : 'text-gray-500 dark:text-gray-400' }}"></i>
                 <span>My Group</span>
             </a>
             @endif
             @if($hasProjectAccess ?? false)
             @if($leaderProjectForNav)
             <a href="{{ route('dashboard.projects.show', $leaderProjectForNav) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $navProjectShow ? $navActiveClass : $navInactiveClass }}">
-                <i class="fas fa-folder-open w-4 text-center {{ $navProjectShow ? 'text-slate-600' : 'text-gray-500' }}"></i>
+                <i class="fas fa-folder-open w-4 text-center {{ $navProjectShow ? 'text-slate-600 dark:text-slate-100' : 'text-gray-500 dark:text-gray-400' }}"></i>
                 <span>My Project</span>
             </a>
             <a href="{{ route('dashboard.projects.show', $leaderProjectForNav) }}#chapters" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $navInactiveClass }}">
@@ -85,32 +88,32 @@
             </a>
             @else
             <a href="{{ route('dashboard.projects.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $navProjectsIndex ? $navActiveClass : $navInactiveClass }}">
-                <i class="fas fa-folder-open w-4 text-center {{ $navProjectsIndex ? 'text-slate-600' : 'text-gray-500' }}"></i>
+                <i class="fas fa-folder-open w-4 text-center {{ $navProjectsIndex ? 'text-slate-600 dark:text-slate-100' : 'text-gray-500 dark:text-gray-400' }}"></i>
                 <span>My Project</span>
             </a>
             @endif
             @endif
             {{-- Profile link removed from sidebar per UI spec --}}
         </nav>
-        <div class="p-3 border-t border-gray-100 space-y-1">
+        <div class="p-3 border-t border-gray-100 dark:border-slate-800 space-y-1">
             @if(isset($student) && $student)
-            <p class="px-3 py-1.5 text-xs text-gray-500 truncate" title="{{ $student->display_name ?? '' }}">{{ $student->display_name ?? '' }}</p>
-            <p class="px-3 py-0 text-xs font-mono text-gray-400 truncate">{{ $student->index_number ?? '' }}</p>
+            <p class="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-300 truncate" title="{{ $student->display_name ?? '' }}">{{ $student->display_name ?? '' }}</p>
+            <p class="px-3 py-0 text-xs font-mono text-gray-400 dark:text-gray-500 truncate">{{ $student->index_number ?? '' }}</p>
             @elseif(isset($user) && $user)
-            <p class="px-3 py-1.5 text-xs text-gray-500 truncate">{{ $user->name ?? $user->username ?? '' }}</p>
+            <p class="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-300 truncate">{{ $user->name ?? $user->username ?? '' }}</p>
             @if(!empty($user->index_number))
-            <p class="px-3 py-0 text-xs font-mono text-gray-400 truncate">{{ $user->index_number }}</p>
+            <p class="px-3 py-0 text-xs font-mono text-gray-400 dark:text-gray-500 truncate">{{ $user->index_number }}</p>
             @endif
             @endif
         </div>
     </aside>
     {{-- Main content --}}
-    <main id="student-main" class="flex-1 w-full min-w-0 pt-14 lg:pt-14 lg:pl-56 overflow-x-hidden bg-gray-50 pb-6 sm:pb-10">
+    <main id="student-main" class="flex-1 w-full min-w-0 pt-14 lg:pt-14 lg:pl-56 overflow-x-hidden bg-gray-50 dark:bg-slate-900 pb-6 sm:pb-10">
         <div class="w-full min-w-0 px-4 py-6 sm:px-6 sm:py-6">
             <div class="w-full">
                 @if(!request()->routeIs('dashboard') && !request()->routeIs('dashboard.projects.show'))
                 <div class="mb-4">
-                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 no-underline">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 no-underline">
                         <i class="fas fa-arrow-left text-xs"></i>
                         <span>Back to dashboard</span>
                     </a>
@@ -171,6 +174,48 @@
             }
         });
     }
+    // Simple theme toggle for student dashboard (light/dark)
+    (function () {
+        var root = document.documentElement;
+        var toggleBtn = document.getElementById('student-theme-toggle');
+        var toggleIcon = document.getElementById('student-theme-icon');
+        var storedTheme = null;
+        try {
+            storedTheme = window.localStorage ? localStorage.getItem('dm-theme') : null;
+        } catch (e) {
+            storedTheme = null;
+        }
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
+        if (initialTheme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+        function applyIcon() {
+            if (!toggleIcon) return;
+            if (root.classList.contains('dark')) {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
+            } else {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            }
+        }
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                var toDark = !root.classList.contains('dark');
+                if (toDark) root.classList.add('dark'); else root.classList.remove('dark');
+                try {
+                    if (window.localStorage) {
+                        localStorage.setItem('dm-theme', toDark ? 'dark' : 'light');
+                    }
+                } catch (e) {}
+                applyIcon();
+            });
+            applyIcon();
+        }
+    })();
 })();
 </script>
 {{-- Hidden utility to keep lg:-translate-x-full class in Tailwind build --}}
