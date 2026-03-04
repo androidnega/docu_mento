@@ -23,6 +23,7 @@
     <script>
         tailwind = window.tailwind || {};
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {

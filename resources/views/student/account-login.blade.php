@@ -1,102 +1,107 @@
 @extends('layouts.app')
 
 @section('title', 'Student Login')
-@section('body_class', 'bg-gray-50')
+@section('body_class', 'bg-gray-50 dark:bg-slate-900')
 
 @section('content')
-<div class="min-h-[100dvh] min-h-screen flex items-center justify-center px-4 py-6">
+<div class="min-h-[100dvh] min-h-screen flex items-center justify-center px-4 py-6 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
     <div class="max-w-md w-full">
-        <div class="bg-white border border-gray-100 rounded-lg p-5 sm:p-6 shadow-sm">
+        <div class="flex justify-end mb-3">
+            <button type="button" id="dm-theme-toggle" class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-gray-500 dark:text-gray-300 shadow-sm hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Toggle theme">
+                <i class="fas fa-sun text-sm" id="dm-theme-icon"></i>
+            </button>
+        </div>
+        <div class="bg-white/95 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-2xl p-5 sm:p-6 shadow-lg shadow-gray-200/60 dark:shadow-black/40 transition-colors duration-300">
             <div class="flex items-center gap-3 mb-6">
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white"><i class="fas fa-graduation-cap text-sm"></i></span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm"><i class="fas fa-graduation-cap text-sm"></i></span>
                 <div>
-                    <h1 class="text-xl font-semibold text-gray-800">Student login</h1>
-                    <p class="text-sm text-gray-500 mt-0.5">Docu Mento</p>
+                    <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Student login</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Docu Mento</p>
                 </div>
             </div>
-            <p class="text-sm text-gray-500 mb-5">Enter your index number. First-time users complete a quick setup with name, phone, and OTP; returning users sign in with a code.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">Enter your index number. First-time users complete a quick setup with name, phone, and OTP; returning users sign in with a code.</p>
 
             {{-- Step 1: Index number --}}
             <div id="step-index" class="space-y-4">
                 <div>
-                    <label for="index_number" class="block text-sm font-medium text-gray-700 mb-1">Index number</label>
-                    <input type="text" id="index_number" name="index_number" required placeholder="e.g. BC/ITS/24/047" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" style="text-transform: uppercase;" autocomplete="off">
+                    <label for="index_number" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Index number</label>
+                    <input type="text" id="index_number" name="index_number" required placeholder="e.g. BC/ITS/24/047" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" style="text-transform: uppercase;" autocomplete="off">
                 </div>
                 <div id="index-error" class="hidden">
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="index-error-text"></div>
-                    <p id="index-error-support-wrap" class="hidden mt-2 text-sm text-gray-500">
-                        <a id="index-error-support" href="#" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-700 font-medium">Get in touch</a>
+                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3 text-sm text-red-800 dark:text-red-200" id="index-error-text"></div>
+                    <p id="index-error-support-wrap" class="hidden mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <a id="index-error-support" href="#" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium">Get in touch</a>
                     </p>
                 </div>
-                <button type="button" id="btn-index" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Continue</button>
+                <button type="button" id="btn-index" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900 transition-colors">Continue</button>
             </div>
 
             {{-- Step 2: Name & Phone --}}
             <div id="step-phone" class="space-y-4 hidden">
-                <p class="text-sm text-gray-500" id="phone-step-message">Enter your full name and active phone number to receive a one-time code (e.g. 233XXXXXXXXX).</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="phone-step-message">Enter your full name and active phone number to receive a one-time code (e.g. 233XXXXXXXXX).</p>
                 <div id="phone-name-wrap">
-                    <label for="phone_name" class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
-                    <input type="text" id="phone_name" name="phone_name" placeholder="Your full name" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
+                    <label for="phone_name" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Full name</label>
+                    <input type="text" id="phone_name" name="phone_name" placeholder="Your full name" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
                 </div>
                 <div>
-                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
-                    <input type="tel" id="phone" name="phone" placeholder="233XXXXXXXXX" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="tel">
+                    <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Phone number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="233XXXXXXXXX" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="tel">
                 </div>
                 <div id="phone-error" class="hidden">
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="phone-error-text"></div>
+                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3 text-sm text-red-800 dark:text-red-200" id="phone-error-text"></div>
                 </div>
-                <button type="button" id="btn-send-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Send code</button>
-                <button type="button" id="btn-back-to-index" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
+                <button type="button" id="btn-send-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900 transition-colors">Send code</button>
+                <button type="button" id="btn-back-to-index" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none transition-colors">← Back</button>
             </div>
 
             {{-- Step 3: OTP --}}
             <div id="step-otp" class="space-y-4 hidden">
-                <p class="text-sm text-gray-500" id="otp-step-message">Enter the 6-digit code sent to your phone.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="otp-step-message">Enter the 6-digit code sent to your phone.</p>
                 <div id="otp-code-fields" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Code</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Code</label>
                         <div class="flex justify-center gap-2" id="otp-boxes-wrap">
                             @for($i = 0; $i < 6; $i++)
                             <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" data-otp-index="{{ $i }}" autocomplete="off"
-                                class="w-11 h-12 text-center text-xl font-semibold border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 otp-digit">
+                                class="w-11 h-12 text-center text-xl font-semibold border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 otp-digit">
                             @endfor
                         </div>
                         <input type="hidden" id="otp_code" name="code" value="">
                     </div>
                     <div>
-                        <label for="otp_name" class="block text-sm font-medium text-gray-700 mb-1">Your name</label>
-                        <input type="text" id="otp_name" name="student_name" placeholder="Full name (required for first-time login)" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
+                        <label for="otp_name" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Your name</label>
+                        <input type="text" id="otp_name" name="student_name" placeholder="Full name (required for first-time login)" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="name" style="text-transform: capitalize;">
                     </div>
                     <div id="otp-error" class="hidden">
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="otp-error-text"></div>
+                        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3 text-sm text-red-800 dark:text-red-200" id="otp-error-text"></div>
                     </div>
-                    <button type="button" id="btn-verify-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Verify and sign in</button>
-                    <p class="text-center text-sm text-gray-500">Didn't get the code? <button type="button" id="btn-resend-otp" class="text-emerald-600 hover:text-emerald-700 font-medium">Resend code</button></p>
-                    <p id="otp-days-remaining" class="text-center text-sm text-gray-500 mt-1 hidden" aria-live="polite"></p>
-                    <button type="button" id="btn-back-to-phone" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
+                    <button type="button" id="btn-verify-otp" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900 transition-colors">Verify and sign in</button>
+                    <p class="text-center text-sm text-gray-500 dark:text-gray-400">Didn't get the code? <button type="button" id="btn-resend-otp" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium">Resend code</button></p>
+                    <p id="otp-days-remaining" class="text-center text-sm text-gray-500 dark:text-gray-400 mt-1 hidden" aria-live="polite"></p>
+                    <button type="button" id="btn-back-to-phone" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none transition-colors">← Back</button>
                 </div>
             </div>
 
             {{-- Step 4: Password --}}
             <div id="step-password" class="space-y-4 hidden">
-                <p class="text-sm text-gray-500" id="password-step-message">Enter your password to sign in.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="password-step-message">Enter your password to sign in.</p>
                 <div>
-                    <label for="password_index" class="block text-sm font-medium text-gray-700 mb-1">Index number</label>
-                    <input type="text" id="password_index" readonly class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700" aria-readonly="true">
+                    <label for="password_index" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Index number</label>
+                    <input type="text" id="password_index" readonly class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-100" aria-readonly="true">
                 </div>
                 <div>
-                    <label for="login_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="login_password" placeholder="Your password" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="current-password">
+                    <label for="login_password" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Password</label>
+                    <input type="password" id="login_password" placeholder="Your password" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="current-password">
                 </div>
                 <div id="password-error" class="hidden">
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="password-error-text"></div>
+                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3 text-sm text-red-800 dark:text-red-200" id="password-error-text"></div>
                 </div>
-                <button type="button" id="btn-password-login" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">Sign in</button>
-                <button type="button" id="btn-back-to-index-from-password" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
+                <button type="button" id="btn-password-login" class="w-full py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900 transition-colors">Sign in</button>
+                <button type="button" id="btn-back-to-index-from-password" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none transition-colors">← Back</button>
             </div>
         </div>
         <p class="text-center mt-6">
-            <a href="{{ route('student.landing') }}" class="text-sm text-gray-500 hover:text-gray-800 no-underline">← Back to home</a>
+            <a href="{{ route('student.landing') }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 no-underline">← Back to home</a>
         </p>
     </div>
 </div>
@@ -104,6 +109,51 @@
 @push('scripts')
 <script>
 (function() {
+    // Simple theme toggle for light/dark modes on the login page
+    var root = document.documentElement;
+    var storedTheme = null;
+    try {
+        storedTheme = window.localStorage ? localStorage.getItem('dm-theme') : null;
+    } catch (e) {
+        storedTheme = null;
+    }
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
+    if (initialTheme === 'dark') {
+        root.classList.add('dark');
+    } else {
+        root.classList.remove('dark');
+    }
+    var toggleBtn = document.getElementById('dm-theme-toggle');
+    var toggleIcon = document.getElementById('dm-theme-icon');
+    function applyThemeIcon() {
+        if (!toggleIcon) return;
+        if (root.classList.contains('dark')) {
+            toggleIcon.classList.remove('fa-sun');
+            toggleIcon.classList.add('fa-moon');
+        } else {
+            toggleIcon.classList.remove('fa-moon');
+            toggleIcon.classList.add('fa-sun');
+        }
+    }
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            var isDark = !root.classList.contains('dark');
+            if (isDark) {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+            try {
+                if (window.localStorage) {
+                    localStorage.setItem('dm-theme', isDark ? 'dark' : 'light');
+                }
+            } catch (e) {}
+            applyThemeIcon();
+        });
+        applyThemeIcon();
+    }
+
     var csrf = document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').content;
     var stepIndex = document.getElementById('step-index');
     var stepPhone = document.getElementById('step-phone');
