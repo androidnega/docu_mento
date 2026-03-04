@@ -117,13 +117,25 @@ class StudentAccountController extends Controller
         );
         $hasName = !empty($student->student_name);
 
-        // First-time login: if no phone yet, show name + phone step.
-        if (!$student->hasPhone()) {
+        // First-time login: always go through name + phone onboarding,
+        // even if a phone was prefilled from imports.
+        if ($student->isFirstTimeLogin()) {
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
                 'index_number' => $student->index_number,
                 'message' => 'Enter your full name and mobile number to receive a one-time code.',
+                'has_name' => $hasName,
+            ]);
+        }
+
+        // Subsequent login but phone missing: ask for phone once.
+        if (!$student->hasPhone()) {
+            return response()->json([
+                'success' => true,
+                'step' => 'phone',
+                'index_number' => $student->index_number,
+                'message' => 'Enter your mobile number to receive a one-time code.',
                 'has_name' => $hasName,
             ]);
         }
