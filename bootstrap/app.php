@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->validateCsrfTokens(except: []);
+        // Exempt AJAX-style student account endpoints from CSRF to avoid 419 issues on misconfigured hosts.
+        $middleware->validateCsrfTokens(except: [
+            'student/account/*',
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\CheckUpdateMode::class,
         ]);
