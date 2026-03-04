@@ -62,26 +62,41 @@
         @endif
 
         <div class="card overflow-hidden min-w-0">
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[600px] divide-y divide-gray-200">
+            <div class="overflow-x-auto sm:overflow-visible">
+                <table class="w-full min-w-[520px] sm:min-w-0 divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">Username</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">Name</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">Role</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-40">Department</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24 hidden sm:table-cell">Role</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-40 hidden md:table-cell">Department</th>
                             @if(isset($isSuperAdmin) && $isSuperAdmin)
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32">SMS</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32 hidden lg:table-cell">SMS</th>
                             @endif
                             <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase min-w-[120px]">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($users as $u)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-3 py-2 text-sm font-medium text-gray-900 break-words" title="{{ $u->username }}">{{ $u->username }}</td>
+                            <tr class="hover:bg-gray-50 align-top">
+                                <td class="px-3 py-2 text-sm font-medium text-gray-900 break-words" title="{{ $u->username }}">
+                                    <div>{{ $u->username }}</div>
+                                    <div class="mt-0.5 text-xs text-gray-500 sm:hidden">
+                                        @php
+                                            $roleLabels = [
+                                                'super_admin' => ['label' => 'Admin', 'class' => 'bg-primary-100 text-primary-800'],
+                                                'supervisor' => ['label' => 'Supervisor', 'class' => 'bg-success-100 text-success-800'],
+                                                'coordinator' => ['label' => 'Coordinator', 'class' => 'bg-indigo-100 text-indigo-800'],
+                                                'student' => ['label' => 'Student', 'class' => 'bg-gray-100 text-gray-800'],
+                                                'leader' => ['label' => 'Leader', 'class' => 'bg-amber-100 text-amber-800'],
+                                            ];
+                                            $rMobile = $roleLabels[$u->role] ?? ['label' => $u->role, 'class' => 'bg-gray-100 text-gray-700'];
+                                        @endphp
+                                        <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold {{ $rMobile['class'] }}">{{ $rMobile['label'] }}</span>
+                                    </div>
+                                </td>
                                 <td class="px-3 py-2 text-sm text-gray-600 break-words uppercase" title="{{ $u->name ?? '-' }}">{{ $u->name ? Str::upper($u->name) : '—' }}</td>
-                                <td class="px-3 py-2">
+                                <td class="px-3 py-2 hidden sm:table-cell">
                                     @php
                                         $roleLabels = [
                                             'super_admin' => ['label' => 'Admin', 'class' => 'bg-primary-100 text-primary-800'],
@@ -99,9 +114,9 @@
                                     $schoolName = $u->department?->school?->name;
                                     $deptLabel = $deptName ? ($schoolName ? ($deptName . ' — ' . $schoolName) : $deptName) : null;
                                 @endphp
-                                <td class="px-3 py-2 text-sm text-gray-600 break-words uppercase" title="{{ $deptLabel ?? '—' }}">{{ $deptLabel ? Str::upper($deptLabel) : '—' }}</td>
+                                <td class="px-3 py-2 text-sm text-gray-600 break-words uppercase hidden md:table-cell" title="{{ $deptLabel ?? '—' }}">{{ $deptLabel ? Str::upper($deptLabel) : '—' }}</td>
                                 @if(isset($isSuperAdmin) && $isSuperAdmin)
-                                <td class="px-3 py-2 text-sm">
+                                <td class="px-3 py-2 text-sm hidden lg:table-cell">
                                     @if($u->role === 'supervisor' || $u->role === \App\Models\User::DM_ROLE_COORDINATOR)
                                     <div class="flex flex-col gap-0.5">
                                         <div class="flex items-center gap-2">

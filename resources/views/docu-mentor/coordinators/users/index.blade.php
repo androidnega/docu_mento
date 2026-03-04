@@ -11,21 +11,31 @@
 
     <div class="card overflow-hidden min-w-0 rounded-lg border border-gray-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[500px] divide-y divide-gray-200">
+            <table class="w-full min-w-[420px] sm:min-w-0 divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Username / Phone</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Role</th>
                         <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($users as $u)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-3 py-2 text-sm font-medium text-gray-900">{{ $u->name ?? '—' }}</td>
+                        <tr class="hover:bg-gray-50 align-top">
+                            <td class="px-3 py-2 text-sm font-medium text-gray-900">
+                                <div>{{ $u->name ?? '—' }}</div>
+                                <div class="mt-0.5 text-xs text-gray-500 sm:hidden">
+                                    <span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full
+                                        @if(in_array($u->role, ['coordinator', 'super_admin'])) bg-primary-100 text-primary-800
+                                        @elseif(in_array($u->role, ['supervisor', 'hod'])) bg-amber-100 text-amber-800
+                                        @else bg-gray-100 text-gray-700
+                                        @endif
+                                    ">{{ $u->role }}</span>
+                                </div>
+                            </td>
                             <td class="px-3 py-2 text-sm text-gray-600">{{ $u->username ?? $u->phone ?? '—' }}</td>
-                            <td class="px-3 py-2">
+                            <td class="px-3 py-2 hidden sm:table-cell">
                                 <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full
                                     @if(in_array($u->role, ['coordinator', 'super_admin'])) bg-primary-100 text-primary-800
                                     @elseif(in_array($u->role, ['supervisor', 'hod'])) bg-amber-100 text-amber-800
