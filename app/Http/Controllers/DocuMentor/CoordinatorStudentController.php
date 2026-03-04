@@ -970,7 +970,7 @@ class CoordinatorStudentController extends Controller
         if ($dmUser) {
             $dmUser->name = $name ?? $dmUser->name;
             if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'phone')) {
-                $dmUser->phone = $phone ?? $dmUser->phone;
+                $dmUser->phone = $phone;
             }
             $dmUser->save();
         }
