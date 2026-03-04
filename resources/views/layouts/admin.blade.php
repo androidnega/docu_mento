@@ -21,7 +21,7 @@
                     @if($user && $user->avatar_url)
                         <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 rounded-full object-cover flex-shrink-0 border border-gray-200" />
                     @else
-                        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 text-sm font-semibold border border-primary-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'A', 0, 1)) : 'A' }}</span>
+                        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 text-base font-semibold border border-primary-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'A', 0, 1)) : 'A' }}</span>
                     @endif
                     <svg class="h-4 w-4 flex-shrink-0 text-gray-500 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>

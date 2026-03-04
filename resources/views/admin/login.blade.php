@@ -6,7 +6,7 @@
 <div class="min-h-screen flex items-center justify-center px-4 py-10 bg-[#f3f4f6]">
     <div class="relative w-full max-w-md">
         {{-- Icon badge above card --}}
-        <div class="absolute -top-2 left-1/2 -translate-x-1/2 h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center">
+        <div class="absolute top-1 left-1/2 -translate-x-1/2 h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center">
             <i class="fas fa-right-to-bracket text-white text-xl"></i>
         </div>
 

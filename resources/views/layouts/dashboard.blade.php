@@ -145,6 +145,15 @@
                     @endif
                 </ul>
             </nav>
+            <div class="px-3 pb-4 border-t border-gray-800">
+                <form action="{{ route('logout') }}" method="post" class="mt-3">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 text-gray-100 text-sm font-medium py-2.5 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        <i class="fas fa-right-from-bracket text-xs"></i>
+                        <span class="staff-nav-text">Log out</span>
+                    </button>
+                </form>
+            </div>
         </div>
     </aside>
 
@@ -188,7 +197,7 @@
                         @if($user && $user->avatar_url)
                             <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 sm:h-9 sm:w-9 rounded-full object-cover flex-shrink-0 border border-gray-200" />
                         @else
-                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600 text-sm font-semibold border border-gray-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
+                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600 text-base font-semibold border border-gray-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
                         @endif
                         <svg class="h-4 w-4 flex-shrink-0 text-gray-500 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
