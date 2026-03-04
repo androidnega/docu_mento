@@ -26,8 +26,7 @@ class AdminAuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        $loginHeroImage = Setting::getValue(Setting::KEY_LOGIN_HERO_IMAGE);
-        return view('admin.login', compact('loginHeroImage'));
+        return view('admin.login');
     }
 
     /**

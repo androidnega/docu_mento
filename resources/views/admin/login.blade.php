@@ -3,25 +3,12 @@
 @section('title', 'Login')
 
 @section('content')
-@php
-    // Use Super Admin Settings → Login page hero image; fallback to public asset (same default as in Settings)
-    $heroUrl = !empty(trim($loginHeroImage ?? '')) ? trim($loginHeroImage) : asset('assets/hero-section.jpg');
-@endphp
 <div class="min-h-screen flex items-center justify-center px-4 py-10" style="background-color: #eef1f4;">
     <div class="w-full max-w-[520px] bg-white rounded-xl shadow-lg overflow-hidden">
-        {{-- Hero section inside card: image + overlay + SIGN IN --}}
-        <div class="relative h-36 sm:h-44 overflow-hidden">
-            <img
-                src="{{ $heroUrl }}"
-                alt=""
-                class="absolute inset-0 w-full h-full object-cover object-top"
-                fetchpriority="high"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-            >
-            <div class="absolute inset-0 bg-[rgba(47,83,93,0.82)]" aria-hidden="true"></div>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <h1 class="text-white text-2xl sm:text-3xl font-bold tracking-widest uppercase">Sign in</h1>
-            </div>
+        {{-- Simple header without images --}}
+        <div class="px-6 sm:px-8 pt-6 pb-4 border-b border-gray-100">
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Sign in</h1>
+            <p class="mt-1 text-sm text-gray-500">Staff, supervisors and coordinators use this form to access the dashboard.</p>
         </div>
 
         {{-- Form section --}}
