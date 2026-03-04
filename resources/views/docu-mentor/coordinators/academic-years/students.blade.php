@@ -60,7 +60,7 @@
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-sm font-semibold text-slate-800">Student management ({{ $students->count() }})</h2>
             <form method="get" action="{{ route('dashboard.coordinators.academic-years.students', $academicYear) }}" class="flex flex-wrap items-center gap-2">
-                <input type="search" name="search" value="{{ request('search') }}" placeholder="Search index, name, email…" class="rounded-md border border-slate-300 px-3 py-1.5 text-sm w-48 max-w-full">
+                <input type="search" name="search" value="{{ request('search') }}" placeholder="Search index, name, phone…" class="rounded-md border border-slate-300 px-3 py-1.5 text-sm w-48 max-w-full">
                 <select name="status" class="rounded-md border border-slate-300 px-3 py-1.5 text-sm">
                     <option value="">All statuses</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
@@ -94,7 +94,7 @@
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Index number</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Phone</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Leader</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
@@ -109,7 +109,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ $u->index_number ?? '—' }}</td>
                                     <td class="px-4 py-3 text-sm text-slate-700">{{ $u->name ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-sm text-slate-600">{{ $u->email ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-sm text-slate-600">{{ $u->phone ?? '—' }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium {{ $u->is_active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600' }}">
                                             {{ $u->is_active ? 'Active' : 'Inactive' }}

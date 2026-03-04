@@ -116,10 +116,46 @@ class StudentAccountController extends Controller
             ]
         );
         $hasName = !empty($student->student_name);
+        $hasPhone = $student->hasPhone();
 
-        // First-time login: always go through name + phone onboarding,
-        // even if a phone was prefilled from imports.
-        if ($student->isFirstTimeLogin()) {
+        // If we already know the student's name and phone, keep the flow short:
+        // send OTP immediately without asking for name/phone again.
+        if ($hasName && $hasPhone) {
+            $smsIndexNumber = $cgStudent?->index_number ?? $indexNumber ?? $student->index_number;
+            $smsOwner = $smsIndexNumber ? $this->smsOwnerForIndex($smsIndexNumber) : null;
+
+            $code = (string) random_int(100000, 999999);
+            Otp::create([
+                'index_number_hash' => $indexHash,
+                'type' => Otp::TYPE_STUDENT_LOGIN,
+                'code' => $code,
+                'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
+            ]);
+            $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 90 days.';
+            $result = ArkeselService::sendSms($student->phone_contact, $message);
+            if (!$result['success']) {
+                $msg = $result['message'] ?? 'We couldn\'t send the code.';
+                if (strpos($msg, 'try again') === false && strpos($msg, 'Try again') === false) {
+                    $msg .= ' Please try again.';
+                }
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            if ($smsOwner) {
+                $smsOwner->increment('sms_used');
+            }
+            return response()->json([
+                'success' => true,
+                'step' => 'otp',
+                'index_number' => $student->index_number,
+                'message' => 'A code has been sent to your registered number. This code is valid for 90 days.',
+                'has_name' => true,
+                'can_resend' => false,
+                'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
+            ]);
+        }
+
+        // Otherwise: go through onboarding to capture name and/or phone.
+        if (!$hasPhone || !$hasName || $student->isFirstTimeLogin()) {
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
@@ -129,22 +165,10 @@ class StudentAccountController extends Controller
             ]);
         }
 
-        // Subsequent login but phone missing: ask for phone once.
-        if (!$student->hasPhone()) {
-            return response()->json([
-                'success' => true,
-                'step' => 'phone',
-                'index_number' => $student->index_number,
-                'message' => 'Enter your mobile number to receive a one-time code.',
-                'has_name' => $hasName,
-            ]);
-        }
-
-        // Coordinator (who has the student's class groups) or supervisor with SMS balance (for deducting); if none, we still send OTP so students can log in
+        // Fallback (should not normally hit): treat as otp path with fresh code.
         $smsIndexNumber = $cgStudent?->index_number ?? $indexNumber ?? $student->index_number;
         $smsOwner = $smsIndexNumber ? $this->smsOwnerForIndex($smsIndexNumber) : null;
 
-        // Generate a fresh OTP, save, send (even if no supervisor with balance)
         $code = (string) random_int(100000, 999999);
         Otp::create([
             'index_number_hash' => $indexHash,

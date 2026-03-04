@@ -52,7 +52,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Index number</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Phone</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
@@ -61,7 +61,7 @@
                             <tr class="hover:bg-slate-50/50">
                                 <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ $u->index_number ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm text-slate-700">{{ $u->name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-600">{{ $u->email ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600">{{ $u->phone ?? '—' }}</td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium {{ $u->is_active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600' }}">
                                         {{ $u->is_active ? 'Active' : 'Inactive' }}
