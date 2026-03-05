@@ -10,7 +10,7 @@
 <div class="w-full space-y-6">
     {{-- Top bar: quick context + primary shortcuts (no welcome text block) --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
+        <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
             @if($activeAcademicYear ?? null)
                 <span class="inline-flex items-center gap-1 rounded-full bg-slate-900 text-amber-300 px-2.5 py-1 text-[11px] sm:text-xs font-medium">
                     <i class="fas fa-calendar-alt text-[10px]"></i>
@@ -25,12 +25,12 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('dashboard.coordinators.academic-years.index') }}"
-               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50">
                 <i class="fas fa-calendar-days text-[11px] sm:text-xs text-slate-500"></i>
                 <span>Academic years</span>
             </a>
             <a href="{{ route('dashboard.coordinators.students.index') }}"
-               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50">
                 <i class="fas fa-user-graduate text-[11px] sm:text-xs text-slate-500"></i>
                 <span>Students</span>
             </a>
@@ -51,12 +51,12 @@
     @endif
 
     {{-- Command bar: search + quick actions --}}
-    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 shadow-sm flex flex-wrap items-center gap-3 sm:gap-4">
+    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4 shadow-sm flex flex-wrap items-center gap-3 sm:gap-4">
         <form class="flex-1 min-w-[200px]" onsubmit="return false;">
             <label for="coordinator-dashboard-search" class="sr-only">Search on this dashboard</label>
             <div class="flex items-center gap-2">
                 <div class="relative flex-1">
-                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 text-slate-400 dark:text-slate-500">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 text-slate-400">
                         <i class="fas fa-magnifying-glass text-xs sm:text-sm"></i>
                     </span>
                     <input
@@ -64,13 +64,13 @@
                         type="search"
                         autocomplete="off"
                         placeholder="Filter approvals by project, group, category or year"
-                        class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 sm:pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50"
+                        class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 sm:pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50"
                         data-dashboard-search-input="true"
                     >
                 </div>
                 <button
                     type="button"
-                    class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-amber-600 text-white text-xs hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                    class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-amber-600 text-white text-xs hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white"
                     title="Search approvals"
                     data-dashboard-search-trigger="true"
                 >
@@ -104,17 +104,17 @@
 
     {{-- Key metrics (cards in a responsive grid) --}}
     <div>
-        <h2 class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2 sm:mb-3">Department overview</h2>
+        <h2 class="text-xs sm:text-sm font-semibold text-slate-800 mb-2 sm:mb-3">Department overview</h2>
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}"
-               class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+               class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
                 <div class="min-w-0">
-                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Projects this year</p>
-                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-500">Projects this year</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900">
                         {{ $overview['projects'] ?? 0 }}
                     </p>
                     @if($activeAcademicYear ?? null)
-                        <p class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">Academic year {{ $activeAcademicYear->year }}</p>
+                        <p class="mt-0.5 text-[11px] text-slate-400">Academic year {{ $activeAcademicYear->year }}</p>
                     @endif
                 </div>
                 <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -179,10 +179,10 @@
             </a>
 
             <a href="{{ route('dashboard.coordinators.supervisors.index') }}"
-               class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+               class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
                 <div class="min-w-0">
-                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-700 dark:text-slate-300">Supervisors</p>
-                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-700">Supervisors</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900">
                         {{ $overview['supervisors'] ?? 0 }}
                     </p>
                     <p class="mt-0.5 text-[11px] text-slate-500">Available for project assignments</p>
@@ -285,10 +285,10 @@
         {{-- Right column: pipeline + deadlines + trend --}}
         <section class="space-y-4 sm:space-y-5">
             {{-- Pipeline --}}
-            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Project pipeline</h2>
-                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <h2 class="text-sm font-semibold text-slate-900">Project pipeline</h2>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         Live
                     </span>
@@ -305,16 +305,16 @@
                 <div class="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
                     @foreach($pipelineStatuses as $statusKey => $meta)
                         @php $count = (int) ($statsPerStatus[$statusKey] ?? 0); @endphp
-                        <div class="rounded-xl border border-slate-100 dark:border-slate-700 {{ $meta['bg'] }} px-3 py-2.5 flex flex-col gap-1">
+                        <div class="rounded-xl border border-slate-100 {{ $meta['bg'] }} px-3 py-2.5 flex flex-col gap-1">
                             <div class="flex items-center justify-between gap-2">
                                 <p class="text-[11px] font-medium uppercase tracking-wide {{ $meta['color'] }}">
                                     {{ $meta['label'] }}
                                 </p>
-                                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-300 tabular-nums">
+                                <span class="text-[11px] font-semibold text-slate-500 tabular-nums">
                                     {{ $count }}
                                 </span>
                             </div>
-                            <div class="h-1.5 w-full rounded-full bg-white/70 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-1.5 w-full rounded-full bg-white/70 overflow-hidden">
                                 @php
                                     $totalForBar = max(1, array_sum($statsPerStatus));
                                     $percent = (int) round(($count / $totalForBar) * 100);
@@ -328,11 +328,11 @@
             </div>
 
             {{-- Deadlines --}}
-            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Deadlines</h2>
+                    <h2 class="text-sm font-semibold text-slate-900">Deadlines</h2>
                     @if($activeAcademicYear ?? null)
-                        <span class="text-[11px] text-slate-500 dark:text-slate-300">Year {{ $activeAcademicYear->year }}</span>
+                        <span class="text-[11px] text-slate-500">Year {{ $activeAcademicYear->year }}</span>
                     @endif
                 </div>
                 @php
@@ -340,11 +340,11 @@
                     $effectiveDeadline = $deadlinesForYear['effective'] ?? null;
                 @endphp
                 @if(!$activeAcademicYear)
-                    <p class="mt-3 text-xs text-slate-500 dark:text-slate-300">
+                    <p class="mt-3 text-xs text-slate-500">
                         Set an active academic year to start configuring project deadlines.
                     </p>
                 @elseif($deadlineList->isEmpty() && !$effectiveDeadline)
-                    <p class="mt-3 text-xs text-slate-500 dark:text-slate-300">
+                    <p class="mt-3 text-xs text-slate-500">
                         No deadlines have been configured for this academic year yet.
                     </p>
                 @else
@@ -365,16 +365,16 @@
                             </li>
                         @endif
                         @foreach($deadlineList as $deadline)
-                            <li class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-2.5">
+                            <li class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
                                 <div class="min-w-0">
-                                    <p class="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                                    <p class="text-xs font-medium text-slate-900 truncate">
                                         {{ $deadline->name ?? 'Milestone' }}
                                     </p>
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-300">
+                                    <p class="text-[11px] text-slate-500">
                                         {{ $deadline->deadline_date?->format('d M Y') ?? '—' }}
                                     </p>
                                 </div>
-                                <span class="text-[11px] font-medium text-slate-500 dark:text-slate-300 whitespace-nowrap">
+                                <span class="text-[11px] font-medium text-slate-500 whitespace-nowrap">
                                     {{ ucfirst($deadline->type ?? 'project') }}
                                 </span>
                             </li>
@@ -389,11 +389,11 @@
             </div>
 
             {{-- Activity bubble trend --}}
-            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5 relative" data-activity-bubbles="true">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5 relative" data-activity-bubbles="true">
                 <div class="flex items-center justify-between gap-2 mb-3">
                     <div>
-                        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Student activity trend</h2>
-                        <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-300">New projects and chapter submissions (last 7 days).</p>
+                        <h2 class="text-sm font-semibold text-slate-900">Student activity trend</h2>
+                        <p class="mt-0.5 text-[11px] text-slate-500">New projects and chapter submissions (last 7 days).</p>
                     </div>
                 </div>
                 @php
@@ -401,7 +401,7 @@
                     $trendMax = max(1, $activityTrend['max'] ?? 1);
                 @endphp
                 @if(empty($trendPoints))
-                    <p class="text-xs text-slate-500 dark:text-slate-300">No recent activity recorded yet.</p>
+                    <p class="text-xs text-slate-500">No recent activity recorded yet.</p>
                 @else
                     <style>
                         @keyframes dm-bubble-float {
@@ -418,11 +418,11 @@
                                 $sizeRem = max(1.4, min($sizeRem, 3.1));
                                 $offset = (int) round(($ratio - 0.5) * 10);
                                 $bubblePalettes = [
-                                    'bg-sky-50 dark:bg-sky-900 text-sky-700 dark:text-sky-100 border-sky-100 dark:border-sky-700',
-                                    'bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-100 border-emerald-100 dark:border-emerald-700',
-                                    'bg-violet-50 dark:bg-violet-900 text-violet-700 dark:text-violet-100 border-violet-100 dark:border-violet-700',
-                                    'bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-100 border-amber-100 dark:border-amber-700',
-                                    'bg-rose-50 dark:bg-rose-900 text-rose-700 dark:text-rose-100 border-rose-100 dark:border-rose-700',
+                                    'bg-sky-50 text-sky-700 border-sky-100',
+                                    'bg-emerald-50 text-emerald-700 border-emerald-100',
+                                    'bg-violet-50 text-violet-700 border-violet-100',
+                                    'bg-amber-50 text-amber-700 border-amber-100',
+                                    'bg-rose-50 text-rose-700 border-rose-100',
                                 ];
                                 $paletteClass = $bubblePalettes[$index % count($bubblePalettes)];
                             @endphp
@@ -437,8 +437,8 @@
                                         <span class="text-[11px] font-semibold tabular-nums">{{ $value }}</span>
                                     </span>
                                 </div>
-                                <p class="text-[10px] font-medium text-slate-600 dark:text-slate-300 leading-tight">{{ $point['label'] }}</p>
-                                <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-tight">{{ $point['date'] }}</p>
+                                <p class="text-[10px] font-medium text-slate-600 leading-tight">{{ $point['label'] }}</p>
+                                <p class="text-[9px] text-slate-400 leading-tight">{{ $point['date'] }}</p>
                             </div>
                         @endforeach
                     </div>

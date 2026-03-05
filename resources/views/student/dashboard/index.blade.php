@@ -7,9 +7,9 @@
 @php
     $fallbackName = $displayName ?? ($user->name ?? $user->username ?? 'Student');
 @endphp
-<header class="mb-5 sm:mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+<header class="mb-5 sm:mb-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
     <div class="min-w-0">
-        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-50">
+        <h1 class="text-base sm:text-lg font-semibold text-gray-900">
             Welcome, {{ $fallbackName }}
             @if($isGroupLeader ?? false)
                 <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[11px] font-semibold align-middle">
@@ -19,16 +19,16 @@
             @endif
         </h1>
         @if(!empty($greeting ?? null))
-            <p class="mt-0.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200">
+            <p class="mt-0.5 text-xs sm:text-sm text-gray-700">
                 {{ $greeting }}
             </p>
         @else
-            <p class="mt-0.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200">
+            <p class="mt-0.5 text-xs sm:text-sm text-gray-700">
                 Here’s a quick view of your group and project workspace.
             </p>
         @endif
         @if(isset($student) && $student)
-            <p class="mt-1 text-[11px] text-gray-400 dark:text-slate-400 font-mono">
+            <p class="mt-1 text-[11px] text-gray-400 font-mono">
                 Index: {{ $student->index_number }}
             </p>
         @endif

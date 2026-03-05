@@ -244,7 +244,7 @@
     @stack('copy_restrict_styles')
     @stack('styles')
 </head>
-<body class="font-sans text-gray-800 dark:text-slate-100 @yield('body_extra_class') @yield('body_class', 'bg-offwhite')">
+<body class="font-sans text-gray-800 @yield('body_extra_class') @yield('body_class', 'bg-offwhite')">
     <noscript>
         <div class="fixed inset-0 z-[99999] flex items-center justify-center bg-offwhite p-6" role="alert">
             <div class="bg-white border border-gray-200 rounded-xl p-8 max-w-md text-center shadow-lg">

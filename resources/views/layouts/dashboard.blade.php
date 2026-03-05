@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $dashboardTitle ?? 'Dashboard')
-@section('body_class', 'bg-gray-100 dark:bg-slate-900 h-screen overflow-hidden')
+@section('body_class', 'bg-gray-100 h-screen overflow-hidden')
 
 @php
     $layoutAdminUser = auth()->user();
@@ -40,24 +40,24 @@
 <div class="staff-wrap flex h-screen bg-gray-100 overflow-hidden">
     <div id="staff-overlay" class="staff-overlay fixed inset-0 z-30 bg-black/40 md:hidden hidden" aria-hidden="true"></div>
 
-    <aside id="staff-sidebar" class="staff-sidebar {{ $isSupervisor ? 'staff-sidebar--light bg-slate-50 border-slate-200' : 'staff-sidebar--dark bg-gray-900 border-gray-800' }} flex h-full flex-col w-64 flex-shrink-0 border-r shadow-sm" aria-label="Dashboard navigation" data-collapsed="false">
+    <aside id="staff-sidebar" class="staff-sidebar staff-sidebar--light bg-slate-50 border-slate-200 flex h-full flex-col w-64 flex-shrink-0 border-r shadow-sm" aria-label="Dashboard navigation" data-collapsed="false">
         <div class="staff-sidebar-inner flex flex-col h-full">
-            <div class="staff-sidebar-header flex h-16 flex-shrink-0 items-center justify-between gap-2 px-4 border-b {{ $isSupervisor ? 'border-slate-200 bg-white' : 'border-gray-800 bg-gray-900' }}">
+            <div class="staff-sidebar-header flex h-16 flex-shrink-0 items-center justify-between gap-2 px-4 border-b border-slate-200 bg-white">
                 <a href="{{ $isCoordinatorOnly ? route('dashboard') : route('dashboard') }}" class="staff-sidebar-brand flex min-w-0 flex-shrink-0 items-center gap-3 overflow-hidden transition-opacity hover:opacity-90">
                     @if($isCoordinatorOnly)
                         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-lg shadow-sm">C</span>
-                        <span class="staff-sidebar-brand-text truncate text-lg font-bold {{ $isSupervisor ? 'text-slate-900' : 'text-white' }}">Coordinator</span>
+                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-slate-900">Coordinator</span>
                     @else
                         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
                             <i class="fas fa-file-alt text-lg"></i>
                         </span>
-                        <span class="staff-sidebar-brand-text truncate text-lg font-bold {{ $isSupervisor ? 'text-slate-900' : 'text-white' }}">Docu Mento</span>
+                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-slate-900">Docu Mento</span>
                     @endif
                 </a>
                 <button type="button"
                         id="staff-sidebar-toggle-inner"
                         data-staff-collapse
-                        class="staff-sidebar-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg {{ $isSupervisor ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:ring-offset-slate-50' : 'text-gray-400 hover:bg-gray-800 hover:text-white focus:ring-offset-gray-900' }} transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 md:flex"
+                        class="staff-sidebar-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:ring-offset-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 md:flex"
                         aria-label="Toggle sidebar"
                         title="Toggle sidebar">
                     <svg class="h-5 w-5 md:h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -201,12 +201,12 @@
     </aside>
 
     <div class="staff-main flex flex-col flex-1 min-w-0 min-h-0">
-        <header class="flex min-h-14 flex-shrink-0 items-stretch border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 min-w-0 safe-area-header">
+        <header class="flex min-h-14 flex-shrink-0 items-stretch border-b border-gray-200 bg-white z-10 min-w-0 safe-area-header">
             <div class="staff-page flex flex-1 flex-wrap items-center gap-2 sm:gap-3 w-full min-w-0 px-3 py-2 sm:px-4 md:px-6">
-                <button type="button" id="staff-sidebar-menu-btn" class="flex h-11 w-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-label="Open menu" title="Open menu" style="display: none;">
+                <button type="button" id="staff-sidebar-menu-btn" class="flex h-11 w-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-label="Open menu" title="Open menu" style="display: none;">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h1 class="min-w-0 flex-1 truncate text-base sm:text-lg font-semibold text-gray-800 dark:text-slate-50">@yield('dashboard_heading', 'Dashboard')</h1>
+                <h1 class="min-w-0 flex-1 truncate text-base sm:text-lg font-semibold text-gray-800">@yield('dashboard_heading', 'Dashboard')</h1>
                 @php
                     $staffUser = auth()->user();
                     $isCoordinatorOrSupervisorOrAdmin = $staffUser && (
@@ -243,7 +243,7 @@
                                         <span class="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600">
                                             <i class="fas fa-comment-sms text-[11px] sm:text-xs"></i>
                                         </span>
-                                        <span class="font-semibold tabular-nums text-slate-800 dark:text-amber-100">
+                                <span class="font-semibold tabular-nums text-slate-800">
                                             SMS: {{ $smsRemaining }}
                                         </span>
                                     </span>
@@ -252,7 +252,7 @@
                                     <span class="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                                         <i class="fas fa-robot text-[11px] sm:text-xs"></i>
                                     </span>
-                                    <span class="font-semibold tabular-nums text-slate-800 dark:text-amber-100">
+                                    <span class="font-semibold tabular-nums text-slate-800">
                                         AI: {{ $aiTokenStatus['remaining'] }}
                                     </span>
                                 </span>
@@ -275,22 +275,22 @@
                     </div>
                 @endif
                 <div class="relative flex flex-shrink-0 items-center" id="profile-menu-wrap">
-                    <button type="button" class="flex items-center gap-2 rounded-full pl-1 pr-2 py-0.5 hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-expanded="false" aria-haspopup="true" id="profile-menu-btn" title="Profile">
+                    <button type="button" class="flex items-center gap-2 rounded-full pl-1 pr-2 py-0.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-expanded="false" aria-haspopup="true" id="profile-menu-btn" title="Profile">
                         @php $user = auth()->user(); @endphp
                         @if($user && $user->avatar_url)
-                            <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 sm:h-9 sm:w-9 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" />
+                            <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 sm:h-9 sm:w-9 rounded-full object-cover flex-shrink-0 border border-gray-200" />
                         @else
-                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-100 text-base font-semibold leading-none border border-gray-200 dark:border-slate-700">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
+                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600 text-base font-semibold leading-none border border-gray-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
                         @endif
-                        <svg class="h-4 w-4 flex-shrink-0 text-gray-500 dark:text-slate-300 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="h-4 w-4 flex-shrink-0 text-gray-500 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div id="profile-menu-dropdown" class="fixed inset-0 z-50 bg-black/40 sm:bg-transparent sm:absolute sm:inset-auto sm:right-0 sm:top-full hidden">
-                        <div class="ml-auto mr-4 sm:mr-0 mt-20 sm:mt-1.5 w-full max-w-xs sm:max-w-none sm:w-48 md:w-56 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 shadow-lg max-h-[80vh] overflow-y-auto overscroll-contain">
-                            <a href="{{ route('dashboard.profile.show') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Profile &amp; info</a>
-                            <a href="{{ route('dashboard.profile.password') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Reset password</a>
-                            <form action="{{ route('logout') }}" method="post" class="border-t border-gray-100 dark:border-slate-700 mt-1">
+                        <div class="ml-auto mr-4 sm:mr-0 mt-20 sm:mt-1.5 w-full max-w-xs sm:max-w-none sm:w-48 md:w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg max-h-[80vh] overflow-y-auto overscroll-contain">
+                            <a href="{{ route('dashboard.profile.show') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Profile &amp; info</a>
+                            <a href="{{ route('dashboard.profile.password') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Reset password</a>
+                            <form action="{{ route('logout') }}" method="post" class="border-t border-gray-100 mt-1">
                                 @csrf
-                                <button type="submit" class="block w-full px-4 py-3 sm:py-2.5 text-left text-sm font-medium text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Log out</button>
+                                <button type="submit" class="block w-full px-4 py-3 sm:py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Log out</button>
                             </form>
                         </div>
                     </div>
@@ -351,7 +351,7 @@
         </div>
         @endif
 
-        <main class="staff-main-content flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-100 dark:bg-slate-900 overscroll-behavior-y-contain">
+        <main class="staff-main-content flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-100 overscroll-behavior-y-contain">
             @php
                 $fullBleedPage = request()->routeIs('dashboard.profile.*') || request()->routeIs('dashboard.system.reset.*') || request()->routeIs('system.reset.*') || request()->is('dashboard/system/reset*');
                 $fullWidthFormPage = false;
@@ -364,15 +364,15 @@
             <div class="staff-page w-full min-h-full max-w-full {{ $fullBleedPage ? 'p-0' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 safe-area-main' }}">
                 <div class="staff-dashboard-content w-full max-w-none overflow-x-hidden {{ $fullBleedPage ? 'px-0' : 'px-0 md:px-2' }}">
                     @if($isCoordinatorOnly && !$isCoordinatorDashboardHome && (request()->routeIs('dashboard') || request()->routeIs('dashboard.coordinators.*') || request()->routeIs('dashboard.class-groups.*') ||  request()->routeIs('dashboard.profile.*')))
-                    <nav class="coordinator-breadcrumb flex items-center gap-2 text-sm text-gray-500 dark:text-slate-300 mb-4" aria-label="Breadcrumb">
-                        <a href="{{ route('dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-50 transition-colors">Dashboard</a>
+                    <nav class="coordinator-breadcrumb flex items-center gap-2 text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+                        <a href="{{ route('dashboard') }}" class="hover:text-gray-700 transition-colors">Dashboard</a>
                         @hasSection('breadcrumb_trail')
-                            <svg class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             @yield('breadcrumb_trail')
                         @else
                             @unless(request()->routeIs('dashboard') && !request()->is('dashboard/coordinators/*') && !request()->routeIs('dashboard.class-groups.*') && !request()->routeIs('dashboard.profile.*'))
-                            <svg class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            <span class="text-gray-800 dark:text-slate-100 font-medium">@yield('dashboard_heading', 'Page')</span>
+                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <span class="text-gray-800 font-medium">@yield('dashboard_heading', 'Page')</span>
                             @endunless
                         @endif
                     </nav>
