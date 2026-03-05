@@ -8,94 +8,524 @@
     $coordinatorName = ($user ?? auth()->user())->name ?? ($user ?? auth()->user())->username ?? 'Coordinator';
 @endphp
 <div class="w-full space-y-6">
-    {{-- Top bar: Academic Year, Welcome Coordinator --}}
+    {{-- Top bar: quick context + primary shortcuts (no welcome text block) --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
             @if($activeAcademicYear ?? null)
-                <p class="text-sm text-slate-500">Academic Year: <strong class="text-slate-700">{{ $activeAcademicYear->year }}</strong></p>
+                <span class="inline-flex items-center gap-1 rounded-full bg-slate-900 text-amber-300 px-2.5 py-1 text-[11px] sm:text-xs font-medium">
+                    <i class="fas fa-calendar-alt text-[10px]"></i>
+                    <span>{{ $activeAcademicYear->year }}</span>
+                </span>
             @else
-                <p class="text-sm text-slate-500">Academic Year: <span class="text-amber-600">Not set</span></p>
+                <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] sm:text-xs font-medium">
+                    <i class="fas fa-calendar-times text-[10px]"></i>
+                    <span>Academic year not set</span>
+                </span>
             @endif
-            <p class="text-slate-800 font-medium mt-0.5">Welcome, {{ $coordinatorName }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('dashboard.coordinators.academic-years.index') }}"
+               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <i class="fas fa-calendar-days text-[11px] sm:text-xs text-slate-500"></i>
+                <span>Academic years</span>
+            </a>
+            <a href="{{ route('dashboard.coordinators.students.index') }}"
+               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <i class="fas fa-user-graduate text-[11px] sm:text-xs text-slate-500"></i>
+                <span>Students</span>
+            </a>
         </div>
     </div>
 
     @if(!($activeAcademicYear ?? null))
-    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm font-medium text-amber-800">No active academic year. Students cannot create groups or projects until one is set.</p>
-        <a href="{{ route('dashboard.coordinators.academic-years.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1">
-            Create academic year
-        </a>
-    </div>
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs sm:text-sm font-medium text-amber-800">
+                No active academic year. Students cannot create groups or projects until one is set.
+            </p>
+            <a href="{{ route('dashboard.coordinators.academic-years.create') }}"
+               class="inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1">
+                <i class="fas fa-plus-circle text-xs"></i>
+                <span>Create academic year</span>
+            </a>
+        </div>
     @endif
 
-    {{-- Statistics cards: clean, different colors, Font Awesome, no shadow --}}
-    <div>
-        <h2 class="text-sm font-semibold text-slate-800 mb-3">Statistics</h2>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}" class="rounded-xl border border-blue-200 bg-blue-50 p-5 transition-colors hover:bg-blue-100 no-underline flex items-center gap-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 text-xl"><i class="fas fa-folder-open"></i></span>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-blue-700 uppercase tracking-wide">Total projects</p>
-                    <p class="mt-0.5 text-2xl font-bold tabular-nums text-blue-900">{{ $overview['projects'] ?? 0 }}</p>
+    {{-- Command bar: search + quick actions --}}
+    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 shadow-sm flex flex-wrap items-center gap-3 sm:gap-4">
+        <form class="flex-1 min-w-[200px]" onsubmit="return false;">
+            <label for="coordinator-dashboard-search" class="sr-only">Search on this dashboard</label>
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-magnifying-glass text-xs sm:text-sm"></i>
+                    </span>
+                    <input
+                        id="coordinator-dashboard-search"
+                        type="search"
+                        autocomplete="off"
+                        placeholder="Filter approvals by project, group, category or year"
+                        class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 sm:pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50"
+                        data-dashboard-search-input="true"
+                    >
                 </div>
+                <button
+                    type="button"
+                    class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-amber-600 text-white text-xs hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                    title="Search approvals"
+                    data-dashboard-search-trigger="true"
+                >
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+        <div class="flex items-center flex-wrap gap-2 sm:gap-2.5">
+            <a href="{{ route('dashboard.coordinators.projects.index', ($activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) + ['pending' => 1]) }}"
+               class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs sm:text-sm font-medium text-amber-900 hover:bg-amber-100">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <i class="fas fa-inbox text-[11px]"></i>
+                </span>
+                <span>Pending approvals</span>
+                <span class="ml-1 rounded-full bg-amber-900/10 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums">
+                    {{ $projectsPendingApprovalCount ?? 0 }}
+                </span>
             </a>
-            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}?pending=1" class="rounded-xl border border-amber-200 bg-amber-50 p-5 transition-colors hover:bg-amber-100 no-underline flex items-center gap-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 text-xl"><i class="fas fa-clock"></i></span>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide">Pending approval</p>
-                    <p class="mt-0.5 text-2xl font-bold tabular-nums text-amber-900">{{ $projectsPendingApprovalCount ?? 0 }}</p>
-                </div>
+            <a href="{{ route('dashboard.coordinators.workload') }}"
+               class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-sky-100 bg-sky-50 text-sky-600 hover:bg-sky-100"
+               title="Supervisor workload">
+                <i class="fas fa-chart-area text-xs"></i>
             </a>
-            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}" class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 transition-colors hover:bg-emerald-100 no-underline flex items-center gap-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 text-xl"><i class="fas fa-check-circle"></i></span>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-emerald-700 uppercase tracking-wide">Approved</p>
-                    <p class="mt-0.5 text-2xl font-bold tabular-nums text-emerald-900">{{ $overview['projects_approved'] ?? 0 }}</p>
-                </div>
-            </a>
-            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}" class="rounded-xl border border-red-200 bg-red-50 p-5 transition-colors hover:bg-red-100 no-underline flex items-center gap-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-600 text-xl"><i class="fas fa-times-circle"></i></span>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-red-700 uppercase tracking-wide">Rejected</p>
-                    <p class="mt-0.5 text-2xl font-bold tabular-nums text-red-900">{{ $rejectedCount ?? 0 }}</p>
-                </div>
-            </a>
-            <a href="{{ route('dashboard.coordinators.groups.index') }}" class="rounded-xl border border-violet-200 bg-violet-50 p-5 transition-colors hover:bg-violet-100 no-underline flex items-center gap-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600 text-xl"><i class="fas fa-users"></i></span>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-violet-700 uppercase tracking-wide">Active groups</p>
-                    <p class="mt-0.5 text-2xl font-bold tabular-nums text-violet-900">{{ $overview['groups'] ?? 0 }}</p>
-                </div>
+            <a href="{{ route('dashboard.coordinators.export-report') }}"
+               class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+               title="Export CSV report">
+                <i class="fas fa-file-download text-xs"></i>
             </a>
         </div>
     </div>
 
-    <details class="rounded-lg border border-gray-200 bg-white shadow-sm group">
-        <summary class="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 rounded-t-lg list-none [&::-webkit-details-marker]:hidden">
-            <span>Setup &amp; reports</span>
-            <svg class="h-5 w-5 text-gray-400 shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="border-t border-gray-100 px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-2.5">
-                <p class="text-xs font-medium text-violet-700 uppercase tracking-wide mb-2">Setup</p>
-                <div class="flex flex-wrap gap-x-1.5 gap-y-1 text-sm">
-                    <a href="{{ route('dashboard.coordinators.academic-years.index') }}" class="text-violet-800 hover:text-violet-900 hover:underline">Academic Years</a>
-                    <span class="text-violet-300" aria-hidden="true">·</span>
-                    <a href="{{ route('dashboard.coordinators.categories.index') }}" class="text-violet-800 hover:text-violet-900 hover:underline">Categories</a>
-                    <span class="text-violet-300" aria-hidden="true">·</span>
-                    <a href="{{ route('dashboard.coordinators.groups.index') }}" class="text-violet-800 hover:text-violet-900 hover:underline">Groups</a>
-                    <span class="text-violet-300" aria-hidden="true">·</span>
-                    <a href="{{ route('dashboard.coordinators.assign-group-leaders.index') }}" class="text-violet-800 hover:text-violet-900 hover:underline">Group Leaders</a>
-                    <span class="text-violet-300" aria-hidden="true">·</span>
-                    <a href="{{ route('dashboard.coordinators.workload') }}" class="text-violet-800 hover:text-violet-900 hover:underline">Workload</a>
+    {{-- Key metrics (cards in a responsive grid) --}}
+    <div>
+        <h2 class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2 sm:mb-3">Department overview</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}"
+               class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Projects this year</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                        {{ $overview['projects'] ?? 0 }}
+                    </p>
+                    @if($activeAcademicYear ?? null)
+                        <p class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">Academic year {{ $activeAcademicYear->year }}</p>
+                    @endif
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <i class="fas fa-diagram-project text-sm sm:text-base"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('dashboard.coordinators.projects.index', ($activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) + ['pending' => 1]) }}"
+               class="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-amber-700">Pending approvals</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-amber-900">
+                        {{ $projectsPendingApprovalCount ?? 0 }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-amber-800/80">Waiting for coordinator decision</p>
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <i class="fas fa-clock-rotate-left text-sm sm:text-base"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('dashboard.coordinators.projects.index', $activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) }}"
+               class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-emerald-700">Approved projects</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-emerald-900">
+                        {{ $overview['projects_approved'] ?? 0 }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-emerald-700/80">Ready for supervision</p>
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <i class="fas fa-circle-check text-sm sm:text-base"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('dashboard.coordinators.groups.index') }}"
+               class="rounded-2xl border border-sky-200 bg-sky-50/80 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-sky-700">Active groups</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-sky-900">
+                        {{ $overview['groups'] ?? 0 }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-sky-700/80">With at least one project or member</p>
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                    <i class="fas fa-people-group text-sm sm:text-base"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('dashboard.coordinators.students.index') }}"
+               class="rounded-2xl border border-violet-200 bg-violet-50/80 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-violet-700">Students in scope</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-violet-900">
+                        {{ $overview['students'] ?? 0 }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-violet-700/80">Department students in Docu Mentor</p>
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                    <i class="fas fa-user-graduate text-sm sm:text-base"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('dashboard.coordinators.supervisors.index') }}"
+               class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
+                <div class="min-w-0">
+                    <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-700 dark:text-slate-300">Supervisors</p>
+                    <p class="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                        {{ $overview['supervisors'] ?? 0 }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Available for project assignments</p>
+                </div>
+                <span class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-slate-900 text-amber-400">
+                    <i class="fas fa-user-tie text-sm sm:text-base"></i>
+                </span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Main content: approvals, pipeline and deadlines --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+        {{-- Pending approvals list --}}
+        <section class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-900">Next approvals</h2>
+                    <p class="mt-0.5 text-xs sm:text-sm text-slate-500">
+                        Most recent projects waiting for your approval.
+                    </p>
+                </div>
+                <a href="{{ route('dashboard.coordinators.projects.index', ($activeAcademicYear ? ['academic_year_id' => $activeAcademicYear->id] : []) + ['pending' => 1]) }}"
+                   class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <span>View all</span>
+                    <i class="fas fa-arrow-up-right-from-square text-[11px]"></i>
+                </a>
+            </div>
+
+            @if(($projectsPendingApproval ?? collect())->isEmpty())
+                <p class="mt-4 text-xs sm:text-sm text-slate-500">
+                    There are no projects waiting for approval right now.
+                </p>
+            @else
+                <div class="mt-4 -mx-2 overflow-x-auto">
+                    <table class="min-w-full text-left text-xs sm:text-sm">
+                        <thead class="border-b border-slate-100 bg-slate-50/80">
+                            <tr>
+                                <th class="px-2 sm:px-3 py-2 font-semibold text-slate-600 whitespace-nowrap">Project</th>
+                                <th class="px-2 sm:px-3 py-2 font-semibold text-slate-600 whitespace-nowrap">Group</th>
+                                <th class="hidden md:table-cell px-2 sm:px-3 py-2 font-semibold text-slate-600 whitespace-nowrap">Category</th>
+                                <th class="hidden sm:table-cell px-2 sm:px-3 py-2 font-semibold text-slate-600 whitespace-nowrap">Year</th>
+                                <th class="px-2 sm:px-3 py-2 font-semibold text-right text-slate-600 whitespace-nowrap">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($projectsPendingApproval as $project)
+                                <tr
+                                    class="hover:bg-slate-50/80"
+                                    data-dashboard-search-row="true"
+                                    data-dashboard-search-text="{{ strtolower($project->title . ' ' . ($project->group->name ?? '') . ' ' . ($project->category->name ?? '') . ' ' . ($project->academicYear->year ?? '')) }}"
+                                >
+                                    <td class="px-2 sm:px-3 py-2 align-top max-w-xs">
+                                        <div class="flex flex-col gap-0.5">
+                                            <span class="font-medium text-slate-900 truncate" title="{{ $project->title }}">
+                                                {{ \Illuminate\Support\Str::limit($project->title, 60) }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-500">
+                                                {{ $project->created_at?->format('d M Y') ?? '—' }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 sm:px-3 py-2 align-top whitespace-nowrap text-slate-700">
+                                        {{ $project->group?->name ?? '—' }}
+                                    </td>
+                                    <td class="hidden md:table-cell px-2 sm:px-3 py-2 align-top whitespace-nowrap text-slate-700">
+                                        {{ $project->category?->name ?? '—' }}
+                                    </td>
+                                    <td class="hidden sm:table-cell px-2 sm:px-3 py-2 align-top whitespace-nowrap text-slate-700">
+                                        {{ $project->academicYear?->year ?? '—' }}
+                                    </td>
+                                    <td class="px-2 sm:px-3 py-2 align-top text-right">
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <a href="{{ route('dashboard.coordinators.projects.show', $project) }}"
+                                               class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
+                                                <i class="fas fa-eye mr-1 text-[10px]"></i>
+                                                <span>Open</span>
+                                            </a>
+                                            <form action="{{ route('dashboard.coordinators.projects.approve', $project) }}" method="post">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700">
+                                                    <i class="fas fa-check mr-1 text-[10px]"></i>
+                                                    <span>Approve</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-3 text-[11px] text-slate-500">
+                    Showing up to 10 most recent pending projects.
+                </p>
+            @endif
+        </section>
+
+        {{-- Right column: pipeline + deadlines + trend --}}
+        <section class="space-y-4 sm:space-y-5">
+            {{-- Pipeline --}}
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Project pipeline</h2>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        Live
+                    </span>
+                </div>
+                @php
+                    $pipelineStatuses = [
+                        \App\Models\DocuMentor\Project::STATUS_SUBMITTED => ['label' => 'Submitted', 'color' => 'text-sky-700', 'bg' => 'bg-sky-50'],
+                        \App\Models\DocuMentor\Project::STATUS_IN_PROGRESS => ['label' => 'In progress', 'color' => 'text-amber-700', 'bg' => 'bg-amber-50'],
+                        \App\Models\DocuMentor\Project::STATUS_COMPLETED => ['label' => 'Completed', 'color' => 'text-emerald-700', 'bg' => 'bg-emerald-50'],
+                        \App\Models\DocuMentor\Project::STATUS_GRADED => ['label' => 'Graded', 'color' => 'text-violet-700', 'bg' => 'bg-violet-50'],
+                        \App\Models\DocuMentor\Project::STATUS_REJECTED => ['label' => 'Rejected', 'color' => 'text-rose-700', 'bg' => 'bg-rose-50'],
+                    ];
+                @endphp
+                <div class="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
+                    @foreach($pipelineStatuses as $statusKey => $meta)
+                        @php $count = (int) ($statsPerStatus[$statusKey] ?? 0); @endphp
+                        <div class="rounded-xl border border-slate-100 dark:border-slate-700 {{ $meta['bg'] }} px-3 py-2.5 flex flex-col gap-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-[11px] font-medium uppercase tracking-wide {{ $meta['color'] }}">
+                                    {{ $meta['label'] }}
+                                </p>
+                                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-300 tabular-nums">
+                                    {{ $count }}
+                                </span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-white/70 dark:bg-slate-800 overflow-hidden">
+                                @php
+                                    $totalForBar = max(1, array_sum($statsPerStatus));
+                                    $percent = (int) round(($count / $totalForBar) * 100);
+                                @endphp
+                                <div class="h-1.5 rounded-full @if($statusKey === \App\Models\DocuMentor\Project::STATUS_REJECTED) bg-rose-500 @elseif($statusKey === \App\Models\DocuMentor\Project::STATUS_COMPLETED) bg-emerald-500 @elseif($statusKey === \App\Models\DocuMentor\Project::STATUS_GRADED) bg-violet-500 @elseif($statusKey === \App\Models\DocuMentor\Project::STATUS_IN_PROGRESS) bg-amber-500 @else bg-sky-500 @endif"
+                                     style="width: {{ $percent }}%;"></div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
-            <div class="rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-2.5">
-                <p class="text-xs font-medium text-emerald-700 uppercase tracking-wide mb-2">Reports</p>
-                <a href="{{ route('dashboard.coordinators.export-report') }}" class="text-sm text-emerald-800 hover:text-emerald-900 hover:underline font-medium">Export CSV</a>
+
+            {{-- Deadlines --}}
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Deadlines</h2>
+                    @if($activeAcademicYear ?? null)
+                        <span class="text-[11px] text-slate-500 dark:text-slate-300">Year {{ $activeAcademicYear->year }}</span>
+                    @endif
+                </div>
+                @php
+                    $deadlineList = $deadlinesForYear['list'] ?? collect();
+                    $effectiveDeadline = $deadlinesForYear['effective'] ?? null;
+                @endphp
+                @if(!$activeAcademicYear)
+                    <p class="mt-3 text-xs text-slate-500 dark:text-slate-300">
+                        Set an active academic year to start configuring project deadlines.
+                    </p>
+                @elseif($deadlineList->isEmpty() && !$effectiveDeadline)
+                    <p class="mt-3 text-xs text-slate-500 dark:text-slate-300">
+                        No deadlines have been configured for this academic year yet.
+                    </p>
+                @else
+                    <ul class="mt-3 space-y-2">
+                        @if($effectiveDeadline)
+                            <li class="flex items-center justify-between gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                        <i class="fas fa-flag-checkered text-xs"></i>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold text-amber-900">Final submission</p>
+                                        <p class="text-[11px] text-amber-800/80">
+                                            {{ \Carbon\Carbon::parse($effectiveDeadline)->format('d M Y') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </li>
+                        @endif
+                        @foreach($deadlineList as $deadline)
+                            <li class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-2.5">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                                        {{ $deadline->name ?? 'Milestone' }}
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-300">
+                                        {{ $deadline->deadline_date?->format('d M Y') ?? '—' }}
+                                    </p>
+                                </div>
+                                <span class="text-[11px] font-medium text-slate-500 dark:text-slate-300 whitespace-nowrap">
+                                    {{ ucfirst($deadline->type ?? 'project') }}
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                <a href="{{ route('dashboard.coordinators.academic-years.edit', $activeAcademicYear ?? ($academicYears->first() ?? null)) }}"
+                   class="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 hover:text-amber-800 @if(!($activeAcademicYear ?? null)) pointer-events-none opacity-60 @endif">
+                    <i class="fas fa-pen-to-square text-[10px]"></i>
+                    <span>Manage deadlines</span>
+                </a>
             </div>
-        </div>
-    </details>
+
+            {{-- Activity bubble trend --}}
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-4 sm:p-5 relative" data-activity-bubbles="true">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Student activity trend</h2>
+                        <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-300">New projects and chapter submissions (last 7 days).</p>
+                    </div>
+                </div>
+                @php
+                    $trendPoints = $activityTrend['points'] ?? [];
+                    $trendMax = max(1, $activityTrend['max'] ?? 1);
+                @endphp
+                @if(empty($trendPoints))
+                    <p class="text-xs text-slate-500 dark:text-slate-300">No recent activity recorded yet.</p>
+                @else
+                    <style>
+                        @keyframes dm-bubble-float {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-6px); }
+                        }
+                    </style>
+                    <div class="flex items-end gap-2 sm:gap-3 h-32">
+                        @foreach($trendPoints as $index => $point)
+                            @php
+                                $value = (int) ($point['value'] ?? 0);
+                                $ratio = $trendMax > 0 ? $value / $trendMax : 0;
+                                $sizeRem = 1.4 + ($ratio * 2.1);
+                                $sizeRem = max(1.4, min($sizeRem, 3.1));
+                                $offset = (int) round(($ratio - 0.5) * 10);
+                                $bubblePalettes = [
+                                    'bg-sky-50 dark:bg-sky-900 text-sky-700 dark:text-sky-100 border-sky-100 dark:border-sky-700',
+                                    'bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-100 border-emerald-100 dark:border-emerald-700',
+                                    'bg-violet-50 dark:bg-violet-900 text-violet-700 dark:text-violet-100 border-violet-100 dark:border-violet-700',
+                                    'bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-100 border-amber-100 dark:border-amber-700',
+                                    'bg-rose-50 dark:bg-rose-900 text-rose-700 dark:text-rose-100 border-rose-100 dark:border-rose-700',
+                                ];
+                                $paletteClass = $bubblePalettes[$index % count($bubblePalettes)];
+                            @endphp
+                            <div class="flex-1 flex flex-col items-center justify-end gap-1"
+                                 data-activity-bubble="true"
+                                 data-label="{{ $point['label'] }}"
+                                 data-date="{{ $point['date'] }}"
+                                 data-value="{{ $value }}">
+                                <div class="flex items-end justify-center h-24">
+                                    <span class="inline-flex items-center justify-center rounded-full border shadow-sm dm-bubble-floating {{ $paletteClass }}"
+                                          style="width: {{ $sizeRem }}rem; height: {{ $sizeRem }}rem; animation: dm-bubble-float 6s ease-in-out infinite; animation-delay: {{ $index * 0.35 }}s; transform: translateY({{ $offset }}px);">
+                                        <span class="text-[11px] font-semibold tabular-nums">{{ $value }}</span>
+                                    </span>
+                                </div>
+                                <p class="text-[10px] font-medium text-slate-600 dark:text-slate-300 leading-tight">{{ $point['label'] }}</p>
+                                <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-tight">{{ $point['date'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </section>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var input = document.querySelector('[data-dashboard-search-input]');
+    var trigger = document.querySelector('[data-dashboard-search-trigger]');
+    var rows = [].slice.call(document.querySelectorAll('[data-dashboard-search-row]'));
+    if (!input || !rows.length) return;
+
+    function normalize(text) {
+        return (text || '').toString().toLowerCase();
+    }
+
+    function handleSearch() {
+        var term = normalize(input.value);
+        var parts = term.split(/\s+/).filter(function (t) { return t.length > 0; });
+        var visibleCount = 0;
+        rows.forEach(function (row) {
+            var haystack = normalize(row.getAttribute('data-dashboard-search-text') || '');
+            var match = !parts.length || parts.every(function (p) { return haystack.indexOf(p) !== -1; });
+            row.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+        input.setAttribute('data-result-count', String(visibleCount));
+    }
+
+    input.addEventListener('input', handleSearch);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearch();
+        }
+    });
+    if (trigger) {
+        trigger.addEventListener('click', function (e) {
+            e.preventDefault();
+            handleSearch();
+        });
+    }
+})();
+
+(function () {
+    var card = document.querySelector('[data-activity-bubbles]');
+    if (!card) return;
+
+    var bubbles = [].slice.call(card.querySelectorAll('[data-activity-bubble]'));
+    if (!bubbles.length) return;
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'absolute z-20 px-3 py-2 rounded-lg bg-slate-900 text-white text-[11px] shadow-lg pointer-events-none hidden';
+    tooltip.style.minWidth = '120px';
+    card.appendChild(tooltip);
+
+    function showTooltip(bubble, event) {
+        var label = bubble.getAttribute('data-label') || '';
+        var date = bubble.getAttribute('data-date') || '';
+        var value = bubble.getAttribute('data-value') || '0';
+        tooltip.innerHTML = '<div class="font-semibold mb-0.5">' + label + ' · ' + date + '</div><div class="text-[10px] text-slate-200">Submissions + projects: <span class="font-semibold">' + value + '</span></div>';
+        tooltip.classList.remove('hidden');
+
+        var rect = card.getBoundingClientRect();
+        var bubbleRect = bubble.getBoundingClientRect();
+        var top = bubbleRect.top - rect.top - 8;
+        var left = bubbleRect.left - rect.left;
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = (left - tooltip.offsetWidth / 2 + bubbleRect.width / 2) + 'px';
+    }
+
+    function hideTooltip() {
+        tooltip.classList.add('hidden');
+    }
+
+    bubbles.forEach(function (bubble) {
+        bubble.addEventListener('mouseenter', function (e) {
+            showTooltip(bubble, e);
+        });
+        bubble.addEventListener('mouseleave', hideTooltip);
+    });
+})();
+</script>
+@endpush

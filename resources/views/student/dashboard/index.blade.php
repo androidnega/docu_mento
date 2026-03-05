@@ -4,37 +4,43 @@
 @php $dashboardTitle = 'Dashboard'; @endphp
 
 @section('dashboard_content')
-<header class="mb-6 sm:mb-8">
-    <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-slate-50">Your dashboard</h1>
-    @php
-        $fallbackName = $displayName ?? ($user->name ?? $user->username ?? 'Student');
-    @endphp
-    @if(!empty($greeting ?? null))
-        <p class="mt-1 text-sm text-gray-700 dark:text-slate-200">
-            {{ $greeting }}
+@php
+    $fallbackName = $displayName ?? ($user->name ?? $user->username ?? 'Student');
+@endphp
+<header class="mb-5 sm:mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+    <div class="min-w-0">
+        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-50">
+            Welcome, {{ $fallbackName }}
             @if($isGroupLeader ?? false)
-                <span class="text-amber-600 font-semibold">(Leader)</span>
+                <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[11px] font-semibold align-middle">
+                    <i class="fas fa-crown text-[10px]"></i>
+                    <span>Leader</span>
+                </span>
             @endif
-        </p>
-    @else
-        <p class="mt-1 text-sm text-gray-700 dark:text-slate-200">
-            Good day, {{ $fallbackName }}
-            @if($isGroupLeader ?? false)
-                <span class="text-amber-600 font-semibold">(Leader)</span>
-            @endif
-        </p>
-    @endif
-    @if(!empty($holidayBadge['message'] ?? null))
-        <div class="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs sm:text-sm {{ $holidayBadge['bg'] ?? 'bg-emerald-50' }} {{ $holidayBadge['text'] ?? 'text-emerald-800' }}">
-            @if(!empty($holidayBadge['icon'] ?? null))
-                <i class="{{ $holidayBadge['icon'] }} text-xs"></i>
-            @endif
-            <span class="font-medium">{{ $holidayBadge['message'] }}</span>
-        </div>
-    @endif
-    @if(isset($student) && $student)
-        <p class="mt-1.5 text-xs text-gray-400 dark:text-slate-400 font-mono">Index: {{ $student->index_number }}</p>
-    @endif
+        </h1>
+        @if(!empty($greeting ?? null))
+            <p class="mt-0.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200">
+                {{ $greeting }}
+            </p>
+        @else
+            <p class="mt-0.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200">
+                Here’s a quick view of your group and project workspace.
+            </p>
+        @endif
+        @if(isset($student) && $student)
+            <p class="mt-1 text-[11px] text-gray-400 dark:text-slate-400 font-mono">
+                Index: {{ $student->index_number }}
+            </p>
+        @endif
+        @if(!empty($holidayBadge['message'] ?? null))
+            <div class="mt-1.5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs sm:text-sm {{ $holidayBadge['bg'] ?? 'bg-emerald-50' }} {{ $holidayBadge['text'] ?? 'text-emerald-800' }}">
+                @if(!empty($holidayBadge['icon'] ?? null))
+                    <i class="{{ $holidayBadge['icon'] }} text-xs"></i>
+                @endif
+                <span class="font-medium">{{ $holidayBadge['message'] }}</span>
+            </div>
+        @endif
+    </div>
 </header>
 
 {{-- Simple, constant dashboard cards. Detailed project/group info lives on their own pages. --}}
@@ -43,45 +49,53 @@
 
     {{-- Projects workspace (active) --}}
     @if($hasProjectAccess ?? false)
-    <a href="{{ route('dashboard.projects.index') }}" class="block rounded-lg border border-sky-700 bg-sky-600 px-5 py-5 no-underline text-left text-white">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-white mb-3">
-            <i class="fas fa-folder-open text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold">Projects workspace</h2>
-        <p class="text-xs mt-1 text-slate-200">View topics, submissions and feedback.</p>
+    <a href="{{ route('dashboard.projects.index') }}" class="block rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 no-underline text-left text-slate-900 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                <i class="fas fa-folder-open text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold">Projects workspace</h2>
+        </div>
+        <p class="text-xs mt-1 text-sky-900/80">View topics, submissions and feedback.</p>
     </a>
     @endif
 
     {{-- My group (active) --}}
     @if($docuMentorGroup ?? null)
-    <a href="{{ route('dashboard.group.show', ['group' => $docuMentorGroup->id]) }}" class="block rounded-lg border border-amber-500 bg-amber-400 px-5 py-5 no-underline text-left text-slate-900">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-slate-900 mb-3">
-            <i class="fas fa-users text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold">My group</h2>
+    <a href="{{ route('dashboard.group.show', ['group' => $docuMentorGroup->id]) }}" class="block rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 no-underline text-left text-slate-900 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                <i class="fas fa-users text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold">My group</h2>
+        </div>
         <p class="text-xs mt-1 truncate text-amber-900">{{ $docuMentorGroup->name }}</p>
     </a>
     @endif
 
     {{-- Create group (leader without group) --}}
     @if($leaderWithoutGroup ?? false)
-    <a href="{{ route('dashboard.group.create') }}" class="block rounded-lg border border-emerald-700 bg-emerald-600 px-5 py-5 no-underline text-left text-white">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-700 text-white mb-3">
-            <i class="fas fa-user-plus text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold">Create group</h2>
-        <p class="text-xs mt-1 text-emerald-100">Start your project group.</p>
+    <a href="{{ route('dashboard.group.create') }}" class="block rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 no-underline text-left text-emerald-900 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                <i class="fas fa-user-plus text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold">Create group</h2>
+        </div>
+        <p class="text-xs mt-1 text-emerald-800/80">Start your project group.</p>
     </a>
     @endif
 
     {{-- Register project (leader with group, no project yet) --}}
     @if(($isGroupLeader ?? false) && !($leaderWithoutGroup ?? false) && !($leaderHasProject ?? false))
-    <a href="{{ route('dashboard.projects.create') }}" class="block rounded-lg border border-indigo-700 bg-indigo-600 px-5 py-5 no-underline text-left text-white">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-700 text-white mb-3">
-            <i class="fas fa-plus-circle text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold">Register project</h2>
-        <p class="text-xs mt-1 text-indigo-100">Propose your group’s topic.</p>
+    <a href="{{ route('dashboard.projects.create') }}" class="block rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 no-underline text-left text-indigo-900 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                <i class="fas fa-plus-circle text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold">Register project</h2>
+        </div>
+        <p class="text-xs mt-1 text-indigo-800/80">Propose your group’s topic.</p>
     </a>
     @endif
 
@@ -89,22 +103,26 @@
 
     {{-- Projects workspace (disabled) --}}
     @if(!($hasProjectAccess ?? false))
-    <div class="rounded-lg border border-gray-300 bg-gray-50 px-5 py-5 text-left text-gray-400">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-400 mb-3">
-            <i class="fas fa-folder-open text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold text-gray-400">Projects workspace</h2>
+    <div class="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-left text-gray-400">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
+                <i class="fas fa-folder-open text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold text-gray-400">Projects workspace</h2>
+        </div>
         <p class="text-xs mt-1">Join a group or be set as leader to access.</p>
     </div>
     @endif
 
     {{-- My group (disabled) --}}
     @if(!($docuMentorGroup ?? null))
-    <div class="rounded-lg border border-gray-300 bg-gray-50 px-5 py-5 text-left text-gray-400">
-        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-400 mb-3">
-            <i class="fas fa-users text-lg"></i>
-        </span>
-        <h2 class="text-sm font-semibold text-gray-400">My group</h2>
+    <div class="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-left text-gray-400">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
+                <i class="fas fa-users text-sm"></i>
+            </span>
+            <h2 class="text-sm font-semibold text-gray-400">My group</h2>
+        </div>
         <p class="text-xs mt-1">Join a group to see it here.</p>
     </div>
     @endif

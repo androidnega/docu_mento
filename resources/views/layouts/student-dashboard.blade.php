@@ -33,7 +33,10 @@
         <div class="flex items-center gap-3 text-sm">
             @php $yearLabel = optional($academicYear ?? null)->year ?? optional($project ?? null)->academicYear?->year ?? null; @endphp
             @if($yearLabel)
-                <span class="text-gray-500 dark:text-gray-300 hidden sm:inline">Academic Year: <strong class="text-gray-700 dark:text-gray-100">{{ $yearLabel }}</strong></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-100">
+                    <i class="fas fa-calendar-alt text-[10px] text-gray-500 dark:text-gray-300"></i>
+                    <span>{{ $yearLabel }}</span>
+                </span>
             @endif
             <button type="button" id="student-theme-toggle" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-gray-200 dark:border-slate-600 bg-white/80 dark:bg-slate-800 text-gray-600 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900" aria-label="Toggle theme">
                 <i class="fas fa-sun text-xs" id="student-theme-icon"></i>
@@ -174,48 +177,6 @@
             }
         });
     }
-    // Simple theme toggle for student dashboard (light/dark)
-    (function () {
-        var root = document.documentElement;
-        var toggleBtn = document.getElementById('student-theme-toggle');
-        var toggleIcon = document.getElementById('student-theme-icon');
-        var storedTheme = null;
-        try {
-            storedTheme = window.localStorage ? localStorage.getItem('dm-theme') : null;
-        } catch (e) {
-            storedTheme = null;
-        }
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
-        if (initialTheme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-        function applyIcon() {
-            if (!toggleIcon) return;
-            if (root.classList.contains('dark')) {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            } else {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            }
-        }
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', function () {
-                var toDark = !root.classList.contains('dark');
-                if (toDark) root.classList.add('dark'); else root.classList.remove('dark');
-                try {
-                    if (window.localStorage) {
-                        localStorage.setItem('dm-theme', toDark ? 'dark' : 'light');
-                    }
-                } catch (e) {}
-                applyIcon();
-            });
-            applyIcon();
-        }
-    })();
 })();
 </script>
 {{-- Hidden utility to keep lg:-translate-x-full class in Tailwind build --}}

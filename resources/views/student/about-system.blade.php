@@ -3,21 +3,9 @@
 @section('title', 'About Docu Mento')
 
 @section('content')
-{{-- Header: light background so dark text is visible --}}
-<header class="bg-dm-card border-b border-dm-border sticky top-0 z-50">
-    <div class="dm-container">
-        <div class="flex h-14 md:h-16 items-center justify-between">
-            <a href="{{ route('student.landing') }}" class="text-dm-primary font-semibold text-lg tracking-tight no-underline">Docu Mento</a>
-            <nav class="flex items-center gap-4 md:gap-6">
-                <a href="{{ route('about-system') }}" class="text-sm font-medium text-dm-primary no-underline">About</a>
-                @if(isset($student) && $student)
-                    <a href="{{ route('dashboard') }}" class="dm-btn-primary text-sm py-2 px-4">Dashboard</a>
-                @else
-                    <a href="{{ route('student.account.login.form') }}" class="dm-btn-primary text-sm py-2 px-4">Student Login</a>
-                @endif
-            </nav>
-        </div>
-    </div>
+{{-- Shared public navigation --}}
+<header class="bg-[#050818] text-white">
+    @include('layouts.partials.public-nav')
 </header>
 
 <main>
@@ -106,23 +94,25 @@
         </div>
     </section>
 
-    {{-- Footer – navy, white text --}}
-    <footer class="bg-dm-primary text-white py-10 md:py-12">
+    {{-- Footer – light background, dark readable text --}}
+    <footer class="bg-dm-bg text-dm-text py-10 md:py-12 border-t border-dm-border">
         <div class="dm-container">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="text-sm">
-                    <span class="font-semibold">Docu Mento</span>
-                    <span class="mx-2 text-white/70">·</span>
-                    <span class="text-white/80">&copy; {{ date('Y') }}</span>
+                    <span class="font-semibold text-dm-primary">Docu Mento</span>
+                    <span class="mx-2 text-dm-text/70">·</span>
+                    <span class="text-dm-text/80">&copy; {{ date('Y') }}</span>
                 </div>
                 <nav class="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">
-                    <a href="{{ route('student.landing') }}" class="text-white/90 hover:text-white no-underline">Home</a>
-                    <a href="{{ route('about-system') }}" class="text-white/90 hover:text-white no-underline">About</a>
-                    <a href="{{ route('student.account.login.form') }}" class="text-white/90 hover:text-white no-underline">Student Login</a>
-                    <a href="{{ route('public.projects.index') }}" class="text-white/90 hover:text-white no-underline">Projects</a>
+                    <a href="{{ route('student.landing') }}" class="text-dm-primary hover:text-dm-secondary no-underline">Home</a>
+                    <a href="{{ route('about-system') }}" class="text-dm-primary hover:text-dm-secondary no-underline">About</a>
+                    <a href="{{ route('student.account.login.form') }}" class="text-dm-primary hover:text-dm-secondary no-underline">Student Login</a>
+                    <a href="{{ route('public.projects.index') }}" class="text-dm-primary hover:text-dm-secondary no-underline">Projects</a>
                 </nav>
             </div>
-            <p class="text-center md:text-left text-white/70 text-sm mt-6">Academic &amp; final year project management for institutions.</p>
+            <p class="text-center md:text-left text-dm-text/80 text-sm mt-6">
+                Academic &amp; final year project management for institutions.
+            </p>
         </div>
     </footer>
 </main>

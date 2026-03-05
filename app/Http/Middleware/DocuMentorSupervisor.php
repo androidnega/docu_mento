@@ -11,7 +11,7 @@ class DocuMentorSupervisor
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->attributes->get('dm_user') ?? auth()->user();
-        if (!$user || (!$user->isDocuMentorSupervisor() && !$user->isDocuMentorCoordinator())) {
+        if (! $user || ! $user->isDocuMentorSupervisor()) {
             abort(403, 'Supervisor access required.');
         }
         $request->attributes->set('dm_user', $user);

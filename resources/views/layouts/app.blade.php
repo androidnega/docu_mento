@@ -244,7 +244,7 @@
     @stack('copy_restrict_styles')
     @stack('styles')
 </head>
-<body class="font-sans text-gray-800 @yield('body_extra_class') @yield('body_class', 'bg-offwhite')">
+<body class="font-sans text-gray-800 dark:text-slate-100 @yield('body_extra_class') @yield('body_class', 'bg-offwhite')">
     <noscript>
         <div class="fixed inset-0 z-[99999] flex items-center justify-center bg-offwhite p-6" role="alert">
             <div class="bg-white border border-gray-200 rounded-xl p-8 max-w-md text-center shadow-lg">
@@ -274,6 +274,118 @@
     @yield('content')
     
     </div>
+    {{-- Global theme + shared scripts --}}
+    <script>
+    (function () {
+        var root = document.documentElement;
+        function getStoredTheme() {
+            var stored = null;
+            try {
+                if (window.localStorage) {
+                    stored = localStorage.getItem('dm-theme') || localStorage.getItem('dm-staff-theme');
+                }
+            } catch (e) {
+                stored = null;
+            }
+            if (stored === 'dark' || stored === 'light') return stored;
+            var prefersDark = false;
+            try {
+                prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            } catch (e) {}
+            return prefersDark ? 'dark' : 'light';
+        }
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+        }
+        function updateIcons() {
+            var isDark = root.classList.contains('dark');
+            var staffIcon = document.getElementById('staff-theme-icon');
+            if (staffIcon) {
+                staffIcon.classList.remove(isDark ? 'fa-moon' : 'fa-sun');
+                staffIcon.classList.add(isDark ? 'fa-sun' : 'fa-moon');
+            }
+            var studentIcon = document.getElementById('student-theme-icon');
+            if (studentIcon) {
+                studentIcon.classList.remove(isDark ? 'fa-sun' : 'fa-moon');
+                studentIcon.classList.add(isDark ? 'fa-moon' : 'fa-sun');
+            }
+        }
+        function persistTheme(theme) {
+            try {
+                if (window.localStorage) {
+                    localStorage.setItem('dm-theme', theme);
+                    localStorage.setItem('dm-staff-theme', theme);
+                }
+            } catch (e) {}
+        }
+        function toggleTheme(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var toDark = !root.classList.contains('dark');
+            var theme = toDark ? 'dark' : 'light';
+            applyTheme(theme);
+            persistTheme(theme);
+            updateIcons();
+        }
+        function initTheme() {
+            var theme = getStoredTheme();
+            applyTheme(theme);
+            updateIcons();
+            var staffBtn = document.getElementById('staff-theme-toggle');
+            if (staffBtn) staffBtn.addEventListener('click', toggleTheme);
+            var studentBtn = document.getElementById('student-theme-toggle');
+            if (studentBtn) studentBtn.addEventListener('click', toggleTheme);
+
+            // Fullscreen toggle on staff header pill
+            var fsBtn = document.getElementById('staff-fullscreen-toggle');
+            var fsIcon = document.getElementById('staff-fullscreen-icon');
+            function isFullscreen() {
+                return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            }
+            function updateFsIcon() {
+                if (!fsIcon) return;
+                var active = isFullscreen();
+                fsIcon.classList.remove(active ? 'fa-expand' : 'fa-compress');
+                fsIcon.classList.add(active ? 'fa-compress' : 'fa-expand');
+            }
+            function toggleFullscreen(e) {
+                if (e && e.preventDefault) e.preventDefault();
+                var rootEl = document.documentElement;
+                if (!isFullscreen()) {
+                    try {
+                        if (rootEl.requestFullscreen) rootEl.requestFullscreen();
+                        else if (rootEl.webkitRequestFullscreen) rootEl.webkitRequestFullscreen();
+                        else if (rootEl.mozRequestFullScreen) rootEl.mozRequestFullScreen();
+                        else if (rootEl.msRequestFullscreen) rootEl.msRequestFullscreen();
+                    } catch (err) {}
+                } else {
+                    try {
+                        if (document.exitFullscreen) document.exitFullscreen();
+                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+                        else if (document.msExitFullscreen) document.msExitFullscreen();
+                    } catch (err) {}
+                }
+            }
+            if (fsBtn) {
+                fsBtn.addEventListener('click', toggleFullscreen);
+                document.addEventListener('fullscreenchange', updateFsIcon);
+                document.addEventListener('webkitfullscreenchange', updateFsIcon);
+                document.addEventListener('mozfullscreenchange', updateFsIcon);
+                document.addEventListener('MSFullscreenChange', updateFsIcon);
+                updateFsIcon();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTheme);
+        } else {
+            initTheme();
+        }
+    })();
+    </script>
     {{-- Global app script; reintroduce later if needed --}}
     @stack('scripts')
 

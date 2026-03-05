@@ -6,7 +6,7 @@
 @section('content')
 <div class="min-h-[100dvh] min-h-screen flex items-center justify-center px-4 py-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
     <div class="max-w-md w-full">
-        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div class="bg-white border border-gray-200 rounded-xl p-6">
             <h1 class="text-2xl font-bold text-gray-800 mb-2">Enter your index number</h1>
             {{-- Step 1: Index number --}}
             <div id="step-index" class="space-y-4">

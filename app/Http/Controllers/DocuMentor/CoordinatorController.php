@@ -7,6 +7,7 @@ use App\Models\DocuMentor\AcademicYear;
 use App\Models\DocuMentor\Category;
 use App\Models\DocuMentor\Project;
 use App\Models\DocuMentor\ProjectGroup;
+use App\Models\DocuMentor\Submission;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -98,6 +99,46 @@ class CoordinatorController extends Controller
                 ? User::where('group_leader', true)->count()
                 : (int) User::where('role', User::DM_ROLE_LEADER)->count(),
             'students' => $user->docuMentorStudentsInScope()->count(),
+            'supervisors' => $user->supervisorsInScope()->count(),
+        ];
+
+        // Simple activity trend for bubble chart (sum of new projects + chapter submissions over last 7 days)
+        $trendDays = 7;
+        $trendEnd = now();
+        $trendStart = (clone $trendEnd)->subDays($trendDays - 1)->startOfDay();
+
+        $projectCountsByDate = (clone $projectsQuery)
+            ->whereBetween('created_at', [$trendStart, $trendEnd])
+            ->selectRaw('DATE(created_at) as d, COUNT(*) as total')
+            ->groupBy('d')
+            ->pluck('total', 'd')
+            ->all();
+
+        $submissionCountsByDate = Submission::whereBetween('submitted_at', [$trendStart, $trendEnd])
+            ->selectRaw('DATE(submitted_at) as d, COUNT(*) as total')
+            ->groupBy('d')
+            ->pluck('total', 'd')
+            ->all();
+
+        $activityTrendPoints = [];
+        $activityTrendMax = 0;
+        for ($i = 0; $i < $trendDays; $i++) {
+            $day = (clone $trendStart)->addDays($i);
+            $key = $day->toDateString();
+            $value = (int) ($projectCountsByDate[$key] ?? 0) + (int) ($submissionCountsByDate[$key] ?? 0);
+            $activityTrendPoints[] = [
+                'label' => $day->format('D'),
+                'date' => $day->format('d M'),
+                'value' => $value,
+            ];
+            if ($value > $activityTrendMax) {
+                $activityTrendMax = $value;
+            }
+        }
+
+        $activityTrend = [
+            'points' => $activityTrendPoints,
+            'max' => max(1, $activityTrendMax),
         ];
 
         $rejectedCount = (int) ($statsPerStatus[Project::STATUS_REJECTED] ?? 0);
@@ -112,7 +153,8 @@ class CoordinatorController extends Controller
             'projectsForApprovalTable',
             'statsPerStatus',
             'deadlinesForYear',
-            'rejectedCount'
+            'rejectedCount',
+            'activityTrend'
         ));
     }
 }

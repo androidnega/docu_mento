@@ -5,7 +5,7 @@
 @section('content')
 <div class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md">
-        <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
+        <div class="bg-white rounded-xl p-8 border border-slate-200">
             <div class="text-center mb-8">
                 <h1 class="text-2xl font-bold text-slate-900">Docu Mentor</h1>
                 <p class="text-sm text-slate-600 mt-1">Project documentation management</p>
@@ -18,7 +18,7 @@
                 <div>
                     <label for="login" class="block text-sm font-medium text-slate-700 mb-1">Phone or Username</label>
                     <input type="text" name="login" id="login" value="{{ old('login') }}" required autofocus
-                        class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                     @error('login')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -26,7 +26,7 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
                     <input type="password" name="password" id="password" required
-                        class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

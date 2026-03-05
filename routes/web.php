@@ -47,10 +47,10 @@ Route::get('/docu_mentor/{any?}', function (?string $any = '') {
 Route::redirect('/docu-mentor/login', '/login', 301)->name('docu-mentor.login');
 Route::redirect('/docu_mentor/login', '/login', 301);
 
-// Supervisor pages: redirect old /docu-mentor/supervisors/* to /dashboard/docu-mentor/*
-Route::redirect('/docu-mentor/supervisors', '/dashboard/docu-mentor/projects', 301);
+// Supervisor pages: redirect old /docu-mentor/supervisors/* to /dashboard/supervisor/*
+Route::redirect('/docu-mentor/supervisors', '/dashboard/supervisor/projects', 301);
 Route::get('/docu-mentor/supervisors/{any}', function (string $any) {
-    return redirect('/dashboard/docu-mentor/' . $any, 301);
+    return redirect('/dashboard/supervisor/' . $any, 301);
 })->where('any', '.*');
 
 Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('docu-mentor')->name('docu-mentor.')->group(function () {
@@ -200,6 +200,31 @@ Route::middleware('admin.auth')->group(function () {
         // School/Department AJAX (for user management and profile)
         Route::get('/schools/{school}/departments', [\App\Http\Controllers\Admin\DepartmentController::class, 'bySchool'])->name('departments.by-school');
 
+        // Class groups (coordinator + supervisors)
+        Route::get('/class-groups', [\App\Http\Controllers\Admin\ClassGroupController::class, 'index'])->name('class-groups.index');
+        Route::get('/class-groups/create', [\App\Http\Controllers\Admin\ClassGroupController::class, 'create'])->name('class-groups.create');
+        Route::post('/class-groups', [\App\Http\Controllers\Admin\ClassGroupController::class, 'store'])->name('class-groups.store');
+        Route::get('/class-groups/{classGroup}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'show'])->name('class-groups.show');
+        Route::get('/class-groups/{classGroup}/edit', [\App\Http\Controllers\Admin\ClassGroupController::class, 'edit'])->name('class-groups.edit');
+        Route::put('/class-groups/{classGroup}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'update'])->name('class-groups.update');
+        Route::delete('/class-groups/{classGroup}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'destroy'])->name('class-groups.destroy');
+        Route::put('/class-groups/{classGroup}/allowed-devices', [\App\Http\Controllers\Admin\ClassGroupController::class, 'updateAllowedDevices'])->name('class-groups.allowed-devices.update');
+
+        // Class group students management
+        Route::get('/class-groups/{classGroup}/students', [\App\Http\Controllers\Admin\ClassGroupController::class, 'studentsIndex'])->name('class-groups.students.index');
+        Route::post('/class-groups/{classGroup}/students', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addStudent'])->name('class-groups.students.add');
+        Route::post('/class-groups/{classGroup}/students/upload', [\App\Http\Controllers\Admin\ClassGroupController::class, 'uploadStudents'])->name('class-groups.students.upload');
+        Route::get('/class-groups/{classGroup}/students/export/excel', [\App\Http\Controllers\Admin\ClassGroupController::class, 'exportStudentsExcel'])->name('class-groups.students.export.excel');
+        Route::get('/class-groups/{classGroup}/students/export/pdf', [\App\Http\Controllers\Admin\ClassGroupController::class, 'exportStudentsPdf'])->name('class-groups.students.export.pdf');
+        Route::delete('/class-groups/{classGroup}/students/bulk-destroy', [\App\Http\Controllers\Admin\ClassGroupController::class, 'bulkDestroyStudents'])->name('class-groups.students.bulk-destroy');
+        Route::post('/class-groups/{classGroup}/students/clear', [\App\Http\Controllers\Admin\ClassGroupController::class, 'clearStudents'])->name('class-groups.students.clear');
+        Route::get('/class-groups/{classGroup}/students/{student}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'showStudent'])->name('class-groups.students.show');
+        Route::get('/class-groups/{classGroup}/students/{student}/edit', [\App\Http\Controllers\Admin\ClassGroupController::class, 'editStudent'])->name('class-groups.students.edit');
+        Route::put('/class-groups/{classGroup}/students/{student}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'updateStudent'])->name('class-groups.students.update');
+        Route::delete('/class-groups/{classGroup}/students/{student}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'destroyStudent'])->name('class-groups.students.destroy');
+        Route::post('/class-groups/{classGroup}/students/{student}/remove-phone', [\App\Http\Controllers\Admin\ClassGroupController::class, 'removeStudentPhone'])->name('class-groups.students.remove-phone');
+        Route::post('/class-groups/{classGroup}/students/{student}/fallback-code', [\App\Http\Controllers\Admin\ClassGroupController::class, 'generateFallbackCode'])->name('class-groups.students.fallback-code');
+
         // Coordinator only: Docu Mentor under unified /dashboard/coordinators/academic-years, /dashboard/coordinators/categories, etc.
         Route::middleware('docu-mentor.coordinator')->prefix('coordinators')->name('coordinators.')->group(function () {
             Route::get('academic-years/{academicYear}/students', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'studentsByYear'])->name('academic-years.students');
@@ -247,8 +272,8 @@ Route::middleware('admin.auth')->group(function () {
             Route::delete('students/{encodedIndex}', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'destroy'])->name('students.destroy');
         });
 
-        // Docu Mentor supervisor: /dashboard/docu-mentor/projects
-        Route::middleware('docu-mentor.supervisor')->prefix('docu-mentor')->name('docu-mentor.')->group(function () {
+        // Supervisor project area: /dashboard/supervisor/projects
+        Route::middleware('docu-mentor.supervisor')->prefix('supervisor')->name('docu-mentor.')->group(function () {
             Route::get('/projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
             Route::get('/projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
             Route::get('/projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');

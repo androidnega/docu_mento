@@ -56,17 +56,25 @@
     </div>
 
     {{-- Student management: search, filter, bulk actions --}}
-    <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold text-slate-800">Student management ({{ $students->count() }})</h2>
+    <section class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Student management</h2>
             <form method="get" action="{{ route('dashboard.coordinators.academic-years.students', $academicYear) }}" class="flex flex-wrap items-center gap-2">
-                <input type="search" name="search" value="{{ request('search') }}" placeholder="Search index, name, phone…" class="rounded-md border border-slate-300 px-3 py-1.5 text-sm w-48 max-w-full">
-                <select name="status" class="rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-search text-xs"></i>
+                    </span>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search index, name, phone…" class="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-7 pr-3 py-1.5 text-sm w-44 sm:w-56 max-w-full text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500">
+                </div>
+                <select name="status" class="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100">
                     <option value="">All statuses</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                 </select>
-                <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"><i class="fas fa-search text-slate-500"></i> Filter</button>
+                <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <i class="fas fa-filter text-slate-500 dark:text-slate-300"></i>
+                    <span>Filter</span>
+                </button>
                 @if(request()->hasAny(['search', 'status']))
                     <a href="{{ route('dashboard.coordinators.academic-years.students', $academicYear) }}" class="text-sm text-slate-600 hover:underline">Clear</a>
                 @endif
@@ -82,12 +90,12 @@
             <form id="bulk-form" action="{{ route('dashboard.coordinators.students.bulk-destroy-selected') }}" method="post" onsubmit="return confirm('Delete selected students? This cannot be undone.');">
                 @csrf
                 <input type="hidden" name="academic_year_id" value="{{ $academicYear->id }}">
-                <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-2">
-                    <button type="submit" id="bulk-delete-btn" class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100" disabled><i class="fas fa-trash-alt"></i> Delete selected</button>
+                <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 flex flex-wrap items-center gap-2">
+                    <button type="submit" id="bulk-delete-btn" class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled><i class="fas fa-trash-alt"></i> Delete selected</button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                        <thead class="bg-slate-50 dark:bg-slate-900/70">
                             <tr>
                                 <th class="px-4 py-3 text-left w-10">
                                     <input type="checkbox" id="select-all" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500" aria-label="Select all">
@@ -100,16 +108,21 @@
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200 bg-white">
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
                             @foreach($students as $u)
                                 @php $encodedIndex = \App\Http\Controllers\DocuMentor\CoordinatorStudentController::encodeIndex($u->index_number ?? ''); @endphp
-                                <tr class="hover:bg-slate-50/50">
+                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/60">
                                     <td class="px-4 py-3">
                                         <input type="checkbox" name="student_ids[]" value="{{ $u->id }}" class="row-checkbox rounded border-slate-300 text-primary-600 focus:ring-primary-500">
                                     </td>
-                                    <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ $u->index_number ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-sm text-slate-700">{{ $u->name ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-sm text-slate-600">{{ $u->phone ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-50">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <i class="fas fa-id-card text-slate-400"></i>
+                                            <span>{{ $u->index_number ?? '—' }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">{{ $u->name ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $u->phone ?? '—' }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium {{ $u->is_active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600' }}">
                                             {{ $u->is_active ? 'Active' : 'Inactive' }}

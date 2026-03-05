@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $dashboardTitle ?? 'Dashboard')
-@section('body_class', 'bg-gray-100 h-screen overflow-hidden')
+@section('body_class', 'bg-gray-100 dark:bg-slate-900 h-screen overflow-hidden')
 
 @php
     $layoutAdminUser = auth()->user();
@@ -26,7 +26,7 @@
 .staff-sidebar .staff-nav-link--active svg { color: white; }
 .staff-sidebar .staff-nav-icon { color: rgb(156 163 175); transition: color 0.15s; }
 </style>
-<div class="staff-wrap flex h-screen bg-gray-100 overflow-hidden">
+<div class="staff-wrap flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
     <div id="staff-overlay" class="staff-overlay fixed inset-0 z-30 bg-black/40 md:hidden hidden" aria-hidden="true"></div>
 
     <aside id="staff-sidebar" class="staff-sidebar flex h-full flex-col w-64 flex-shrink-0 bg-gray-900 border-r border-gray-800 shadow-sm" aria-label="Dashboard navigation" data-collapsed="false">
@@ -158,14 +158,19 @@
     </aside>
 
     <div class="staff-main flex flex-col flex-1 min-w-0 min-h-0">
-        <header class="flex min-h-14 flex-shrink-0 items-stretch border-b border-gray-200 bg-white z-10 min-w-0 safe-area-header">
+        <header class="flex min-h-14 flex-shrink-0 items-stretch border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 min-w-0 safe-area-header">
             <div class="staff-page flex flex-1 flex-wrap items-center gap-2 sm:gap-3 w-full min-w-0 px-3 py-2 sm:px-4 md:px-6">
-                <button type="button" id="staff-sidebar-menu-btn" class="flex h-11 w-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-label="Open menu" title="Open menu" style="display: none;">
+                <button type="button" id="staff-sidebar-menu-btn" class="flex h-11 w-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-label="Open menu" title="Open menu" style="display: none;">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h1 class="min-w-0 flex-1 truncate text-base sm:text-lg font-semibold text-gray-800">@yield('dashboard_heading', 'Dashboard')</h1>
+                <h1 class="min-w-0 flex-1 truncate text-base sm:text-lg font-semibold text-gray-800 dark:text-slate-50">@yield('dashboard_heading', 'Dashboard')</h1>
                 @php
                     $staffUser = auth()->user();
+                    $isCoordinatorOrSupervisorOrAdmin = $staffUser && (
+                        $staffUser->isDocuMentorSupervisor()
+                        || $staffUser->role === \App\Models\User::DM_ROLE_COORDINATOR
+                        || $staffUser->isSuperAdmin()
+                    );
                     $showSmsInHeader = $staffUser && $staffUser->isDocuMentorCoordinator();
                     if ($showSmsInHeader) {
                         $staffUser->refresh();
@@ -174,40 +179,73 @@
                     $smsAllocation = $showSmsInHeader ? ($staffUser->sms_allocation ?? 0) : 0;
                     $smsBadgeClass = $smsRemaining >= 100 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
                 @endphp
-                @if($staffUser && ($staffUser->isDocuMentorSupervisor() || $staffUser->role === \App\Models\User::DM_ROLE_COORDINATOR))
-                @php
-                    $aiTokenStatus = app(\App\Services\AiTokenService::class)->getStatus($staffUser);
-                    $aiTokenBadgeClass = $aiTokenStatus['remaining'] > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
-                @endphp
-                <div class="flex flex-shrink-0 items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                    <div class="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-amber-200 {{ $aiTokenBadgeClass }} px-2 py-1.5 sm:px-2.5 text-xs sm:text-sm font-medium" title="AI generations remaining">
-                        <span class="font-semibold tabular-nums">{{ $aiTokenStatus['remaining'] }}</span>
+                @if($isCoordinatorOrSupervisorOrAdmin)
+                    @php
+                        $aiTokenStatus = app(\App\Services\AiTokenService::class)->getStatus($staffUser);
+                        $aiTokenBadgeClass = $aiTokenStatus['remaining'] > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+                    @endphp
+                    <div class="flex flex-shrink-0 items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                        <div class="flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-900 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-amber-100 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                @if($showSmsInHeader)
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                                            <i class="fas fa-comment-sms text-[11px] sm:text-xs"></i>
+                                        </span>
+                                        <span class="font-semibold tabular-nums text-slate-800 dark:text-amber-100">
+                                            SMS: {{ $smsRemaining }}
+                                        </span>
+                                    </span>
+                                @endif
+                                <span class="inline-flex items-center gap-1.5">
+                                    <span class="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                        <i class="fas fa-robot text-[11px] sm:text-xs"></i>
+                                    </span>
+                                    <span class="font-semibold tabular-nums text-slate-800 dark:text-amber-100">
+                                        AI: {{ $aiTokenStatus['remaining'] }}
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+                                <button type="button"
+                                        id="staff-theme-toggle"
+                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-slate-900 text-amber-300 text-xs sm:text-sm hover:bg-black focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                                        title="Toggle dark mode">
+                                    <i class="fas fa-moon" id="staff-theme-icon"></i>
+                                </button>
+                                <button type="button"
+                                        id="staff-fullscreen-toggle"
+                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-200 text-xs sm:text-sm hover:bg-sky-200 dark:hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                                        title="Toggle full screen">
+                                    <i class="fas fa-expand" id="staff-fullscreen-icon"></i>
+                                </button>
+                                <button type="button"
+                                        id="staff-sidebar-collapse-toggle"
+                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-200 text-xs sm:text-sm hover:bg-emerald-200 dark:hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                                        title="Collapse / expand sidebar">
+                                    <i class="fas fa-table-columns" id="staff-sidebar-icon"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    @if($showSmsInHeader)
-                    <div class="flex flex-shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg border {{ $smsRemaining >= 100 ? 'border-amber-200' : 'border-red-200' }} {{ $smsBadgeClass }} px-2 py-1.5 sm:px-2.5 text-xs sm:text-sm font-medium" title="SMS balance">
-                        <span class="hidden sm:inline">SMS:</span>
-                        <span class="font-semibold">{{ $smsRemaining }}</span>
-                    </div>
-                    @endif
-                </div>
                 @endif
                 <div class="relative flex flex-shrink-0 items-center" id="profile-menu-wrap">
-                    <button type="button" class="flex items-center gap-2 rounded-full pl-1 pr-2 py-0.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-expanded="false" aria-haspopup="true" id="profile-menu-btn" title="Profile">
+                    <button type="button" class="flex items-center gap-2 rounded-full pl-1 pr-2 py-0.5 hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 touch-manipulation" aria-expanded="false" aria-haspopup="true" id="profile-menu-btn" title="Profile">
                         @php $user = auth()->user(); @endphp
                         @if($user && $user->avatar_url)
-                            <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 sm:h-9 sm:w-9 rounded-full object-cover flex-shrink-0 border border-gray-200" />
+                            <img src="{{ $user->avatar_url }}" alt="Profile" class="h-9 w-9 sm:h-9 sm:w-9 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" />
                         @else
-                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600 text-base font-semibold leading-none border border-gray-200">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
+                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-100 text-base font-semibold leading-none border border-gray-200 dark:border-slate-700">{{ $user ? strtoupper(substr($user->name ?? $user->username ?? 'U', 0, 1)) : 'U' }}</span>
                         @endif
-                        <svg class="h-4 w-4 flex-shrink-0 text-gray-500 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="h-4 w-4 flex-shrink-0 text-gray-500 dark:text-slate-300 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div id="profile-menu-dropdown" class="fixed inset-0 z-50 bg-black/40 sm:bg-transparent sm:absolute sm:inset-auto sm:right-0 sm:top-full hidden">
-                        <div class="ml-auto mr-4 sm:mr-0 mt-20 sm:mt-1.5 w-full max-w-xs sm:max-w-none sm:w-48 md:w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg max-h-[80vh] overflow-y-auto overscroll-contain">
-                            <a href="{{ route('dashboard.profile.show') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Profile &amp; info</a>
-                            <a href="{{ route('dashboard.profile.password') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Reset password</a>
-                            <form action="{{ route('logout') }}" method="post" class="border-t border-gray-100 mt-1">
+                        <div class="ml-auto mr-4 sm:mr-0 mt-20 sm:mt-1.5 w-full max-w-xs sm:max-w-none sm:w-48 md:w-56 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 shadow-lg max-h-[80vh] overflow-y-auto overscroll-contain">
+                            <a href="{{ route('dashboard.profile.show') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Profile &amp; info</a>
+                            <a href="{{ route('dashboard.profile.password') }}" class="block px-4 py-3 sm:py-2.5 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Reset password</a>
+                            <form action="{{ route('logout') }}" method="post" class="border-t border-gray-100 dark:border-slate-700 mt-1">
                                 @csrf
-                                <button type="submit" class="block w-full px-4 py-3 sm:py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 whitespace-nowrap touch-manipulation">Log out</button>
+                                <button type="submit" class="block w-full px-4 py-3 sm:py-2.5 text-left text-sm font-medium text-gray-700 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 whitespace-nowrap touch-manipulation">Log out</button>
                             </form>
                         </div>
                     </div>
@@ -215,23 +253,28 @@
             </div>
         </header>
 
-        <main class="staff-main-content flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-100 overscroll-behavior-y-contain">
+        <main class="staff-main-content flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-100 dark:bg-slate-900 overscroll-behavior-y-contain">
             @php
                 $fullBleedPage = request()->routeIs('dashboard.profile.*') || request()->routeIs('dashboard.system.reset.*') || request()->routeIs('system.reset.*') || request()->is('dashboard/system/reset*');
                 $fullWidthFormPage = false;
+                $isCoordinatorDashboardHome = $isCoordinatorOnly
+                    && request()->routeIs('dashboard')
+                    && !request()->is('dashboard/coordinators/*')
+                    && !request()->routeIs('dashboard.class-groups.*')
+                    && !request()->routeIs('dashboard.profile.*');
             @endphp
             <div class="staff-page w-full min-h-full max-w-full {{ $fullBleedPage ? 'p-0' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 safe-area-main' }}">
                 <div class="staff-dashboard-content w-full max-w-none overflow-x-hidden {{ $fullBleedPage ? 'px-0' : 'px-0 md:px-2' }}">
-                    @if($isCoordinatorOnly && (request()->routeIs('dashboard') || request()->routeIs('dashboard.coordinators.*') || request()->routeIs('dashboard.class-groups.*') ||  request()->routeIs('dashboard.profile.*')))
-                    <nav class="coordinator-breadcrumb flex items-center gap-2 text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
-                        <a href="{{ route('dashboard') }}" class="hover:text-gray-700 transition-colors">Dashboard</a>
+                    @if($isCoordinatorOnly && !$isCoordinatorDashboardHome && (request()->routeIs('dashboard') || request()->routeIs('dashboard.coordinators.*') || request()->routeIs('dashboard.class-groups.*') ||  request()->routeIs('dashboard.profile.*')))
+                    <nav class="coordinator-breadcrumb flex items-center gap-2 text-sm text-gray-500 dark:text-slate-300 mb-4" aria-label="Breadcrumb">
+                        <a href="{{ route('dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-50 transition-colors">Dashboard</a>
                         @hasSection('breadcrumb_trail')
-                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <svg class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             @yield('breadcrumb_trail')
                         @else
                             @unless(request()->routeIs('dashboard') && !request()->is('dashboard/coordinators/*') && !request()->routeIs('dashboard.class-groups.*') && !request()->routeIs('dashboard.profile.*'))
-                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            <span class="text-gray-800 font-medium">@yield('dashboard_heading', 'Page')</span>
+                            <svg class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <span class="text-gray-800 dark:text-slate-100 font-medium">@yield('dashboard_heading', 'Page')</span>
                             @endunless
                         @endif
                     </nav>
@@ -286,6 +329,20 @@
         var link = e.target && e.target.closest && e.target.closest('a[href]');
         if (link && link.getAttribute('href') && link.getAttribute('href') !== '#' && !isDesktop()) setCollapsed(true);
     });
+    // Top-right sidebar collapse / expand button
+    var topCollapseBtn = document.getElementById('staff-sidebar-collapse-toggle');
+    if (topCollapseBtn) {
+        topCollapseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (isDesktop()) {
+                setCollapsed(!collapsed);
+            } else {
+                // On mobile, toggle drawer visibility
+                var isHidden = sidebar.classList.contains('staff-sidebar--collapsed') || collapsed;
+                setCollapsed(!isHidden);
+            }
+        });
+    }
     window.addEventListener('resize', function() {
         if (!isDesktop()) setCollapsed(true);
         updateMenuButton();

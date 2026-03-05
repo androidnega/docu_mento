@@ -5,70 +5,70 @@
 
 @section('dashboard_content')
 <div class="w-full max-w-lg space-y-6">
-    <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <a href="{{ route('dashboard') }}" class="hover:text-primary-600">Dashboard</a>
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        <a href="{{ route('dashboard.schools.index') }}" class="hover:text-primary-600">Schools</a>
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        <span class="text-gray-900 font-medium">Edit {{ $school->name }}</span>
+    <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300 mb-6">
+        <a href="{{ route('dashboard') }}" class="hover:text-primary-600 dark:hover:text-primary-400">Dashboard</a>
+        <svg class="w-4 h-4 text-gray-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="{{ route('dashboard.schools.index') }}" class="hover:text-primary-600 dark:hover:text-primary-400">Schools</a>
+        <svg class="w-4 h-4 text-gray-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-900 dark:text-slate-50 font-medium">Edit {{ $school->name }}</span>
     </div>
 
     @if(session('success'))
-        <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">{{ session('success') }}</div>
+        <div class="rounded-lg bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-600 text-green-800 dark:text-green-100 px-4 py-3 text-sm">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-3 text-sm">{{ session('error') }}</div>
+        <div class="rounded-lg bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-600 text-red-800 dark:text-red-100 px-4 py-3 text-sm">{{ session('error') }}</div>
     @endif
 
-    <div class="rounded-lg border border-gray-200 bg-white shadow-sm p-6">
+    <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-6">
         <form action="{{ route('dashboard.schools.update', $school) }}" method="post" class="space-y-4">
             @csrf
             @method('PUT')
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input type="text" name="name" id="name" value="{{ old('name', $school->name) }}" required class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 @error('name') border-red-500 @enderror">
-                @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Name *</label>
+                <input type="text" name="name" id="name" value="{{ old('name', $school->name) }}" required class="block w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 @error('name') border-red-500 @enderror">
+                @error('name')<p class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>@enderror
             </div>
             @if(isset($school->is_active))
             <div class="flex items-center gap-2">
                 <input type="hidden" name="is_active" value="0">
-                <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $school->is_active) ? 'checked' : '' }} class="rounded border-gray-300">
-                <label for="is_active" class="text-sm text-gray-700">Active</label>
+                <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $school->is_active) ? 'checked' : '' }} class="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+                <label for="is_active" class="text-sm text-gray-700 dark:text-slate-200">Active</label>
             </div>
             @endif
             <div class="flex gap-3">
                 <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">Save</button>
-                <a href="{{ route('dashboard.schools.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">Cancel</a>
+                <a href="{{ route('dashboard.schools.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-100 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</a>
             </div>
         </form>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white shadow-sm p-6">
-        <h2 class="text-sm font-semibold text-gray-900 mb-3">Departments</h2>
+    <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-6">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Departments</h2>
 
         <div class="mb-4">
-            <label for="new_department_name" class="block text-xs font-medium text-gray-500 mb-1">Add department</label>
+            <label for="new_department_name" class="block text-xs font-medium text-gray-500 dark:text-slate-300 mb-1">Add department</label>
             <div class="flex gap-2">
-                <input type="text" id="new_department_name" class="block w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="e.g. Computer Science">
+                <input type="text" id="new_department_name" class="block w-full max-w-xs rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="e.g. Computer Science">
                 <button type="button" id="btn_add_department" class="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">Add</button>
             </div>
             <p id="department_message" class="mt-1 text-xs hidden"></p>
         </div>
 
-        <ul id="department_list" class="text-sm text-gray-600 space-y-2">
+        <ul id="department_list" class="text-sm text-gray-600 dark:text-slate-300 space-y-2">
             @foreach($school->departments as $dept)
-            <li class="flex items-center justify-between gap-2 py-1 border-b border-gray-100 last:border-0">
+            <li class="flex items-center justify-between gap-2 py-1 border-b border-gray-100 dark:border-slate-800 last:border-0">
                 <span>{{ $dept->name }}</span>
                 <form action="{{ route('dashboard.departments.destroy', $dept) }}" method="post" class="inline department-delete-form" data-name="{{ $dept->name }}">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs">Remove</button>
+                    <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200 text-xs">Remove</button>
                 </form>
             </li>
             @endforeach
         </ul>
         @if($school->departments->isEmpty())
-        <p id="department_empty" class="text-xs text-gray-500 py-2">No departments yet. Add one above.</p>
+        <p id="department_empty" class="text-xs text-gray-500 dark:text-slate-400 py-2">No departments yet. Add one above.</p>
         @endif
     </div>
 </div>

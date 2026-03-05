@@ -6,7 +6,13 @@
 <div class="max-w-6xl mx-auto w-full pt-4 sm:pt-6 pb-10">
     {{-- Back + header --}}
     <div class="mb-6">
-        <a href="{{ route('dashboard.docu-mentor.projects.show', $project) }}" class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 mb-3">
+        @php
+            $user = auth()->user();
+            $backUrl = $user && $user->isDocuMentorCoordinator()
+                ? route('dashboard.coordinators.projects.show', $project)
+                : route('dashboard.docu-mentor.projects.show', $project);
+        @endphp
+        <a href="{{ $backUrl }}" class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 mb-3">
             <span aria-hidden="true">←</span> {{ $project->title }}
         </a>
         <h1 class="text-2xl font-bold text-slate-900">{{ $chapter->title }}</h1>
@@ -22,99 +28,116 @@
     {{-- Chapter controls --}}
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
         <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Chapter controls</h2>
-        <div class="flex flex-wrap gap-3">
-            <form action="{{ route('dashboard.docu-mentor.chapters.toggle-open', [$project, $chapter->order]) }}" method="post" class="inline">
-                @csrf
-                <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
-                    {{ $chapter->is_open ? 'Close for submission' : 'Open for submission' }}
-                </button>
-            </form>
-            <form action="{{ route('dashboard.docu-mentor.chapters.mark-completed', [$project, $chapter->order]) }}" method="post" class="inline">
-                @csrf
-                <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
-                    {{ $chapter->completed ? 'Mark in progress' : 'Complete chapter' }}
-                </button>
-            </form>
-            <form action="{{ route('dashboard.docu-mentor.chapters.toggle-submissions', [$project, $chapter->order]) }}" method="post" class="inline">
-                @csrf
-                <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
-                    Toggle all submissions
-                </button>
-            </form>
-        </div>
 
-        {{-- Edit chapter form --}}
-        <form action="{{ route('dashboard.docu-mentor.chapters.update', [$project, $chapter->order]) }}" method="post" class="mt-6 pt-6 border-t border-slate-200 min-w-0">
-            @csrf
-            @method('PUT')
-            <h3 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Edit chapter details</h3>
-            <div class="flex flex-wrap items-end gap-4">
-                <div class="min-w-0 flex-1 basis-40">
-                    <label for="ch_title" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Title</label>
-                    <input id="ch_title" type="text" name="title" value="{{ old('title', $chapter->title) }}" required
-                        class="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="w-20 shrink-0">
-                    <label for="ch_order" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Order</label>
-                    <input id="ch_order" type="number" name="order" value="{{ old('order', $chapter->order) }}" min="0"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="w-24 shrink-0">
-                    <label for="ch_max_score" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Max score</label>
-                    <input id="ch_max_score" type="number" name="max_score" value="{{ old('max_score', $chapter->max_score) }}" min="0"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="flex flex-wrap items-center gap-4 shrink-0">
-                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer whitespace-nowrap">
-                        <input type="hidden" name="is_open" value="0">
-                        <input type="checkbox" name="is_open" value="1" {{ $chapter->is_open ? 'checked' : '' }}
-                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                        Open
-                    </label>
-                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer whitespace-nowrap">
-                        <input type="hidden" name="completed" value="0">
-                        <input type="checkbox" name="completed" value="1" {{ $chapter->completed ? 'checked' : '' }}
-                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                        Completed
-                    </label>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 whitespace-nowrap">
-                        Save
+        @can('update', [$chapter, $project])
+            <div class="flex flex-wrap gap-3">
+                <form action="{{ route('dashboard.docu-mentor.chapters.toggle-open', [$project, $chapter->order]) }}" method="post" class="inline">
+                    @csrf
+                    <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                        {{ $chapter->is_open ? 'Close for submission' : 'Open for submission' }}
                     </button>
-                </div>
+                </form>
+                <form action="{{ route('dashboard.docu-mentor.chapters.mark-completed', [$project, $chapter->order]) }}" method="post" class="inline">
+                    @csrf
+                    <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                        {{ $chapter->completed ? 'Mark in progress' : 'Complete chapter' }}
+                    </button>
+                </form>
+                <form action="{{ route('dashboard.docu-mentor.chapters.toggle-submissions', [$project, $chapter->order]) }}" method="post" class="inline">
+                    @csrf
+                    <button type="submit" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                        Toggle all submissions
+                    </button>
+                </form>
             </div>
-        </form>
+
+            {{-- Edit chapter form --}}
+            <form action="{{ route('dashboard.docu-mentor.chapters.update', [$project, $chapter->order]) }}" method="post" class="mt-6 pt-6 border-t border-slate-200 min-w-0">
+                @csrf
+                @method('PUT')
+                <h3 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Edit chapter details</h3>
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="min-w-0 flex-1 basis-40">
+                        <label for="ch_title" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Title</label>
+                        <input id="ch_title" type="text" name="title" value="{{ old('title', $chapter->title) }}" required
+                            class="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="w-20 shrink-0">
+                        <label for="ch_order" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Order</label>
+                        <input id="ch_order" type="number" name="order" value="{{ old('order', $chapter->order) }}" min="0"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="w-24 shrink-0">
+                        <label for="ch_max_score" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Max score</label>
+                        <input id="ch_max_score" type="number" name="max_score" value="{{ old('max_score', $chapter->max_score) }}" min="0"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex flex-wrap items-center gap-4 shrink-0">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer whitespace-nowrap">
+                            <input type="hidden" name="is_open" value="0">
+                            <input type="checkbox" name="is_open" value="1" {{ $chapter->is_open ? 'checked' : '' }}
+                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            Open
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer whitespace-nowrap">
+                            <input type="hidden" name="completed" value="0">
+                            <input type="checkbox" name="completed" value="1" {{ $chapter->completed ? 'checked' : '' }}
+                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            Completed
+                        </label>
+                        <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 whitespace-nowrap">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </form>
+        @else
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p class="font-medium">You can view this chapter, but only the assigned supervisor can open/close it, mark it completed, or change its settings.</p>
+                <p class="mt-1 text-xs text-amber-900/80">If you need a chapter opened or closed for submissions, ask the supervising lecturer for this project.</p>
+            </div>
+        @endcan
     </section>
 
     {{-- Submissions --}}
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
         <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Submissions</h2>
 
-        <form action="{{ route('dashboard.docu-mentor.submissions.store', [$project, $chapter->order]) }}" method="post" enctype="multipart/form-data" class="space-y-4 p-4 rounded-lg bg-slate-50 border border-slate-200 mb-6">
-            @csrf
-            <p class="text-xs text-slate-600">{{ $chapter->order === 6 ? 'ZIP only (no size limit).' : 'PDF, DOCX or TXT, max 1MB.' }}</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
-                <div class="lg:col-span-5">
-                    <label for="sub_file" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">File</label>
-                    <input id="sub_file" type="file" name="file" accept="{{ $chapter->order === 6 ? '.zip' : '.pdf,.docx,.txt' }}" required
-                        class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+        @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+            <form action="{{ route('dashboard.docu-mentor.submissions.store', [$project, $chapter->order]) }}" method="post" enctype="multipart/form-data" class="space-y-4 p-4 rounded-lg bg-slate-50 border border-slate-200 mb-6">
+                @csrf
+                <p class="text-xs text-slate-600">{{ $chapter->order === 6 ? 'ZIP only (no size limit).' : 'PDF, DOCX or TXT, max 1MB.' }}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                    <div class="lg:col-span-5">
+                        <label for="sub_file" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">File</label>
+                        <input id="sub_file" type="file" name="file" accept="{{ $chapter->order === 6 ? '.zip' : '.pdf,.docx,.txt' }}" required
+                            class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    </div>
+                    <div class="lg:col-span-4">
+                        <label for="sub_comment" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Comment (optional)</label>
+                        <input id="sub_comment" type="text" name="comment" placeholder="Brief comment"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="lg:col-span-3">
+                        <button type="submit" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Add submission
+                        </button>
+                    </div>
                 </div>
-                <div class="lg:col-span-4">
-                    <label for="sub_comment" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Comment (optional)</label>
-                    <input id="sub_comment" type="text" name="comment" placeholder="Brief comment"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="lg:col-span-3">
-                    <button type="submit" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        Add submission
-                    </button>
-                </div>
+            </form>
+        @else
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
+                <p class="font-medium">Only the supervising lecturer can add or edit submissions for this chapter.</p>
+                <p class="mt-1 text-xs text-amber-900/80">You can review the list of submissions below. Ask the supervisor if you need a file added or removed.</p>
             </div>
-        </form>
+        @endif
 
         @if($chapter->submissions->isEmpty())
         <div class="rounded-lg border border-slate-200 border-dashed bg-slate-50/50 py-10 text-center">
             <p class="text-slate-500 text-sm">No submissions yet.</p>
-            <p class="text-slate-400 text-xs mt-1">Use the form above to add one.</p>
+            @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+                <p class="text-slate-400 text-xs mt-1">Use the form above to add one.</p>
+            @endif
         </div>
     @else
         <ul class="space-y-4">
@@ -133,36 +156,42 @@
                         </div>
                         <div class="flex flex-wrap gap-2 items-center">
                             @php $aiCount = $sub->aiReviews->count(); @endphp
-                            <form action="{{ route('dashboard.docu-mentor.ai.review-submission', [$project, $chapter->order, $sub]) }}" method="post" class="inline">
-                                @csrf
-                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-slate-300 text-indigo-600 text-sm hover:bg-indigo-50" {{ $aiCount >= 2 ? 'disabled' : '' }}>Review with AI</button>
-                            </form>
-                            <span class="text-xs text-slate-500">({{ $aiCount }}/2)</span>
-                            <form action="{{ route('dashboard.docu-mentor.submissions.destroy', [$project, $chapter->order, $sub]) }}" method="post" class="inline" onsubmit="return confirm('Delete this submission?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-slate-300 text-red-600 text-sm hover:bg-red-50">Delete</button>
-                            </form>
+                            @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+                                <form action="{{ route('dashboard.docu-mentor.ai.review-submission', [$project, $chapter->order, $sub]) }}" method="post" class="inline">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg border border-slate-300 text-indigo-600 text-sm hover:bg-indigo-50" {{ $aiCount >= 2 ? 'disabled' : '' }}>Review with AI</button>
+                                </form>
+                                <span class="text-xs text-slate-500">({{ $aiCount }}/2)</span>
+                                <form action="{{ route('dashboard.docu-mentor.submissions.destroy', [$project, $chapter->order, $sub]) }}" method="post" class="inline" onsubmit="return confirm('Delete this submission?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg border border-slate-300 text-red-600 text-sm hover:bg-red-50">Delete</button>
+                                </form>
+                            @else
+                                <span class="text-xs text-slate-500">AI reviews: {{ $aiCount }}/2</span>
+                            @endif
                         </div>
                     </div>
-                    <form action="{{ route('dashboard.docu-mentor.submissions.update', [$project, $chapter->order, $sub]) }}" method="post" class="flex flex-wrap gap-3 items-end pt-3 border-t border-slate-100">
-                        @csrf
-                        @method('PUT')
-                        <div class="w-24">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Score</label>
-                            <input type="number" name="score" value="{{ $sub->score }}" placeholder="0" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div class="flex-1 min-w-[160px]">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Comment</label>
-                            <input type="text" name="comment" value="{{ $sub->comment }}" placeholder="Comment" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                            <input type="hidden" name="is_open" value="0">
-                            <input type="checkbox" name="is_open" value="1" {{ $sub->is_open ? 'checked' : '' }} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                            Open
-                        </label>
-                        <button type="submit" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Update</button>
-                    </form>
+                    @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+                        <form action="{{ route('dashboard.docu-mentor.submissions.update', [$project, $chapter->order, $sub]) }}" method="post" class="flex flex-wrap gap-3 items-end pt-3 border-t border-slate-100">
+                            @csrf
+                            @method('PUT')
+                            <div class="w-24">
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Score</label>
+                                <input type="number" name="score" value="{{ $sub->score }}" placeholder="0" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div class="flex-1 min-w-[160px]">
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Comment</label>
+                                <input type="text" name="comment" value="{{ $sub->comment }}" placeholder="Comment" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="hidden" name="is_open" value="0">
+                                <input type="checkbox" name="is_open" value="1" {{ $sub->is_open ? 'checked' : '' }} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                Open
+                            </label>
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Update</button>
+                        </form>
+                    @endif
                     @if($sub->aiReviews->isNotEmpty())
                         <div class="mt-3 pt-3 border-t border-slate-200 space-y-3">
                             <h4 class="text-xs font-semibold text-slate-600 uppercase tracking-wide">AI Reviews ({{ $sub->aiReviews->count() }})</h4>
