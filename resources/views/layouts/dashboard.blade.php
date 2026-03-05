@@ -212,7 +212,15 @@
                         $aiTokenBadgeClass = $aiTokenStatus['remaining'] > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
                     @endphp
                     <div class="flex flex-shrink-0 items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                        <div class="flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-900 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-amber-100 shadow-sm">
+                        {{-- Mobile: quick actions button opens modal --}}
+                        <button type="button"
+                                id="staff-quick-actions-open"
+                                class="inline-flex md:hidden items-center justify-center h-9 w-9 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                                aria-label="Open quick actions">
+                            <i class="fas fa-circle-info text-sm"></i>
+                        </button>
+                        {{-- Desktop: inline metrics pill --}}
+                        <div class="hidden md:flex items-center gap-3 rounded-xl bg-white px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-800 shadow-sm">
                             <div class="flex items-center gap-3">
                                 @if($showSmsInHeader)
                                     <span class="inline-flex items-center gap-1.5">
@@ -233,22 +241,16 @@
                                     </span>
                                 </span>
                             </div>
-                            <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
-                                <button type="button"
-                                        id="staff-theme-toggle"
-                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-slate-900 text-amber-300 text-xs sm:text-sm hover:bg-black focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
-                                        title="Toggle dark mode">
-                                    <i class="fas fa-moon" id="staff-theme-icon"></i>
-                                </button>
+                            <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
                                 <button type="button"
                                         id="staff-fullscreen-toggle"
-                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-200 text-xs sm:text-sm hover:bg-sky-200 dark:hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                                        class="hidden md:inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-sky-100 text-sky-600 text-xs sm:text-sm hover:bg-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-white"
                                         title="Toggle full screen">
                                     <i class="fas fa-expand" id="staff-fullscreen-icon"></i>
                                 </button>
                                 <button type="button"
                                         id="staff-sidebar-collapse-toggle"
-                                        class="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-200 text-xs sm:text-sm hover:bg-emerald-200 dark:hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                                        class="hidden md:inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-xs sm:text-sm hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-white"
                                         title="Collapse / expand sidebar">
                                     <i class="fas fa-table-columns" id="staff-sidebar-icon"></i>
                                 </button>
@@ -279,6 +281,59 @@
                 </div>
             </div>
         </header>
+
+        {{-- Mobile quick actions modal --}}
+        @if($isCoordinatorOrSupervisorOrAdmin)
+        <div id="staff-quick-actions-modal" class="fixed inset-0 z-40 bg-black/40 hidden md:hidden">
+            <div class="ml-auto mr-4 mt-20 w-64 rounded-2xl bg-white shadow-lg border border-gray-200 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-semibold text-slate-900">Quick actions</p>
+                    <button type="button" id="staff-quick-actions-close"
+                            class="inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                @if($showSmsInHeader)
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                            <i class="fas fa-comment-sms text-xs"></i>
+                        </span>
+                        <span class="text-slate-700">SMS balance</span>
+                    </div>
+                    <span class="font-semibold tabular-nums text-slate-900">
+                        {{ $smsRemaining }}
+                    </span>
+                </div>
+                @endif
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                            <i class="fas fa-robot text-xs"></i>
+                        </span>
+                        <span class="text-slate-700">AI tokens</span>
+                    </div>
+                    <span class="font-semibold tabular-nums text-slate-900">
+                        {{ $aiTokenStatus['remaining'] ?? 0 }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    <button type="button"
+                            id="staff-fullscreen-toggle-mobile"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold py-2">
+                        <i class="fas fa-expand" id="staff-fullscreen-icon-mobile"></i>
+                        <span>Fullscreen</span>
+                    </button>
+                    <button type="button"
+                            id="staff-sidebar-collapse-toggle-mobile"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold py-2">
+                        <i class="fas fa-table-columns"></i>
+                        <span>Sidebar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <main class="staff-main-content flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-100 dark:bg-slate-900 overscroll-behavior-y-contain">
             @php
@@ -370,6 +425,13 @@
             }
         });
     }
+    var mobileCollapseBtn = document.getElementById('staff-sidebar-collapse-toggle-mobile');
+    if (mobileCollapseBtn && topCollapseBtn) {
+        mobileCollapseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            topCollapseBtn.click();
+        });
+    }
     window.addEventListener('resize', function() {
         if (!isDesktop()) setCollapsed(true);
         updateMenuButton();
@@ -381,6 +443,35 @@
         profileBtn.addEventListener('click', function(e) { e.stopPropagation(); var open = !profileDropdown.classList.contains('hidden'); profileDropdown.classList.toggle('hidden', open); profileBtn.setAttribute('aria-expanded', !open); });
         document.addEventListener('click', function() { profileDropdown.classList.add('hidden'); profileBtn.setAttribute('aria-expanded', 'false'); });
         if (profileWrap) profileWrap.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
+    // Mobile quick actions modal
+    var quickOpen = document.getElementById('staff-quick-actions-open');
+    var quickModal = document.getElementById('staff-quick-actions-modal');
+    var quickClose = document.getElementById('staff-quick-actions-close');
+    if (quickOpen && quickModal) {
+        var closeQuick = function() {
+            quickModal.classList.add('hidden');
+        };
+        quickOpen.addEventListener('click', function(e) {
+            e.preventDefault();
+            quickModal.classList.remove('hidden');
+        });
+        if (quickClose) {
+            quickClose.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeQuick();
+            });
+        }
+        quickModal.addEventListener('click', function(e) {
+            if (e.target === quickModal) {
+                closeQuick();
+            }
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQuick();
+            }
+        });
     }
 })();
 </script>

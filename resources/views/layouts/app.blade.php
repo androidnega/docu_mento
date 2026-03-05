@@ -279,20 +279,8 @@
     (function () {
         var root = document.documentElement;
         function getStoredTheme() {
-            var stored = null;
-            try {
-                if (window.localStorage) {
-                    stored = localStorage.getItem('dm-theme') || localStorage.getItem('dm-staff-theme');
-                }
-            } catch (e) {
-                stored = null;
-            }
-            if (stored === 'dark' || stored === 'light') return stored;
-            var prefersDark = false;
-            try {
-                prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            } catch (e) {}
-            return prefersDark ? 'dark' : 'light';
+            // Dark mode disabled: always use light theme
+            return 'light';
         }
         function applyTheme(theme) {
             if (theme === 'dark') {
@@ -314,30 +302,10 @@
                 studentIcon.classList.add(isDark ? 'fa-moon' : 'fa-sun');
             }
         }
-        function persistTheme(theme) {
-            try {
-                if (window.localStorage) {
-                    localStorage.setItem('dm-theme', theme);
-                    localStorage.setItem('dm-staff-theme', theme);
-                }
-            } catch (e) {}
-        }
-        function toggleTheme(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            var toDark = !root.classList.contains('dark');
-            var theme = toDark ? 'dark' : 'light';
-            applyTheme(theme);
-            persistTheme(theme);
-            updateIcons();
-        }
+        function persistTheme(theme) {}
+        function toggleTheme(e) {}
         function initTheme() {
-            var theme = getStoredTheme();
-            applyTheme(theme);
-            updateIcons();
-            var staffBtn = document.getElementById('staff-theme-toggle');
-            if (staffBtn) staffBtn.addEventListener('click', toggleTheme);
-            var studentBtn = document.getElementById('student-theme-toggle');
-            if (studentBtn) studentBtn.addEventListener('click', toggleTheme);
+            applyTheme('light');
 
             // Fullscreen toggle on staff header pill
             var fsBtn = document.getElementById('staff-fullscreen-toggle');
@@ -372,6 +340,10 @@
             }
             if (fsBtn) {
                 fsBtn.addEventListener('click', toggleFullscreen);
+                var fsMobileBtn = document.getElementById('staff-fullscreen-toggle-mobile');
+                if (fsMobileBtn) {
+                    fsMobileBtn.addEventListener('click', toggleFullscreen);
+                }
                 document.addEventListener('fullscreenchange', updateFsIcon);
                 document.addEventListener('webkitfullscreenchange', updateFsIcon);
                 document.addEventListener('mozfullscreenchange', updateFsIcon);
