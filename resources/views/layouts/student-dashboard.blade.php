@@ -14,8 +14,8 @@
     $navProjects = $navProjectShow || $navProjectsIndex;
     $navProfile = request()->routeIs('dashboard.my-profile');
     $leaderProjectForNav = ($docuMentorGroup ?? null) && $docuMentorGroup->relationLoaded('project') ? $docuMentorGroup->project : null;
-    $navActiveClass = 'bg-slate-100 text-slate-900';
-    $navInactiveClass = 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+    $navActiveClass = 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50';
+    $navInactiveClass = 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50';
 @endphp
 <div class="min-h-screen flex bg-gray-50 dark:bg-slate-900" id="student-dashboard-wrap">
     {{-- Top bar: Menu | Academic Year | Logout --}}
@@ -38,7 +38,7 @@
             <button type="button" id="student-theme-toggle" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-gray-200 dark:border-slate-600 bg-white/80 dark:bg-slate-800 text-gray-600 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-slate-900" aria-label="Toggle theme">
                 <i class="fas fa-sun text-xs" id="student-theme-icon"></i>
             </button>
-            <form action="{{ ($user && method_exists($user, 'isDocuMentorStudent') && $user->isDocuMentorStudent()) ? route('student.account.logout') : route('logout') }}" method="post" class="hidden sm:block">
+            <form action="{{ ($user && method_exists($user, 'isDocuMentorStudent') && $user->isDocuMentorStudent()) ? route('student.account.logout') : route('logout') }}" method="post" class="block">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-800">
                     <i class="fas fa-sign-out-alt text-xs"></i>

@@ -5,19 +5,19 @@
 
 @section('dashboard_content')
 <header class="mb-6 sm:mb-8">
-    <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">Your dashboard</h1>
+    <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-slate-50">Your dashboard</h1>
     @php
         $fallbackName = $displayName ?? ($user->name ?? $user->username ?? 'Student');
     @endphp
     @if(!empty($greeting ?? null))
-        <p class="mt-1 text-sm text-gray-700">
+        <p class="mt-1 text-sm text-gray-700 dark:text-slate-200">
             {{ $greeting }}
             @if($isGroupLeader ?? false)
                 <span class="text-amber-600 font-semibold">(Leader)</span>
             @endif
         </p>
     @else
-        <p class="mt-1 text-sm text-gray-700">
+        <p class="mt-1 text-sm text-gray-700 dark:text-slate-200">
             Good day, {{ $fallbackName }}
             @if($isGroupLeader ?? false)
                 <span class="text-amber-600 font-semibold">(Leader)</span>
@@ -33,7 +33,7 @@
         </div>
     @endif
     @if(isset($student) && $student)
-        <p class="mt-1.5 text-xs text-gray-400 font-mono">Index: {{ $student->index_number }}</p>
+        <p class="mt-1.5 text-xs text-gray-400 dark:text-slate-400 font-mono">Index: {{ $student->index_number }}</p>
     @endif
 </header>
 
