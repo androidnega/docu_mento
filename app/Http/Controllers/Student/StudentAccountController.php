@@ -392,13 +392,6 @@ class StudentAccountController extends Controller
         if ($fallbackOtp && $fallbackOtp->code === $code) {
             $fallbackOtp->used_at = now();
             $fallbackOtp->save();
-            if ($student->isFirstTimeLogin()) {
-                session(['student_setup_index_hash' => $indexHash, 'student_setup_index_number' => $student->index_number]);
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('student.account.setup'),
-                ]);
-            }
             $this->completeStudentLogin($student, null, $name);
             return response()->json([
                 'success' => true,
@@ -426,19 +419,6 @@ class StudentAccountController extends Controller
             }
         }
 
-        // First-time: redirect to Account Setup (do not log in yet). Attach phone from OTP for setup form.
-        if ($student->isFirstTimeLogin()) {
-            if ($phone) {
-                $student->phone_contact = $phone;
-                $student->save();
-            }
-            session(['student_setup_index_hash' => $indexHash, 'student_setup_index_number' => $student->index_number]);
-            return response()->json([
-                'success' => true,
-                'redirect' => route('student.account.setup'),
-            ]);
-        }
-
         $this->completeStudentLogin($student, $phone ?? null, $name);
         return response()->json([
             'success' => true,
@@ -454,6 +434,9 @@ class StudentAccountController extends Controller
         if ($name !== null && $name !== '') {
             $student->student_name = ucwords(strtolower(trim($name)));
         }
+        // OTP-only login: mark student as active and not first-time after any successful OTP login
+        $student->first_time_login = false;
+        $student->is_active = true;
         $student->save();
 
         $user = User::findOrCreateDocuMentorUserForStudent($student);
@@ -475,131 +458,7 @@ class StudentAccountController extends Controller
         return route('dashboard');
     }
 
-    /**
-     * Account Setup (first-time only). Show form: Full Name, Phone, Password.
-     * Allowed only when session has student_setup_index_hash from successful OTP verify.
-     */
-    public function showAccountSetup(): View|RedirectResponse
-    {
-        if (Auth::check()) {
-            return redirect()->route('dashboard')->with('info', 'You are already logged in.');
-        }
-        $indexHash = session('student_setup_index_hash');
-        if (!$indexHash) {
-            return redirect()->route('student.account.login.form')->with('info', 'Please sign in with your index number and verify the code sent to your phone first.');
-        }
-        $student = Student::where('index_number_hash', $indexHash)->first();
-        if (!$student || !$student->isFirstTimeLogin()) {
-            session()->forget(['student_setup_index_hash', 'student_setup_index_number']);
-            return redirect()->route('student.account.login.form')->with('info', 'Invalid or expired setup session. Please sign in again.');
-        }
-        return view('student.account-setup', [
-            'index_number' => session('student_setup_index_number', $student->index_number),
-            'student' => $student,
-        ]);
-    }
-
-    /**
-     * Store account setup: validate Full Name, Phone, Password; hash password; set first_time_login = false, is_active = true; log in; redirect to dashboard.
-     */
-    public function storeAccountSetup(Request $request): RedirectResponse
-    {
-        $indexHash = session('student_setup_index_hash');
-        if (!$indexHash) {
-            return redirect()->route('student.account.login.form')->with('error', 'Session expired. Please sign in again.');
-        }
-        $student = Student::where('index_number_hash', $indexHash)->first();
-        if (!$student || !$student->isFirstTimeLogin()) {
-            session()->forget(['student_setup_index_hash', 'student_setup_index_number']);
-            return redirect()->route('student.account.login.form')->with('error', 'Invalid setup session.');
-        }
-
-        $request->validate([
-            'student_name' => 'required|string|max:255',
-            'phone_contact' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $phone = Student::normalizePhoneForStorage(trim((string) $request->phone_contact));
-        if (!$phone || strlen($phone) < 10) {
-            return redirect()->back()->withInput()->with('error', 'Please enter a valid phone number (e.g. 0244123456).');
-        }
-        $otherStudent = Student::where('phone_contact', $phone)->where('id', '!=', $student->id)->first();
-        if ($otherStudent) {
-            return redirect()->back()->withInput()->with('error', 'This phone number is already registered to another student.');
-        }
-
-        $student->student_name = ucwords(strtolower(trim($request->student_name)));
-        $student->phone_contact = $phone;
-        $student->password = Hash::make($request->password);
-        $student->first_time_login = false;
-        $student->is_active = true;
-        $student->save();
-
-        session()->forget(['student_setup_index_hash', 'student_setup_index_number']);
-        $user = User::findOrCreateDocuMentorUserForStudent($student);
-        if ($user) {
-            $user->update(['password' => Hash::make($request->password), 'name' => $student->student_name, 'phone' => $phone]);
-            request()->session()->regenerate();
-            Auth::login($user, false);
-        }
-        return redirect()->to($this->studentLoginRedirect($student))->with('success', 'Account set up. Welcome!');
-    }
-
-    /**
-     * Subsequent login: verify password, then log in as User.
-     */
-    public function loginWithPassword(Request $request): JsonResponse
-    {
-        if (Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are already logged in.',
-            ], 422);
-        }
-
-        $request->validate([
-            'index_number' => 'required|string|max:100',
-            'password' => 'required|string',
-        ]);
-
-        $indexHash = Student::hashIndexNumber(trim($request->index_number));
-        $student = Student::where('index_number_hash', $indexHash)->first();
-        if (!$student) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid session. Start again.',
-            ], 422);
-        }
-        if ($student->isFirstTimeLogin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please complete account setup first using the code sent to your phone.',
-            ], 422);
-        }
-        if (!$student->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Account is not active. Contact your coordinator.',
-            ], 422);
-        }
-        if (!Hash::check($request->password, $student->getAuthPassword())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Incorrect password.',
-            ], 422);
-        }
-
-        $user = User::findOrCreateDocuMentorUserForStudent($student);
-        if ($user) {
-            request()->session()->regenerate();
-            Auth::login($user, false);
-        }
-        return response()->json([
-            'success' => true,
-            'redirect' => $this->studentLoginRedirect($student),
-        ]);
-    }
+    // Account setup and password-based login removed – students use OTP-only authentication.
 
     /**
      * Log out (Laravel Auth).

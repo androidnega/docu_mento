@@ -107,9 +107,6 @@ Route::get('/student/login', function () {
 Route::post('/student/account/verify-index', [\App\Http\Controllers\Student\StudentAccountController::class, 'verifyIndex'])->name('student.account.verify-index');
 Route::post('/student/account/send-otp', [\App\Http\Controllers\Student\StudentAccountController::class, 'sendOtp'])->name('student.account.send-otp');
 Route::post('/student/account/verify-otp', [\App\Http\Controllers\Student\StudentAccountController::class, 'verifyOtp'])->name('student.account.verify-otp');
-Route::get('/student/account/setup', [\App\Http\Controllers\Student\StudentAccountController::class, 'showAccountSetup'])->name('student.account.setup');
-Route::post('/student/account/setup', [\App\Http\Controllers\Student\StudentAccountController::class, 'storeAccountSetup'])->name('student.account.setup.store');
-Route::post('/student/account/login-password', [\App\Http\Controllers\Student\StudentAccountController::class, 'loginWithPassword'])->name('student.account.login-password');
 Route::post('/student/account/logout', [\App\Http\Controllers\Student\StudentAccountController::class, 'logout'])->name('student.account.logout');
 
 // Student passkey (WebAuthn) — students only; not for staff/admin

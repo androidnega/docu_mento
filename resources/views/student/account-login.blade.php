@@ -77,23 +77,6 @@
                 </div>
             </div>
 
-            {{-- Step 4: Password --}}
-            <div id="step-password" class="space-y-4 hidden">
-                <p class="text-sm text-gray-500" id="password-step-message">Enter your password to sign in.</p>
-                <div>
-                    <label for="password_index" class="block text-sm font-medium text-gray-700 mb-1">Index number</label>
-                    <input type="text" id="password_index" readonly class="w-full px-3 py-2.5 rounded-[14px] bg-gray-50 text-gray-700 border border-gray-300" aria-readonly="true">
-                </div>
-                <div>
-                    <label for="login_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="login_password" placeholder="Your password" class="w-full px-3 py-2.5 rounded-[14px] bg-white text-gray-800 placeholder-gray-400 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" autocomplete="current-password">
-                </div>
-                <div id="password-error" class="hidden">
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800" id="password-error-text"></div>
-                </div>
-                <button type="button" id="btn-password-login" class="w-full py-2.5 px-4 text-sm font-semibold rounded-[14px] text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">Sign in</button>
-                <button type="button" id="btn-back-to-index-from-password" class="w-full py-2 px-4 text-sm font-medium rounded-lg text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">← Back</button>
-            </div>
         </div>
         <p class="text-center mt-6">
             <a href="{{ route('student.landing') }}" class="text-sm text-gray-500 hover:text-gray-800 no-underline">← Back to home</a>
@@ -108,7 +91,6 @@
     var stepIndex = document.getElementById('step-index');
     var stepPhone = document.getElementById('step-phone');
     var stepOtp = document.getElementById('step-otp');
-    var stepPassword = document.getElementById('step-password');
     var indexInput = document.getElementById('index_number');
     var phoneInput = document.getElementById('phone');
     var otpInput = document.getElementById('otp_code');
@@ -123,23 +105,11 @@
         stepIndex.classList.add('hidden');
         stepPhone.classList.add('hidden');
         stepOtp.classList.add('hidden');
-        if (stepPassword) stepPassword.classList.add('hidden');
         if (step === 'index') stepIndex.classList.remove('hidden');
         else if (step === 'phone') stepPhone.classList.remove('hidden');
         else if (step === 'otp') {
             stepOtp.classList.remove('hidden');
             initOtpBoxes();
-        }
-        else if (step === 'password' && stepPassword) {
-            stepPassword.classList.remove('hidden');
-            var msgEl = document.getElementById('password-step-message');
-            if (msgEl) msgEl.textContent = 'Enter your password to sign in.';
-            var idxEl = document.getElementById('password_index');
-            if (idxEl) idxEl.value = currentIndexNumber;
-            var pwdEl = document.getElementById('login_password');
-            if (pwdEl) { pwdEl.value = ''; pwdEl.focus(); }
-            var errWrap = document.getElementById('password-error');
-            if (errWrap) errWrap.classList.add('hidden');
         }
     }
 
@@ -261,56 +231,6 @@
             }
         });
     }
-
-    function showPasswordError(text) {
-        var wrap = document.getElementById('password-error');
-        var textEl = document.getElementById('password-error-text');
-        if (wrap && textEl) {
-            textEl.textContent = text || '';
-            wrap.classList.toggle('hidden', !text);
-        }
-    }
-
-    document.getElementById('btn-back-to-index-from-password').addEventListener('click', function() {
-        showStep('index');
-        showPasswordError('');
-    });
-
-    document.getElementById('btn-password-login').addEventListener('click', function() {
-        var pwd = document.getElementById('login_password');
-        var password = (pwd && pwd.value) ? pwd.value : '';
-        if (!currentIndexNumber) {
-            showPasswordError('Session lost. Please enter your index number again.');
-            return;
-        }
-        if (!password) {
-            showPasswordError('Please enter your password.');
-            return;
-        }
-        showPasswordError('');
-        setLoading(this, true);
-        this.dataset.originalText = this.textContent;
-        fetch('{{ route("student.account.login-password") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-            body: JSON.stringify({ index_number: currentIndexNumber, password: password })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            setLoading(document.getElementById('btn-password-login'), false);
-            if (!data.success) {
-                showPasswordError(data.message || 'Incorrect password. Please try again.');
-                return;
-            }
-            if (data.redirect) {
-                window.location.href = data.redirect;
-            }
-        })
-        .catch(function() {
-            setLoading(document.getElementById('btn-password-login'), false);
-            showPasswordError('Network error. Please try again.');
-        });
-    });
 
     document.getElementById('btn-send-otp').addEventListener('click', function() {
         var fullName = phoneNameInput ? phoneNameInput.value.trim() : '';
