@@ -47,10 +47,10 @@ Route::get('/docu_mentor/{any?}', function (?string $any = '') {
 Route::redirect('/docu-mentor/login', '/login', 301)->name('docu-mentor.login');
 Route::redirect('/docu_mentor/login', '/login', 301);
 
-// Supervisor pages: redirect old /docu-mentor/supervisors/* to /dashboard/supervisor/*
-Route::redirect('/docu-mentor/supervisors', '/dashboard/supervisor/projects', 301);
+// Supervisor pages: redirect old /docu-mentor/supervisors/* to new /dashboard/* slugs
+Route::redirect('/docu-mentor/supervisors', '/dashboard/projects', 301);
 Route::get('/docu-mentor/supervisors/{any}', function (string $any) {
-    return redirect('/dashboard/supervisor/' . $any, 301);
+    return redirect('/dashboard/' . $any, 301);
 })->where('any', '.*');
 
 Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('docu-mentor')->name('docu-mentor.')->group(function () {
@@ -133,27 +133,27 @@ Route::middleware(['auth', 'role:student,group_leader'])->prefix('dashboard')->n
     Route::post('/documents', [\App\Http\Controllers\Student\StudentDocumentController::class, 'store'])->name('documents.store');
 });
 
-// Project (student) routes under /dashboard — role:student,group_leader + policy for project access
+// Project (student) routes under /dashboard/student — role:student,group_leader + policy for project access
 Route::middleware(['auth', 'role:student,group_leader', 'docu-mentor.project-access'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::get('/csrf-refresh', fn () => response()->json(['token' => csrf_token()]))->name('csrf-refresh');
-    Route::get('/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'index'])->name('projects.index');
-    Route::get('/projects/create', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'create'])->name('projects.create');
-    Route::post('/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'store'])->name('projects.store');
-    Route::get('/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'show'])->name('projects.show');
-    Route::put('/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'update'])->name('projects.update');
-    Route::post('/projects/{project}/features', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'store'])->name('projects.features.store');
-    Route::put('/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update'])->name('projects.features.update');
-    Route::delete('/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy'])->name('projects.features.destroy');
-    Route::post('/projects/{project}/proposals', [\App\Http\Controllers\DocuMentor\StudentProposalController::class, 'store'])->name('projects.proposals.store');
-    Route::get('/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('projects.proposals.download');
-    Route::get('/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'))->name('join-group');
-    Route::post('/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'));
-    Route::get('/public-projects', [\App\Http\Controllers\DocuMentor\PublicProjectController::class, 'index'])->name('public-projects');
-    Route::get('/group/create', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'createGroup'])->name('group.create');
-    Route::post('/group', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'storeGroup'])->name('group.store');
-    Route::post('/group/add-member', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'addMember'])->name('group.add-member');
-    Route::get('/group/{group}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'showGroup'])->name('group.show');
-    Route::post('/group/{group}/remove/{member}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'removeMember'])->name('group.remove-member');
+    Route::get('/student/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'index'])->name('projects.index');
+    Route::get('/student/projects/create', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'create'])->name('projects.create');
+    Route::post('/student/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'store'])->name('projects.store');
+    Route::get('/student/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'show'])->name('projects.show');
+    Route::put('/student/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'update'])->name('projects.update');
+    Route::post('/student/projects/{project}/features', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'store'])->name('projects.features.store');
+    Route::put('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update'])->name('projects.features.update');
+    Route::delete('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy'])->name('projects.features.destroy');
+    Route::post('/student/projects/{project}/proposals', [\App\Http\Controllers\DocuMentor\StudentProposalController::class, 'store'])->name('projects.proposals.store');
+    Route::get('/student/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('projects.proposals.download');
+    Route::get('/student/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'))->name('join-group');
+    Route::post('/student/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'));
+    Route::get('/student/public-projects', [\App\Http\Controllers\DocuMentor\PublicProjectController::class, 'index'])->name('public-projects');
+    Route::get('/student/group/create', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'createGroup'])->name('group.create');
+    Route::post('/student/group', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'storeGroup'])->name('group.store');
+    Route::post('/student/group/add-member', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'addMember'])->name('group.add-member');
+    Route::get('/student/group/{group}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'showGroup'])->name('group.show');
+    Route::post('/student/group/{group}/remove/{member}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'removeMember'])->name('group.remove-member');
     Route::post('/projects/{project}/chapters/{chapter}/submissions', [\App\Http\Controllers\DocuMentor\StudentSubmissionController::class, 'store'])->name('projects.submissions.store');
 });
 
@@ -269,28 +269,28 @@ Route::middleware('admin.auth')->group(function () {
             Route::delete('students/{encodedIndex}', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'destroy'])->name('students.destroy');
         });
 
-        // Supervisor project area: /dashboard/supervisor/projects
-        Route::middleware('docu-mentor.supervisor')->prefix('supervisor')->name('docu-mentor.')->group(function () {
-            Route::get('/projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
-            Route::get('/projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
-            Route::get('/projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
-            Route::put('/projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/chapters/{chapterRef}/mark-completed', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'markCompleted'])->name('chapters.mark-completed')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/chapters/{chapterRef}/toggle-submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleAllSubmissions'])->name('chapters.toggle-submissions')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'store'])->name('submissions.store')->whereNumber('chapterRef');
-            Route::put('/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'update'])->name('submissions.update')->whereNumber('chapterRef');
-            Route::delete('/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'destroy'])->name('submissions.destroy')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/files', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadProjectFiles'])->name('files.upload');
-            Route::post('/projects/{project}/final-submission', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadFinalSubmission'])->name('final-submission.upload');
-            Route::get('/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('proposals.download');
-            Route::get('/projects/{project}/download-final', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadFinalSubmission'])->name('download-final');
-            Route::get('/projects/{project}/download-all', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadAll'])->name('download-all');
-            Route::post('/projects/{project}/chapters/{chapterRef}/submissions/{submission}/ai-review', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'reviewSubmission'])->name('ai.review-submission')->whereNumber('chapterRef');
-            Route::post('/projects/{project}/ai-summary', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'projectSummary'])->name('ai.summary');
-            Route::post('/projects/{project}/approve', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'approveProject'])->name('projects.approve');
-            Route::post('/projects/{project}/scores', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'storeScores'])->name('projects.scores.store');
-            Route::get('/documents/{document}/download', [\App\Http\Controllers\Supervisor\SupervisorDocumentController::class, 'download'])->name('documents.download');
+        // Supervisor project area: clean /dashboard/projects... slugs (no /supervisor prefix)
+        Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
+            Route::get('/dashboard/projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
+            Route::get('/dashboard/projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
+            Route::get('/dashboard/projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
+            Route::put('/dashboard/projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/mark-completed', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'markCompleted'])->name('chapters.mark-completed')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/toggle-submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleAllSubmissions'])->name('chapters.toggle-submissions')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'store'])->name('submissions.store')->whereNumber('chapterRef');
+            Route::put('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'update'])->name('submissions.update')->whereNumber('chapterRef');
+            Route::delete('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'destroy'])->name('submissions.destroy')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/files', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadProjectFiles'])->name('files.upload');
+            Route::post('/dashboard/projects/{project}/final-submission', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadFinalSubmission'])->name('final-submission.upload');
+            Route::get('/dashboard/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('proposals.download');
+            Route::get('/dashboard/projects/{project}/download-final', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadFinalSubmission'])->name('download-final');
+            Route::get('/dashboard/projects/{project}/download-all', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadAll'])->name('download-all');
+            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}/ai-review', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'reviewSubmission'])->name('ai.review-submission')->whereNumber('chapterRef');
+            Route::post('/dashboard/projects/{project}/ai-summary', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'projectSummary'])->name('ai.summary');
+            Route::post('/dashboard/projects/{project}/approve', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'approveProject'])->name('projects.approve');
+            Route::post('/dashboard/projects/{project}/scores', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'storeScores'])->name('projects.scores.store');
+            Route::get('/dashboard/documents/{document}/download', [\App\Http\Controllers\Supervisor\SupervisorDocumentController::class, 'download'])->name('documents.download');
         });
 
         // Super Admin only: schools, departments, users, settings, system reset
