@@ -144,14 +144,14 @@
 
                                 <div class="mt-5 md:mt-6 flex flex-col sm:flex-row items-center gap-3 text-xs sm:text-sm text-white/75 justify-center lg:justify-start">
                                     <div class="flex items-center gap-2">
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-200">
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-slate-900">
                                             <i class="fas fa-check text-xs"></i>
                                         </span>
                                         <span>Structured workflow for every project</span>
                                     </div>
                                     <div class="hidden sm:inline-block h-4 w-px bg-white/20"></div>
                                     <div class="flex items-center gap-2">
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-400/20 text-sky-200">
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-slate-900">
                                             <i class="fas fa-bell text-xs"></i>
                                         </span>
                                         <span>Reminders for reviews & submissions</span>

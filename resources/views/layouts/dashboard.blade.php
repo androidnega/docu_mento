@@ -51,6 +51,19 @@
             <nav class="staff-sidebar-nav flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 <ul class="space-y-1.5" role="list">
                     @if($isCoordinatorOnly)
+                    @php
+                        // Coordinator sidebar badge: pending project approvals for active academic year
+                        try {
+                            $activeYear = \App\Models\DocuMentor\AcademicYear::active();
+                            $pendingQuery = \App\Models\DocuMentor\Project::query();
+                            if ($activeYear) {
+                                $pendingQuery->where('academic_year_id', $activeYear->id);
+                            }
+                            $coordinatorPendingApprovals = (clone $pendingQuery)->where('approved', false)->count();
+                        } catch (\Throwable $e) {
+                            $coordinatorPendingApprovals = 0;
+                        }
+                    @endphp
                     {{-- Coordinator sidebar: Academic Years = parent (cards); then Projects, Approvals, Deadlines, Reports, Profile --}}
                     <li>
                         <a href="{{ route('dashboard') }}" class="staff-nav-link {{ request()->routeIs('dashboard') && !request()->is('dashboard/coordinators/*') && !request()->routeIs('dashboard.profile.*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4">
@@ -63,7 +76,21 @@
                     <li><a href="{{ route('dashboard.coordinators.supervisors.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.supervisors.index') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="Supervisors"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><span class="staff-nav-text truncate">Supervisors</span></a></li>
                     <li><a href="{{ route('dashboard.coordinators.groups.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.groups.*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="Project groups"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5.33-3.8M9 20H4v-2a4 4 0 015.33-3.8M12 12a4 4 0 100-8 4 4 0 000 8z"/></svg><span class="staff-nav-text truncate">Groups</span></a></li>
                     <li><a href="{{ route('dashboard.coordinators.projects.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.projects.index') && !request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="staff-nav-text truncate">Projects</span></a></li>
-                    <li><a href="{{ route('dashboard.coordinators.projects.index', ['pending' => 1]) }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.projects.index') && request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2m0 0l7 7 7-7M5 12l2-2m0 0l7-7 7 7"/></svg><span class="staff-nav-text truncate">Approvals</span></a></li>
+                    <li>
+                        <a href="{{ route('dashboard.coordinators.projects.index', ['pending' => 1]) }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.projects.index') && request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center justify-between gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4">
+                            <span class="flex items-center gap-3 min-w-0">
+                                <svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2m0 0l7 7 7-7M5 12l2-2m0 0l7-7 7 7"/>
+                                </svg>
+                                <span class="staff-nav-text truncate">Approvals</span>
+                            </span>
+                            @if(($coordinatorPendingApprovals ?? 0) > 0)
+                                <span class="ml-2 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-amber-400 text-slate-900 text-xs font-semibold tabular-nums">
+                                    {{ $coordinatorPendingApprovals > 99 ? '99+' : $coordinatorPendingApprovals }}
+                                </span>
+                            @endif
+                        </a>
+                    </li>
                     <li><a href="{{ route('dashboard.coordinators.categories.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.categories.*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="Project categories"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h10M4 14h7M4 18h13"/></svg><span class="staff-nav-text truncate">Categories</span></a></li>
                     <li><a href="{{ route('dashboard.coordinators.export-report') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.export-report*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v2m0 4v2m0-6v2m6-16v2m0 4v2m0-6v2m-6 6h12m-6 0H3"/></svg><span class="staff-nav-text truncate">Reports</span></a></li>
                     <li><a href="{{ route('dashboard.profile.show') }}" class="staff-nav-link {{ request()->routeIs('dashboard.profile.*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span class="staff-nav-text truncate">Profile</span></a></li>
