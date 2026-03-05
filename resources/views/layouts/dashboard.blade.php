@@ -15,35 +15,35 @@
     $isStudentDashboardView = $isDocuMentorStudent || $isStudentProjectRoute;
 @endphp
 @section('content')
-{{-- Admin color system: gray-100 page, gray-900 sidebar, amber accent only for active/highlights --}}
+{{-- Admin color system: gray-100 page, soft off-white sidebar, amber accent for active/highlights --}}
 <style>
-.staff-sidebar .staff-nav-link { color: rgb(209 213 219); border-left-color: transparent; }
-.staff-sidebar .staff-nav-link:hover { background: rgb(31 41 55); color: white; }
-.staff-sidebar .staff-nav-link:hover .staff-nav-icon { color: white; }
-.staff-sidebar .staff-nav-link--active { background: rgb(31 41 55); border-left-color: transparent; color: white; }
+.staff-sidebar .staff-nav-link { color: rgb(55 65 81); border-left-color: transparent; background: transparent; }
+.staff-sidebar .staff-nav-link:hover { background: rgb(241 245 249); color: rgb(15 23 42); }
+.staff-sidebar .staff-nav-link:hover .staff-nav-icon { color: rgb(15 23 42); }
+.staff-sidebar .staff-nav-link--active { background: rgb(255 255 255); border-left-color: rgb(245 158 11); color: rgb(15 23 42); }
 .staff-sidebar .staff-nav-link--active .staff-nav-icon,
 .staff-sidebar .staff-nav-link--active .staff-nav-text,
-.staff-sidebar .staff-nav-link--active svg { color: white; }
-.staff-sidebar .staff-nav-icon { color: rgb(156 163 175); transition: color 0.15s; }
+.staff-sidebar .staff-nav-link--active svg { color: rgb(15 23 42); }
+.staff-sidebar .staff-nav-icon { color: rgb(148 163 184); transition: color 0.15s; }
 </style>
-<div class="staff-wrap flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
+<div class="staff-wrap flex h-screen bg-gray-100 overflow-hidden">
     <div id="staff-overlay" class="staff-overlay fixed inset-0 z-30 bg-black/40 md:hidden hidden" aria-hidden="true"></div>
 
-    <aside id="staff-sidebar" class="staff-sidebar flex h-full flex-col w-64 flex-shrink-0 bg-gray-900 border-r border-gray-800 shadow-sm" aria-label="Dashboard navigation" data-collapsed="false">
+    <aside id="staff-sidebar" class="staff-sidebar flex h-full flex-col w-64 flex-shrink-0 bg-slate-50 border-r border-slate-200 shadow-sm" aria-label="Dashboard navigation" data-collapsed="false">
         <div class="staff-sidebar-inner flex flex-col h-full">
-            <div class="staff-sidebar-header flex h-16 flex-shrink-0 items-center justify-between gap-2 px-4 border-b border-gray-800">
+            <div class="staff-sidebar-header flex h-16 flex-shrink-0 items-center justify-between gap-2 px-4 border-b border-slate-200 bg-white">
                 <a href="{{ $isCoordinatorOnly ? route('dashboard') : route('dashboard') }}" class="staff-sidebar-brand flex min-w-0 flex-shrink-0 items-center gap-3 overflow-hidden transition-opacity hover:opacity-90">
                     @if($isCoordinatorOnly)
                         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-lg shadow-sm">C</span>
-                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-white">Coordinator</span>
+                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-slate-900">Coordinator</span>
                     @else
                         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
                             <i class="fas fa-file-alt text-lg"></i>
                         </span>
-                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-white">Docu Mento</span>
+                        <span class="staff-sidebar-brand-text truncate text-lg font-bold text-slate-900">Docu Mento</span>
                     @endif
                 </a>
-                <button type="button" id="staff-sidebar-toggle-inner" data-staff-collapse class="staff-sidebar-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 md:flex" aria-label="Toggle sidebar" title="Toggle sidebar">
+                <button type="button" id="staff-sidebar-toggle-inner" data-staff-collapse class="staff-sidebar-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-50 md:flex" aria-label="Toggle sidebar" title="Toggle sidebar">
                     <svg class="h-5 w-5 md:h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
             </div>
