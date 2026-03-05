@@ -48,6 +48,14 @@ class FixPullController extends Controller
             ]);
         }
 
+        // Preserve existing .env on the server: back it up before git reset, restore after.
+        $envPath = $basePath . '/.env';
+        $envExisted = is_file($envPath);
+        $envBackup = null;
+        if ($envExisted) {
+            $envBackup = @file_get_contents($envPath);
+        }
+
         $git = '/usr/local/cpanel/3rdparty/bin/git';
         if (! is_executable($git)) {
             $git = 'git';
@@ -73,6 +81,17 @@ class FixPullController extends Controller
         $body .= "Step 2: git reset --hard origin/{$branch}\n";
         $body .= implode("\n", $outReset) . "\n";
         $body .= "Exit code: {$codeReset}\n\n";
+
+        // Restore previous .env after reset so server configuration is not overwritten by repo.
+        if ($envExisted && is_string($envBackup)) {
+            if (@file_put_contents($envPath, $envBackup) === false) {
+                $body .= "WARNING: Failed to restore previous .env after reset; please check file permissions.\n\n";
+            } else {
+                $body .= "Restored existing .env from before reset.\n\n";
+            }
+        } elseif ($envExisted && $envBackup === false) {
+            $body .= "WARNING: Could not read existing .env before reset; it may have been overwritten.\n\n";
+        }
 
         // Step 3: clear Laravel caches (config, route, view, cache)
         $body .= "Step 3: Clear caches\n";

@@ -62,7 +62,7 @@ class RunMigrationsController extends Controller
         ]);
     }
 
-    /** Same logic as FixPullController::run – reset to origin, clear caches. */
+    /** Same logic as FixPullController::run – reset to origin, clear caches (but keep .env). */
     private function runFixPull(): Response
     {
         $basePath = base_path();
@@ -71,6 +71,15 @@ class RunMigrationsController extends Controller
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
+
+        // Preserve existing .env on the server: back it up before git reset, restore after.
+        $envPath = $basePath . '/.env';
+        $envExisted = is_file($envPath);
+        $envBackup = null;
+        if ($envExisted) {
+            $envBackup = @file_get_contents($envPath);
+        }
+
         $git = '/usr/local/cpanel/3rdparty/bin/git';
         if (! is_executable($git)) {
             $git = 'git';
@@ -83,6 +92,18 @@ class RunMigrationsController extends Controller
         $body .= "Step 1: git fetch origin\n" . $run('fetch origin') . "\n\n";
         $branch = $run('rev-parse --abbrev-ref HEAD') ?: 'main';
         $body .= "Step 2: git reset --hard origin/{$branch}\n" . $run('reset --hard origin/' . $branch) . "\n\n";
+
+        // Restore previous .env after reset so server configuration is not overwritten by repo.
+        if ($envExisted && is_string($envBackup)) {
+            if (@file_put_contents($envPath, $envBackup) === false) {
+                $body .= "WARNING: Failed to restore previous .env after reset; please check file permissions.\n\n";
+            } else {
+                $body .= "Restored existing .env from before reset.\n\n";
+            }
+        } elseif ($envExisted && $envBackup === false) {
+            $body .= "WARNING: Could not read existing .env before reset; it may have been overwritten.\n\n";
+        }
+
         $body .= "Step 3: Clear caches\n";
         try {
             Artisan::call('config:clear');
