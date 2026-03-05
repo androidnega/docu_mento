@@ -19,7 +19,12 @@
             @if(isset($activeAcademicYear) && $activeAcademicYear)
                 <p class="text-sm text-slate-500 dark:text-slate-300">Academic Year: <strong class="text-slate-700 dark:text-slate-100">{{ $activeAcademicYear->year }}</strong></p>
             @endif
-            <p class="text-slate-800 dark:text-slate-50 font-medium mt-0.5">Welcome, {{ $supervisorName }}</p>
+            <p class="flex items-center gap-2 text-slate-800 dark:text-slate-50 font-medium mt-0.5">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <i class="fas fa-user-tie text-sm"></i>
+                </span>
+                <span>Welcome, {{ $supervisorName }}</span>
+            </p>
         </div>
     </div>
 
@@ -44,27 +49,58 @@
     {{-- STATS ROW --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow p-5">
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Assigned projects</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">{{ $assignedProjects->count() ?? 0 }}</p>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Assigned projects</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">{{ $assignedProjects->count() ?? 0 }}</p>
+                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+                    <i class="fas fa-diagram-project text-sm"></i>
+                </span>
+            </div>
         </div>
         <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow p-5">
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pending reviews</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{{ $pendingSubmissionsCount ?? 0 }}</p>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pending reviews</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{{ $pendingSubmissionsCount ?? 0 }}</p>
+                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-700">
+                    <i class="fas fa-hourglass-half text-sm"></i>
+                </span>
+            </div>
         </div>
         <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow p-5">
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Reviewed chapters</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-green-700 dark:text-green-300">{{ $commentsFollowUpCount ?? 0 }}</p>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Reviewed chapters</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-green-700 dark:text-green-300">{{ $commentsFollowUpCount ?? 0 }}</p>
+                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                    <i class="fas fa-circle-check text-sm"></i>
+                </span>
+            </div>
         </div>
     </div>
 
     {{-- ASSIGNED PROJECTS TABLE --}}
     <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700/80">
-            <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Assigned projects</h2>
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+                    <i class="fas fa-folder-open text-xs"></i>
+                </span>
+                <span>Assigned projects</span>
+            </h2>
             <p class="text-xs text-slate-500 dark:text-slate-300 mt-0.5">Projects assigned to you via project_supervisors. View submissions, add comments, mark reviewed. You cannot approve the final project.</p>
         </div>
         @if($assignedProjects->isEmpty())
             <div class="p-8 text-center text-slate-500 dark:text-slate-300">
+                <div class="mb-3 flex justify-center">
+                    <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                        <i class="fas fa-diagram-project text-lg"></i>
+                    </span>
+                </div>
                 <p>No projects assigned to you yet.</p>
                 <p class="text-sm mt-1">A coordinator can assign you as a supervisor to projects.</p>
             </div>
@@ -104,21 +140,51 @@
 
     {{-- Your role --}}
     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow p-5">
-        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Your role</h3>
+        <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <i class="fas fa-user-check text-xs"></i>
+            </span>
+            <span>Your role</span>
+        </h3>
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
                 <p class="font-medium text-slate-700 dark:text-slate-200">You can</p>
-                <ul class="mt-1 list-disc list-inside text-slate-600 dark:text-slate-300 space-y-0.5">
-                    <li>View submissions</li>
-                    <li>Add comments</li>
-                    <li>Mark chapter as reviewed (open/close chapters)</li>
+                <ul class="mt-2 space-y-1.5 text-slate-600 dark:text-slate-300">
+                    <li class="flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <i class="fas fa-check text-[10px]"></i>
+                        </span>
+                        <span>View student submissions for each chapter.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <i class="fas fa-comment-dots text-[10px]"></i>
+                        </span>
+                        <span>Add feedback comments and guidance.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <i class="fas fa-clipboard-check text-[10px]"></i>
+                        </span>
+                        <span>Mark chapters as reviewed and reopen when needed.</span>
+                    </li>
                 </ul>
             </div>
             <div>
                 <p class="font-medium text-slate-700 dark:text-slate-200">You cannot</p>
-                <ul class="mt-1 list-disc list-inside text-slate-600 dark:text-slate-300 space-y-0.5">
-                    <li>Create a project</li>
-                    <li>Approve final project (coordinator only)</li>
+                <ul class="mt-2 space-y-1.5 text-slate-600 dark:text-slate-300">
+                    <li class="flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-700">
+                            <i class="fas fa-ban text-[10px]"></i>
+                        </span>
+                        <span>Create or register new projects.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-700">
+                            <i class="fas fa-gavel text-[10px]"></i>
+                        </span>
+                        <span>Approve the final project (coordinator only).</span>
+                    </li>
                 </ul>
             </div>
         </div>
