@@ -271,26 +271,26 @@ Route::middleware('admin.auth')->group(function () {
 
         // Supervisor project area: clean /dashboard/projects... slugs (no /supervisor prefix)
         Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
-            Route::get('/dashboard/projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
-            Route::get('/dashboard/projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
-            Route::get('/dashboard/projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
-            Route::put('/dashboard/projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/mark-completed', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'markCompleted'])->name('chapters.mark-completed')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/toggle-submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleAllSubmissions'])->name('chapters.toggle-submissions')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'store'])->name('submissions.store')->whereNumber('chapterRef');
-            Route::put('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'update'])->name('submissions.update')->whereNumber('chapterRef');
-            Route::delete('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'destroy'])->name('submissions.destroy')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/files', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadProjectFiles'])->name('files.upload');
-            Route::post('/dashboard/projects/{project}/final-submission', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadFinalSubmission'])->name('final-submission.upload');
-            Route::get('/dashboard/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('proposals.download');
-            Route::get('/dashboard/projects/{project}/download-final', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadFinalSubmission'])->name('download-final');
-            Route::get('/dashboard/projects/{project}/download-all', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadAll'])->name('download-all');
-            Route::post('/dashboard/projects/{project}/chapters/{chapterRef}/submissions/{submission}/ai-review', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'reviewSubmission'])->name('ai.review-submission')->whereNumber('chapterRef');
-            Route::post('/dashboard/projects/{project}/ai-summary', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'projectSummary'])->name('ai.summary');
-            Route::post('/dashboard/projects/{project}/approve', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'approveProject'])->name('projects.approve');
-            Route::post('/dashboard/projects/{project}/scores', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'storeScores'])->name('projects.scores.store');
-            Route::get('/dashboard/documents/{document}/download', [\App\Http\Controllers\Supervisor\SupervisorDocumentController::class, 'download'])->name('documents.download');
+            Route::get('projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
+            Route::get('projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
+            Route::get('projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
+            Route::put('projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
+            Route::post('projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');
+            Route::post('projects/{project}/chapters/{chapterRef}/mark-completed', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'markCompleted'])->name('chapters.mark-completed')->whereNumber('chapterRef');
+            Route::post('projects/{project}/chapters/{chapterRef}/toggle-submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleAllSubmissions'])->name('chapters.toggle-submissions')->whereNumber('chapterRef');
+            Route::post('projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'store'])->name('submissions.store')->whereNumber('chapterRef');
+            Route::put('projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'update'])->name('submissions.update')->whereNumber('chapterRef');
+            Route::delete('projects/{project}/chapters/{chapterRef}/submissions/{submission}', [\App\Http\Controllers\DocuMentor\SupervisorSubmissionController::class, 'destroy'])->name('submissions.destroy')->whereNumber('chapterRef');
+            Route::post('projects/{project}/files', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadProjectFiles'])->name('files.upload');
+            Route::post('projects/{project}/final-submission', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'uploadFinalSubmission'])->name('final-submission.upload');
+            Route::get('projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('proposals.download');
+            Route::get('projects/{project}/download-final', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadFinalSubmission'])->name('download-final');
+            Route::get('projects/{project}/download-all', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadAll'])->name('download-all');
+            Route::post('projects/{project}/chapters/{chapterRef}/submissions/{submission}/ai-review', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'reviewSubmission'])->name('ai.review-submission')->whereNumber('chapterRef');
+            Route::post('projects/{project}/ai-summary', [\App\Http\Controllers\DocuMentor\SupervisorAiController::class, 'projectSummary'])->name('ai.summary');
+            Route::post('projects/{project}/approve', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'approveProject'])->name('projects.approve');
+            Route::post('projects/{project}/scores', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'storeScores'])->name('projects.scores.store');
+            Route::get('documents/{document}/download', [\App\Http\Controllers\Supervisor\SupervisorDocumentController::class, 'download'])->name('documents.download');
         });
 
         // Super Admin only: schools, departments, users, settings, system reset
