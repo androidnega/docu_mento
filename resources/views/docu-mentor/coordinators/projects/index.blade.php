@@ -261,13 +261,23 @@
             @csrf
             @method('PUT')
             <div class="mb-4">
-                <label for="assign-supervisor-modal-select" class="block text-xs font-medium text-gray-600 mb-1">Supervisors</label>
-                <select name="supervisor_ids[]" id="assign-supervisor-modal-select" multiple class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none min-h-[8rem]">
-                    @foreach($supervisors ?? [] as $s)
-                        <option value="{{ $s->id }}">{{ $s->name ?? $s->username }}</option>
-                    @endforeach
-                </select>
-                <p class="mt-1 text-xs text-gray-500">Hold Ctrl (Windows) or ⌘ (Mac) to select multiple.</p>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Supervisors</label>
+                <div id="assign-supervisor-modal-supervisors" class="max-h-64 overflow-y-auto rounded-md border border-gray-300 bg-white px-3 py-2 space-y-1">
+                    @forelse($supervisors ?? [] as $s)
+                        <label class="flex items-center gap-2 py-1 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 rounded">
+                            <input
+                                type="checkbox"
+                                name="supervisor_ids[]"
+                                value="{{ $s->id }}"
+                                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-1"
+                            >
+                            <span>{{ $s->name ?? $s->username }}</span>
+                        </label>
+                    @empty
+                        <p class="text-xs text-gray-500">No supervisors available yet. Add supervisors from the coordinators → supervisors page.</p>
+                    @endforelse
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Tick one or more supervisors to assign. Untick all to remove the assignment.</p>
             </div>
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
                 <button type="button" id="assign-supervisor-modal-cancel" class="px-3 py-1.5 rounded border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
@@ -283,17 +293,18 @@
     var overlay = document.getElementById('assign-supervisor-modal-overlay');
     var form = document.getElementById('assign-supervisor-modal-form');
     var titleEl = document.getElementById('assign-supervisor-modal-title');
-    var selectEl = document.getElementById('assign-supervisor-modal-select');
+    var supervisorsWrap = document.getElementById('assign-supervisor-modal-supervisors');
     var closeBtn = document.getElementById('assign-supervisor-modal-close');
     var cancelBtn = document.getElementById('assign-supervisor-modal-cancel');
-    if (!overlay || !form || !selectEl) return;
+    if (!overlay || !form || !supervisorsWrap) return;
 
     function openAssignModal(updateUrl, supervisorIds, projectTitle) {
         form.action = updateUrl || '';
         if (titleEl) titleEl.textContent = projectTitle ? 'Assign supervisors — ' + projectTitle : 'Assign supervisors';
         var ids = (supervisorIds || '').toString().split(',').map(function (x) { return x.trim(); }).filter(Boolean);
-        [].slice.call(selectEl.options).forEach(function (opt) {
-            opt.selected = ids.indexOf(opt.value) !== -1;
+        var checkboxes = supervisorsWrap.querySelectorAll('input[name="supervisor_ids[]"]');
+        checkboxes.forEach(function (cb) {
+            cb.checked = ids.indexOf(cb.value) !== -1;
         });
         overlay.classList.remove('hidden');
     }

@@ -177,27 +177,32 @@
                 <div>
                     <label for="supervisor_ids" class="block text-xs font-medium text-gray-600 mb-1">Supervisors</label>
                     @if($project->supervisors->isNotEmpty())
-                        <p class="text-xs text-gray-600 mb-1">
+                        <p class="text-xs text-gray-600 mb-2">
                             Assigned:&nbsp;
                             @foreach($project->supervisors as $s)
                                 <span class="font-medium" style="color: #ca8a04;">{{ $s->name ?? $s->username }}</span>@if(!$loop->last), @endif
                             @endforeach
                         </p>
                     @endif
-                    <select
-                        name="supervisor_ids[]"
-                        id="supervisor_ids"
-                        multiple
-                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none min-h-[2.5rem]"
-                    >
-                        @foreach($supervisors as $s)
+                    <div class="max-h-40 overflow-y-auto rounded-md border border-gray-300 bg-white px-3 py-2">
+                        @forelse($supervisors as $s)
                             @php $isAssigned = $project->supervisors->contains($s); @endphp
-                            <option value="{{ $s->id }}" {{ $isAssigned ? 'selected' : '' }} @if($isAssigned) style="color: #ca8a04;" @endif>
-                                {{ $s->name ?? $s->username }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">Hold Ctrl (Windows) or ⌘ (Mac) to select multiple.</p>
+                            <label class="flex items-center gap-2 py-1 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 rounded">
+                                <input
+                                    type="checkbox"
+                                    name="supervisor_ids[]"
+                                    id="supervisor_ids_{{ $s->id }}"
+                                    value="{{ $s->id }}"
+                                    class="rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-1"
+                                    {{ $isAssigned ? 'checked' : '' }}
+                                >
+                                <span @if($isAssigned) style="color: #ca8a04;" @endif>{{ $s->name ?? $s->username }}</span>
+                            </label>
+                        @empty
+                            <p class="text-xs text-gray-500">No supervisors available yet. Add supervisors from the coordinators → supervisors page.</p>
+                        @endforelse
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Tick one or more supervisors to assign. Untick all to remove the assignment.</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-3 pt-1">
