@@ -178,6 +178,9 @@ class CoordinatorStudentController extends Controller
         }
 
         $columns = ['id', 'index_number', 'name', 'email', 'is_active'];
+        if (Schema::hasColumn('users', 'phone')) {
+            $columns[] = 'phone';
+        }
         if (Schema::hasColumn('users', 'group_leader')) {
             $columns[] = 'group_leader';
         }
@@ -811,7 +814,22 @@ class CoordinatorStudentController extends Controller
         if (!$user || !$user->isDocuMentorCoordinator()) {
             abort(403, 'Access denied.');
         }
-        [$indexNumber, $classGroupIds] = $this->resolveStudentByIndex($encodedIndex, $user);
+
+        $classGroupIds = [];
+        $indexNumber = null;
+        $explicitUser = null;
+
+        if ($request->filled('user_id')) {
+            $explicitUser = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
+                ->find((int) $request->input('user_id'));
+            if ($explicitUser) {
+                $indexNumber = $explicitUser->index_number;
+            }
+        }
+
+        if ($indexNumber === null || trim((string) $indexNumber) === '') {
+            [$indexNumber, $classGroupIds] = $this->resolveStudentByIndex($encodedIndex, $user);
+        }
 
         $redirectTo = function (string $message, string $type = 'success') use ($request, $encodedIndex) {
             if ($request->filled('return_url') && \Illuminate\Support\Str::startsWith($request->return_url, url('/'))) {
@@ -824,9 +842,10 @@ class CoordinatorStudentController extends Controller
             return $redirectTo('Database migration required.', 'error');
         }
 
-        $dmUser = $user->docuMentorStudentsInScope()
-            ->whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper(trim($indexNumber))])
-            ->first();
+        $dmUser = $explicitUser
+            ?: $user->docuMentorStudentsInScope()
+                ->whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper(trim($indexNumber))])
+                ->first();
 
         // If not in coordinator scope, check for existing User by index (e.g. created by student login).
         // Update that same account so the student sees group-leader features when they log in.

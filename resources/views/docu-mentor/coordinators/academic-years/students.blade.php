@@ -140,6 +140,7 @@
                                             <a href="{{ route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex]) }}" class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 no-underline" title="View details"><i class="fas fa-eye"></i> View</a>
                                             <form action="{{ route('dashboard.coordinators.students.toggle-leader', ['encodedIndex' => $encodedIndex]) }}" method="post" class="inline">
                                                 @csrf
+                                                <input type="hidden" name="user_id" value="{{ $u->id }}">
                                                 <input type="hidden" name="return_url" value="{{ route('dashboard.coordinators.academic-years.students', ['academicYear' => $academicYear]) }}">
                                                 <button type="submit" class="inline-flex items-center gap-1 rounded border {{ !empty($u->group_leader) ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' }} px-2.5 py-1.5 text-xs font-medium" title="{{ !empty($u->group_leader) ? 'Remove group leader' : 'Set as group leader' }}">
                                                     <i class="fas {{ !empty($u->group_leader) ? 'fa-user-minus' : 'fa-crown' }}"></i> {{ !empty($u->group_leader) ? 'Remove leader' : 'Set leader' }}
