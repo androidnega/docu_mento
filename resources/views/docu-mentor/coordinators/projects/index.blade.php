@@ -33,7 +33,7 @@
                     <tr>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Supervisors</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Budget</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -45,7 +45,13 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-3 py-2 text-sm font-medium text-gray-900 max-w-xs truncate">{{ $project->title }}</td>
                             <td class="px-3 py-2 text-sm text-gray-600 max-w-[10rem] truncate">{{ $project->group?->name }}</td>
-                            <td class="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">{{ $project->academicYear?->year ?? '—' }}</td>
+                            <td class="px-3 py-2 text-sm text-gray-600 max-w-[12rem] truncate">
+                                @if($project->supervisors && $project->supervisors->isNotEmpty())
+                                    {{ $project->supervisors->map(fn($s) => $s->name ?? $s->username)->implode(', ') }}
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="px-3 py-2 text-sm text-gray-600">{{ $project->budget !== null ? number_format($project->budget, 2) : '—' }}</td>
                             <td class="px-3 py-2">
                                 @php
@@ -140,7 +146,16 @@
             <h3 class="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">{{ Str::limit($project->title, 50) }}</h3>
             <div class="grid grid-cols-2 gap-3">
                 <div><span class="text-xs font-medium text-gray-500 uppercase">Group</span><p class="text-sm font-medium text-gray-900 mt-0.5">{{ $project->group?->name ?? '—' }}</p></div>
-                <div><span class="text-xs font-medium text-gray-500 uppercase">Year</span><p class="text-sm font-medium text-gray-900 mt-0.5">{{ $project->academicYear?->year ?? '—' }}</p></div>
+                <div>
+                    <span class="text-xs font-medium text-gray-500 uppercase">Supervisors</span>
+                    <p class="text-sm font-medium text-gray-900 mt-0.5">
+                        @if($project->supervisors && $project->supervisors->isNotEmpty())
+                            {{ $project->supervisors->map(fn($s) => $s->name ?? $s->username)->implode(', ') }}
+                        @else
+                            —
+                        @endif
+                    </p>
+                </div>
                 <div><span class="text-xs font-medium text-gray-500 uppercase">Budget</span><p class="text-sm font-medium text-gray-900 mt-0.5">{{ $project->budget !== null ? number_format($project->budget, 2) : '—' }}</p></div>
                 <div><span class="text-xs font-medium text-gray-500 uppercase">Status</span><p class="text-sm mt-0.5"><span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full {{ $project->approved ? 'bg-success-100 text-success-800' : 'bg-amber-100 text-amber-800' }}">{{ $project->approved ? 'Approved' : 'Pending' }}</span></p></div>
             </div>
