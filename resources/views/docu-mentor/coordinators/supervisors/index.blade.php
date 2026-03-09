@@ -82,7 +82,7 @@
         </div>
     </div>
 
-    {{-- Table: Name | Email | Assigned projects --}}
+    {{-- Table: Name | Phone | Assigned projects | Students --}}
     <section class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between gap-2">
             <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">All supervisors</h2>
@@ -101,8 +101,9 @@
                     <thead class="bg-slate-50 dark:bg-slate-900/70">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Name</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Email</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Phone</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Assigned projects</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Students</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -114,8 +115,9 @@
                                         <span>{{ $u->name ?? '—' }}</span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $u->email ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $u->phone ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->supervised_projects_count ?? 0 }}</td>
+                                <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->total_students_count ?? 0 }}</td>
                             </tr>
                         @endforeach
                     </tbody>

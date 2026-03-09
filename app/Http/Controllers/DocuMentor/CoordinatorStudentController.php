@@ -207,8 +207,24 @@ class CoordinatorStudentController extends Controller
                 $query->where('department_id', $deptId);
             }
         }
-        $supervisors = $query->withCount('supervisedProjects')->orderBy('name')
-            ->get(['id', 'name', 'email', 'is_active']);
+        $supervisors = $query
+            ->withCount('supervisedProjects')
+            ->with(['supervisedProjects.group.members'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'phone', 'is_active']);
+
+        foreach ($supervisors as $sup) {
+            $studentIds = [];
+            foreach ($sup->supervisedProjects as $project) {
+                $members = $project->group?->members ?? collect();
+                foreach ($members as $member) {
+                    if ($member && $member->id !== null) {
+                        $studentIds[$member->id] = true;
+                    }
+                }
+            }
+            $sup->total_students_count = count($studentIds);
+        }
 
         return view('docu-mentor.coordinators.academic-years.supervisors', compact('academicYear', 'supervisors'));
     }
@@ -272,8 +288,26 @@ class CoordinatorStudentController extends Controller
         if ($deptId !== null) {
             $query->where('department_id', $deptId);
         }
-        $supervisors = $query->withCount('supervisedProjects')->orderBy('name')
-            ->get(['id', 'name', 'email', 'is_active']);
+
+        $supervisors = $query
+            ->withCount('supervisedProjects')
+            ->with(['supervisedProjects.group.members'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'phone', 'is_active']);
+
+        foreach ($supervisors as $sup) {
+            $studentIds = [];
+            foreach ($sup->supervisedProjects as $project) {
+                $members = $project->group?->members ?? collect();
+                foreach ($members as $member) {
+                    if ($member && $member->id !== null) {
+                        $studentIds[$member->id] = true;
+                    }
+                }
+            }
+            $sup->total_students_count = count($studentIds);
+        }
+
         return view('docu-mentor.coordinators.supervisors.index', compact('supervisors'));
     }
 
