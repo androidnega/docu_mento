@@ -160,10 +160,19 @@ class SupervisorFileController extends Controller
             $path = $pathAlt;
         }
 
-        return $disk->download(
-            $path,
-            'proposal-v' . $proposal->version_number . '-' . basename($path)
-        );
+        $filename = 'proposal-v' . $proposal->version_number . '-' . basename($path);
+        $forceDownload = $request->boolean('attachment') || $request->boolean('download');
+
+        if ($forceDownload) {
+            return $disk->download($path, $filename);
+        }
+
+        $absolutePath = $disk->path($path);
+
+        return response()->file($absolutePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     public function downloadFinalSubmission(Project $project): StreamedResponse
