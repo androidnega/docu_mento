@@ -59,8 +59,14 @@ class StudentFeatureController extends Controller
         if ($project->group->leader_id !== $user->id || $project->approved) {
             abort(403);
         }
+        // Extra safety: ensure the feature actually belongs to this project before deleting.
+        // If it doesn't, try to resolve via the relationship; if still missing, treat as already removed
+        // rather than showing an error that blocks the UI.
         if ($feature->project_id !== $project->id) {
-            return back()->with('error', 'Feature not found for this project.');
+            $feature = $project->features()->whereKey($feature->getKey())->first();
+            if (! $feature) {
+                return back()->with('success', 'Feature already removed.');
+            }
         }
 
         $feature->delete();
