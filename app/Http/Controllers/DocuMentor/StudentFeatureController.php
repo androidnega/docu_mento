@@ -60,7 +60,7 @@ class StudentFeatureController extends Controller
             abort(403);
         }
         if ($feature->project_id !== $project->id) {
-            abort(404);
+            return back()->with('error', 'Feature not found for this project.');
         }
 
         $feature->delete();
