@@ -43,8 +43,8 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($projects as $project)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-3 py-2 text-sm font-medium text-gray-900 max-w-xs truncate">{{ $project->title }}</td>
-                            <td class="px-3 py-2 text-sm text-gray-600 max-w-[10rem] truncate">{{ $project->group?->name }}</td>
+                            <td class="px-3 py-2 text-sm font-medium text-gray-900 max-w-xs truncate">{{ Str::upper($project->title) }}</td>
+                            <td class="px-3 py-2 text-sm text-gray-600 max-w-[10rem] truncate">{{ $project->group?->name ? Str::upper($project->group->name) : '—' }}</td>
                             <td class="px-3 py-2 text-sm text-gray-600 max-w-[12rem] truncate">
                                 @if($project->supervisors && $project->supervisors->isNotEmpty())
                                     {{ $project->supervisors->map(fn($s) => $s->name ?? $s->username)->implode(', ') }}
