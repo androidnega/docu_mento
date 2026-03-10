@@ -361,38 +361,42 @@
     {{-- Global app script; reintroduce later if needed --}}
     @stack('scripts')
 
-    @if(config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.app_id'))
-    <!-- Real-time: Reverb WebSocket - no auto-reload to keep pages light -->
-    <script>
-    window.REVERB_CONFIG = {
-        key: @json(config('broadcasting.connections.reverb.key')),
-        host: @json(config('broadcasting.connections.reverb.options.host')),
-        port: @json(config('broadcasting.connections.reverb.options.port')),
-        scheme: @json(config('broadcasting.connections.reverb.options.scheme') ?? 'http')
-    };
-    </script>
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js" crossorigin="anonymous" defer></script>
-    <script>
-    (function() {
-        var c = window.REVERB_CONFIG;
-        if (!c || !c.key) return;
-        function init() {
-            try {
-                var pusher = new Pusher(c.key, {
-                    wsHost: c.host,
-                    wsPort: parseInt(c.port, 10) || 8080,
-                    wssPort: 443,
-                    forceTLS: (c.scheme || 'http') === 'https',
-                    disableStats: true,
-                    enabledTransports: ['ws', 'wss'],
-                    cluster: 'mt1'
-                });
-                // Docu Mento can listen on its own channels in future
-            } catch (e) { console.warn('Reverb:', e); }
-        }
-        if (typeof Pusher !== 'undefined') init(); else window.addEventListener('load', init);
-    })();
-    </script>
+    @if(
+        config('broadcasting.default') === 'reverb' &&
+        config('broadcasting.connections.reverb.app_id') &&
+        app()->environment('local')
+    )
+        <!-- Real-time: Reverb WebSocket (local dev only) -->
+        <script>
+        window.REVERB_CONFIG = {
+            key: @json(config('broadcasting.connections.reverb.key')),
+            host: @json(config('broadcasting.connections.reverb.options.host')),
+            port: @json(config('broadcasting.connections.reverb.options.port')),
+            scheme: @json(config('broadcasting.connections.reverb.options.scheme') ?? 'http')
+        };
+        </script>
+        <script src="https://js.pusher.com/8.2.0/pusher.min.js" crossorigin="anonymous" defer></script>
+        <script>
+        (function() {
+            var c = window.REVERB_CONFIG;
+            if (!c || !c.key) return;
+            function init() {
+                try {
+                    var pusher = new Pusher(c.key, {
+                        wsHost: c.host,
+                        wsPort: parseInt(c.port, 10) || 8080,
+                        wssPort: 443,
+                        forceTLS: (c.scheme || 'http') === 'https',
+                        disableStats: true,
+                        enabledTransports: ['ws', 'wss'],
+                        cluster: 'mt1'
+                    });
+                    // Realtime channels can be attached from per-page scripts if needed
+                } catch (e) { console.warn('Reverb:', e); }
+            }
+            if (typeof Pusher !== 'undefined') init(); else window.addEventListener('load', init);
+        })();
+        </script>
     @endif
 
     <!-- Auto-dismiss toast notifications after 4s -->
