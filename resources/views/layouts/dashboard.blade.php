@@ -36,6 +36,17 @@
 .staff-sidebar--light .staff-nav-link--active .staff-nav-text,
 .staff-sidebar--light .staff-nav-link--active svg { color: rgb(15 23 42); }
 .staff-sidebar--light .staff-nav-icon { color: rgb(148 163 184); transition: color 0.15s; }
+
+/* Sidebar collapsed: ensure badges (e.g. Approvals) stay visible and aligned */
+.staff-sidebar--collapsed .staff-nav-link--badge {
+    justify-content: center;
+}
+.staff-sidebar--collapsed .staff-nav-link--badge .staff-nav-badge {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.55rem;
+    transform: translate(25%, -25%);
+}
 </style>
 <div class="staff-wrap flex h-screen bg-gray-100 overflow-hidden">
     <div id="staff-overlay" class="staff-overlay fixed inset-0 z-30 bg-black/40 md:hidden hidden" aria-hidden="true"></div>
@@ -93,7 +104,7 @@
                     <li><a href="{{ route('dashboard.coordinators.groups.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.groups.*') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="Project groups"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5.33-3.8M9 20H4v-2a4 4 0 015.33-3.8M12 12a4 4 0 100-8 4 4 0 000 8z"/></svg><span class="staff-nav-text truncate">Groups</span></a></li>
                     <li><a href="{{ route('dashboard.coordinators.projects.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.projects.index') && !request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4"><svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="staff-nav-text truncate">Projects</span></a></li>
                     <li>
-                        <a href="{{ route('dashboard.coordinators.projects.index', ['pending' => 1]) }}" class="staff-nav-link {{ request()->routeIs('dashboard.coordinators.projects.index') && request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center justify-between gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4">
+                        <a href="{{ route('dashboard.coordinators.projects.index', ['pending' => 1]) }}" class="staff-nav-link staff-nav-link--badge {{ request()->routeIs('dashboard.coordinators.projects.index') && request()->get('pending') ? 'staff-nav-link--active' : '' }} group relative flex items-center justify-between gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4">
                             <span class="flex items-center gap-3 min-w-0">
                                 <svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2m0 0l7 7 7-7M5 12l2-2m0 0l7-7 7 7"/>
@@ -101,7 +112,7 @@
                                 <span class="staff-nav-text truncate">Approvals</span>
                             </span>
                             @if(($coordinatorPendingApprovals ?? 0) > 0)
-                                <span class="ml-2 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-amber-400 text-slate-900 text-xs font-semibold tabular-nums">
+                                <span class="staff-nav-badge ml-2 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-amber-400 text-slate-900 text-xs font-semibold tabular-nums">
                                     {{ $coordinatorPendingApprovals > 99 ? '99+' : $coordinatorPendingApprovals }}
                                 </span>
                             @endif
