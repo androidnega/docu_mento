@@ -23,7 +23,7 @@
         <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 font-medium text-slate-700 dark:text-slate-100">
                 <i class="fas fa-users text-[11px]"></i>
-                <span>Total: <span class="tabular-nums">{{ $supervisors->count() }}</span></span>
+                <span>Total: <span class="tabular-nums">{{ $supervisors->total() }}</span></span>
             </span>
         </div>
     </div>
@@ -82,14 +82,37 @@
         </div>
     </div>
 
-    {{-- Table: Name | Phone | Assigned projects | Students --}}
+    {{-- Filters + table: Name | Phone | Assigned projects | Students --}}
     <section class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between gap-2">
-            <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">All supervisors</h2>
-            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                <i class="fas fa-diagram-project text-[10px]"></i>
-                <span>Projects per supervisor</span>
-            </span>
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">All supervisors</h2>
+                <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-diagram-project text-[10px]"></i>
+                    <span>Projects per supervisor</span>
+                </span>
+            </div>
+            <form id="supervisors-filter-form" method="get" action="{{ route('dashboard.coordinators.supervisors.index') }}" class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-search text-[11px]"></i>
+                    </span>
+                    <input
+                        type="search"
+                        name="search"
+                        id="supervisors-search"
+                        value="{{ $search ?? request('search') }}"
+                        placeholder="Search name or phone…"
+                        class="rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-7 pr-3 py-1.5 text-xs sm:text-sm w-40 sm:w-56 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        autocomplete="off"
+                    >
+                </div>
+                <select name="projects" id="supervisors-projects-filter" class="rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100">
+                    <option value="">{{ __('All projects') }}</option>
+                    <option value="with" {{ ($projectsFilter ?? request('projects')) === 'with' ? 'selected' : '' }}>With projects</option>
+                    <option value="without" {{ ($projectsFilter ?? request('projects')) === 'without' ? 'selected' : '' }}>Without projects</option>
+                </select>
+            </form>
         </div>
         @if($supervisors->isEmpty())
             <div class="p-8 text-center text-slate-500">
@@ -123,9 +146,55 @@
                     </tbody>
                 </table>
             </div>
+            <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
+                <div>
+                    Showing
+                    <span class="font-medium tabular-nums">{{ $supervisors->firstItem() }}</span>
+                    –
+                    <span class="font-medium tabular-nums">{{ $supervisors->lastItem() }}</span>
+                    of
+                    <span class="font-medium tabular-nums">{{ $supervisors->total() }}</span>
+                    supervisors
+                </div>
+                <div class="text-right">
+                    {{ $supervisors->links() }}
+                </div>
+            </div>
         @endif
     </section>
 
     <p class="text-xs text-slate-500 dark:text-slate-300">Assign or unassign supervisors to projects from <a href="{{ route('dashboard.coordinators.projects.index') }}" class="text-primary-600 hover:underline">Projects</a> → open a project → Review.</p>
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    var form = document.getElementById('supervisors-filter-form');
+    if (!form) return;
+
+    var searchInput = document.getElementById('supervisors-search');
+    var projectsSelect = document.getElementById('supervisors-projects-filter');
+    var timer = null;
+
+    function submitWithDebounce() {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(function () {
+            form.submit();
+        }, 400);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', submitWithDebounce);
+    }
+    if (projectsSelect) {
+        projectsSelect.addEventListener('change', function () {
+            form.submit();
+        });
+    }
+})();
+</script>
+@endpush
+
 @endsection

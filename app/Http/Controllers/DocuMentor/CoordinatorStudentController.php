@@ -292,13 +292,31 @@ class CoordinatorStudentController extends Controller
             $query->where('department_id', $deptId);
         }
 
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $term = '%' . $search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('phone', 'like', $term)
+                    ->orWhere('email', 'like', $term);
+            });
+        }
+
+        $projectsFilter = $request->query('projects');
+        if ($projectsFilter === 'with') {
+            $query->whereHas('supervisedProjects');
+        } elseif ($projectsFilter === 'without') {
+            $query->whereDoesntHave('supervisedProjects');
+        }
+
         $supervisors = $query
             ->withCount('supervisedProjects')
             ->with(['supervisedProjects.group.members'])
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'phone', 'is_active']);
+            ->paginate(25)
+            ->withQueryString();
 
-        foreach ($supervisors as $sup) {
+        $supervisors->getCollection()->transform(function (User $sup) {
             $studentIds = [];
             foreach ($sup->supervisedProjects as $project) {
                 $members = $project->group?->members ?? collect();
@@ -309,9 +327,10 @@ class CoordinatorStudentController extends Controller
                 }
             }
             $sup->total_students_count = count($studentIds);
-        }
+            return $sup;
+        });
 
-        return view('docu-mentor.coordinators.supervisors.index', compact('supervisors'));
+        return view('docu-mentor.coordinators.supervisors.index', compact('supervisors', 'search', 'projectsFilter'));
     }
 
     /** Add a single user: index number + academic year + role (student or supervisor). */
