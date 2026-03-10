@@ -199,15 +199,6 @@
                     @endif
                 </ul>
             </nav>
-            <div class="px-3 pb-4 border-t border-gray-800">
-                <form action="{{ route('logout') }}" method="post" class="mt-3">
-                    @csrf
-                    <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 text-gray-100 text-sm font-medium py-2.5 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-                        <i class="fas fa-right-from-bracket text-xs"></i>
-                        <span class="staff-nav-text">Log out</span>
-                    </button>
-                </form>
-            </div>
         </div>
     </aside>
 
