@@ -70,7 +70,9 @@ Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('d
         Route::put('/students/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update'])->name('students.projects.features.update');
         Route::delete('/students/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy'])->name('students.projects.features.destroy');
         // Fallback for any legacy POST-based feature deletion hitting the same URL
-        Route::post('/students/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy']);
+        // Legacy fallback: some older clients may still send POST instead of PUT for feature updates.
+        // Treat such POSTs as updates (same signature as the PUT route above).
+        Route::post('/students/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update']);
         Route::post('/students/projects/{project}/proposals', [\App\Http\Controllers\DocuMentor\StudentProposalController::class, 'store'])->name('students.proposals.store');
         Route::get('/students/public-projects', [\App\Http\Controllers\DocuMentor\PublicProjectController::class, 'index'])->name('students.public-projects');
         Route::post('/students/group/add-member', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'addMember'])->name('students.group.add-member');
@@ -146,8 +148,8 @@ Route::middleware(['auth', 'role:student,group_leader', 'docu-mentor.project-acc
     Route::post('/student/projects/{project}/features', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'store'])->name('projects.features.store');
     Route::put('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update'])->name('projects.features.update');
     Route::delete('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy'])->name('projects.features.destroy');
-    // Fallback for any legacy POST-based feature deletion hitting the same URL
-    Route::post('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'destroy']);
+    // Legacy fallback: handle POST (instead of PUT) for feature updates on the same URL.
+    Route::post('/student/projects/{project}/features/{feature}', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'update']);
     Route::post('/student/projects/{project}/proposals', [\App\Http\Controllers\DocuMentor\StudentProposalController::class, 'store'])->name('projects.proposals.store');
     Route::get('/student/projects/{project}/proposals/{proposal}/download', [\App\Http\Controllers\DocuMentor\SupervisorFileController::class, 'downloadProposal'])->name('projects.proposals.download');
     Route::get('/student/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'))->name('join-group');
