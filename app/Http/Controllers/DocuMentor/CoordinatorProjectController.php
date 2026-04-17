@@ -9,12 +9,12 @@ use App\Models\DocuMentor\Project;
 use App\Models\SmsLog;
 use App\Models\User;
 use App\Services\ArkeselService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * C. COORDINATOR FLOW – Coordinator Dashboard.
@@ -37,9 +37,31 @@ class CoordinatorProjectController extends Controller
         if ($request->boolean('pending')) {
             $query->where('approved', false);
         }
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($q) use ($like) {
+                $q->where('title', 'like', $like)
+                    ->orWhereHas('group', function ($g) use ($like) {
+                        $g->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('supervisors', function ($u) use ($like) {
+                        $u->where(function ($inner) use ($like) {
+                            $inner->where('name', 'like', $like)
+                                ->orWhere('username', 'like', $like);
+                        });
+                    })
+                    ->orWhereHas('category', function ($c) use ($like) {
+                        $c->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('academicYear', function ($ay) use ($like) {
+                        $ay->where('year', 'like', $like);
+                    });
+            });
+        }
         $projects = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        return view('docu-mentor.coordinators.projects.index', compact('projects', 'academicYears', 'supervisors'));
+        return view('docu-mentor.coordinators.projects.index', compact('projects', 'academicYears', 'supervisors', 'search'));
     }
 
     public function show(Project $project): View
@@ -62,7 +84,7 @@ class CoordinatorProjectController extends Controller
         $this->authorize('update', $project);
         $request->validate([
             'submission_deadline' => 'nullable|date',
-            'status' => 'nullable|in:' . implode(',', [Project::STATUS_DRAFT, Project::STATUS_SUBMITTED, Project::STATUS_APPROVED, Project::STATUS_REJECTED, Project::STATUS_IN_PROGRESS, Project::STATUS_COMPLETED, Project::STATUS_GRADED, Project::STATUS_ARCHIVED]),
+            'status' => 'nullable|in:'.implode(',', [Project::STATUS_DRAFT, Project::STATUS_SUBMITTED, Project::STATUS_APPROVED, Project::STATUS_REJECTED, Project::STATUS_IN_PROGRESS, Project::STATUS_COMPLETED, Project::STATUS_GRADED, Project::STATUS_ARCHIVED]),
             'approval_date' => 'nullable|date',
             'supervisor_ids' => 'nullable|array',
             'supervisor_ids.*' => 'exists:users,id',
@@ -152,7 +174,7 @@ class CoordinatorProjectController extends Controller
         $request->validate(['supervisor_id' => 'required|exists:users,id']);
         $supervisorId = (int) $request->supervisor_id;
         $user = User::find($supervisorId);
-        if (!$user || $user->role !== User::ROLE_SUPERVISOR) {
+        if (! $user || $user->role !== User::ROLE_SUPERVISOR) {
             return back()->with('error', 'Invalid supervisor.');
         }
         $currentIds = $project->supervisors()->pluck('users.id')->all();
@@ -175,7 +197,8 @@ class CoordinatorProjectController extends Controller
             ['project_id' => $project->id, 'user_id' => $supervisorId],
             ['approved' => false, 'approved_at' => null]
         );
-        return back()->with('success', ($user->name ?: $user->username) . ' added as supervisor.');
+
+        return back()->with('success', ($user->name ?: $user->username).' added as supervisor.');
     }
 
     public function storeChapter(Request $request, Project $project): RedirectResponse
@@ -208,6 +231,7 @@ class CoordinatorProjectController extends Controller
         $this->authorize('update', $project);
         $request->validate(['coordinator_comment' => 'nullable|string|max:2000']);
         $proposal->update(['coordinator_comment' => $request->coordinator_comment]);
+
         return back()->with('success', 'Comment saved. Students will see it on their project dashboard.');
     }
 
@@ -224,7 +248,7 @@ class CoordinatorProjectController extends Controller
         $userId = request()->attributes->get('dm_user')?->id;
 
         $members = $project->group?->members ?? collect();
-        $membersWithPhone = $members->filter(fn ($m) => !empty($m->phone))->take(2);
+        $membersWithPhone = $members->filter(fn ($m) => ! empty($m->phone))->take(2);
         foreach ($membersWithPhone as $m) {
             $phone = $m->phone;
             if (ArkeselService::hasApiKey()) {
@@ -267,6 +291,7 @@ class CoordinatorProjectController extends Controller
                 }
                 $projects = $projectsQuery->with('group.members')->get();
                 $studentCount = $projects->sum(fn ($p) => $p->group?->members?->count() ?? 0);
+
                 return (object) [
                     'user' => $s,
                     'project_count' => $projects->count(),
@@ -282,6 +307,7 @@ class CoordinatorProjectController extends Controller
     public function exportReportPage(): View
     {
         $academicYears = \App\Models\DocuMentor\AcademicYear::orderByDesc('year')->get();
+
         return view('docu-mentor.coordinators.export-report', compact('academicYears'));
     }
 
@@ -299,7 +325,8 @@ class CoordinatorProjectController extends Controller
 
         if ($format === 'xlsx') {
             $year = \App\Models\DocuMentor\AcademicYear::find($yearId)?->year ?? $yearId;
-            $filename = 'docu-mentor-report-' . $year . '.xlsx';
+            $filename = 'docu-mentor-report-'.$year.'.xlsx';
+
             return Excel::download(new DocuMentorReportExport($yearId), $filename, \Maatwebsite\Excel\Excel::XLSX);
         }
 
@@ -309,6 +336,7 @@ class CoordinatorProjectController extends Controller
             ->get();
         $year = \App\Models\DocuMentor\AcademicYear::find($yearId)?->year ?? $yearId;
         $headers = ['Project Title', 'Student Name', 'Phone', 'Supervisor(s)', 'Doc Score', 'System Score', 'Final Score', 'Academic Year'];
+
         return response()->streamDownload(function () use ($projects, $year, $headers) {
             $out = fopen('php://output', 'w');
             fputcsv($out, $headers);
@@ -337,7 +365,7 @@ class CoordinatorProjectController extends Controller
                 }
             }
             fclose($out);
-        }, 'docu-mentor-report-' . $year . '.csv', ['Content-Type' => 'text/csv']);
+        }, 'docu-mentor-report-'.$year.'.csv', ['Content-Type' => 'text/csv']);
     }
 
     /**
@@ -347,6 +375,7 @@ class CoordinatorProjectController extends Controller
     {
         $this->authorize('delete', $project);
         $project->deleteWithRelated();
+
         return redirect()->route('dashboard.coordinators.projects.index')
             ->with('success', 'Project deleted.');
     }

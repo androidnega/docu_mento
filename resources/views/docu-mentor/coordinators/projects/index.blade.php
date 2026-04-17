@@ -6,21 +6,39 @@
 @section('dashboard_content')
 <div class="w-full min-w-0 max-w-full space-y-6">
     <div class="flex flex-wrap items-center gap-3 justify-between">
-        <form method="get" action="{{ route('dashboard.coordinators.projects.index') }}" class="flex flex-wrap items-center gap-2">
-            <label for="academic_year_id" class="text-sm text-gray-600">Academic year</label>
+        <form id="projects-filter-form" method="get" action="{{ route('dashboard.coordinators.projects.index') }}" class="flex flex-wrap items-center gap-2 sm:gap-3">
+            @if(request()->boolean('pending'))
+                <input type="hidden" name="pending" value="1">
+            @endif
+            <label for="academic_year_id" class="text-sm text-gray-600 whitespace-nowrap">Academic year</label>
             <select name="academic_year_id" id="academic_year_id" class="rounded border-gray-300 text-sm py-1.5 px-2" onchange="this.form.submit()">
                 <option value="">All years</option>
                 @foreach($academicYears ?? [] as $ay)
                     <option value="{{ $ay->id }}" {{ request('academic_year_id') == $ay->id ? 'selected' : '' }}>{{ $ay->year }}{{ $ay->is_active ? ' (active)' : '' }}</option>
                 @endforeach
             </select>
+            <div class="relative min-w-0">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-gray-400">
+                    <i class="fas fa-search text-[11px]"></i>
+                </span>
+                <label for="projects-search" class="sr-only">Search projects</label>
+                <input
+                    type="search"
+                    name="search"
+                    id="projects-search"
+                    value="{{ $search ?? request('search') }}"
+                    placeholder="Search title, group, supervisor…"
+                    class="w-48 sm:w-64 max-w-full rounded border border-gray-300 bg-white pl-7 pr-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400"
+                    autocomplete="off"
+                >
+            </div>
         </form>
-        <div class="inline-flex rounded-full border border-gray-200 bg-white text-xs font-medium overflow-hidden">
-            <a href="{{ route('dashboard.coordinators.projects.index') }}"
+        <div class="inline-flex rounded-full border border-gray-200 bg-white text-xs font-medium overflow-hidden shrink-0">
+            <a href="{{ route('dashboard.coordinators.projects.index', request()->only('academic_year_id', 'search')) }}"
                class="px-3 py-1.5 {{ request()->boolean('pending') ? 'text-gray-500 hover:text-gray-800' : 'bg-gray-900 text-white' }}">
                 All projects
             </a>
-            <a href="{{ route('dashboard.coordinators.projects.index', ['pending' => 1] + request()->only('academic_year_id')) }}"
+            <a href="{{ route('dashboard.coordinators.projects.index', array_merge(['pending' => 1], request()->only('academic_year_id', 'search'))) }}"
                class="px-3 py-1.5 {{ request()->boolean('pending') ? 'bg-amber-500 text-gray-900' : 'text-gray-500 hover:text-gray-800' }}">
                 Pending approvals
             </a>
@@ -304,6 +322,19 @@
 
 @push('scripts')
 <script>
+(function () {
+    var form = document.getElementById('projects-filter-form');
+    var searchInput = document.getElementById('projects-search');
+    if (!form || !searchInput) return;
+    var timer = null;
+    searchInput.addEventListener('input', function () {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () {
+            form.submit();
+        }, 400);
+    });
+})();
+
 (function () {
     var overlay = document.getElementById('assign-supervisor-modal-overlay');
     var form = document.getElementById('assign-supervisor-modal-form');
