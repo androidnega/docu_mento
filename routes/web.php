@@ -143,6 +143,8 @@ Route::middleware(['auth', 'role:student,group_leader', 'docu-mentor.project-acc
     Route::get('/student/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'index'])->name('projects.index');
     Route::get('/student/projects/create', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'create'])->name('projects.create');
     Route::post('/student/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'store'])->name('projects.store');
+    // Same as docu-mentor.students.projects.proposals.upload-temp but under /dashboard so AJAX uses the same host path as the wizard (avoids live issues with /docu-mentor).
+    Route::post('/student/projects/proposals/upload-temp', [\App\Http\Controllers\DocuMentor\StudentTempProposalUploadController::class, '__invoke'])->name('projects.proposals.upload-temp');
     Route::get('/student/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'show'])->name('projects.show');
     Route::put('/student/projects/{project}', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'update'])->name('projects.update');
     Route::post('/student/projects/{project}/features', [\App\Http\Controllers\DocuMentor\StudentFeatureController::class, 'store'])->name('projects.features.store');

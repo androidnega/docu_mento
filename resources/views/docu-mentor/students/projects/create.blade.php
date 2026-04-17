@@ -4,6 +4,16 @@
 @php $dashboardTitle = 'Create Project'; @endphp
 
 @section('dashboard_content')
+@if($errors->any())
+    <div class="mb-6 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-800" role="alert">
+        <p class="font-medium">We could not save your project. Please fix the following and try again:</p>
+        <ul class="mt-2 list-disc list-inside space-y-0.5">
+            @foreach($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 <header class="mb-8">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -190,6 +200,7 @@
 
 @push('scripts')
 <script>
+window.__dmCreateProjectStepFromServer = @json($errors->has('proposal_file') ? 'step-2' : ($errors->any() ? 'step-1' : null));
 (function() {
     var steps = document.querySelectorAll('.project-step');
     var form = document.getElementById('project-create-form');
@@ -201,7 +212,7 @@
     var progressBar = document.getElementById('proposal-upload-progress');
     var progressLabel = document.getElementById('proposal-upload-label');
     var uploadedUrlInput = document.getElementById('proposal_uploaded_url');
-    var uploadEndpoint = "{{ route('docu-mentor.students.projects.proposals.upload-temp') }}";
+    var uploadEndpoint = "{{ route('dashboard.projects.proposals.upload-temp') }}";
     var csrfRefreshUrl = "{{ route('dashboard.csrf-refresh') }}";
     var STORAGE_KEY_STEP = 'dm_project_create_step';
     var STORAGE_KEY_FORM = 'dm_project_create_form';
@@ -406,13 +417,21 @@
     restoreFormState();
     (function initStep() {
         var savedStep = null;
-        try {
-            savedStep = window.localStorage && localStorage.getItem(STORAGE_KEY_STEP);
-        } catch (e) {
-            savedStep = null;
-        }
-        if (!savedStep || stepOrder.indexOf(savedStep) === -1) {
-            savedStep = 'step-1';
+        var serverStep = window.__dmCreateProjectStepFromServer;
+        if (serverStep && stepOrder.indexOf(serverStep) !== -1) {
+            savedStep = serverStep;
+            try {
+                window.localStorage && localStorage.setItem(STORAGE_KEY_STEP, savedStep);
+            } catch (e) {}
+        } else {
+            try {
+                savedStep = window.localStorage && localStorage.getItem(STORAGE_KEY_STEP);
+            } catch (e) {
+                savedStep = null;
+            }
+            if (!savedStep || stepOrder.indexOf(savedStep) === -1) {
+                savedStep = 'step-1';
+            }
         }
         showStep(savedStep);
     })();
@@ -423,6 +442,33 @@
     if (form) {
         form.addEventListener('input', saveFormState);
         form.addEventListener('change', saveFormState);
+        form.addEventListener('submit', function (e) {
+            var visible = document.querySelector('.project-step:not(.hidden)');
+            if (!visible || visible.id !== 'step-3') {
+                e.preventDefault();
+                return;
+            }
+            var hasUrl = uploadedUrlInput && String(uploadedUrlInput.value || '').trim() !== '';
+            var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+            if (!hasUrl && !hasFile) {
+                e.preventDefault();
+                showStep('step-2');
+                if (progressLabel) {
+                    progressLabel.textContent = 'Please select a proposal PDF (max 1MB) before submitting.';
+                    progressLabel.classList.remove('text-slate-500', 'text-green-600');
+                    progressLabel.classList.add('text-red-600');
+                }
+                return;
+            }
+        });
+        form.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            if (e.target && e.target.tagName === 'TEXTAREA') return;
+            var visible = document.querySelector('.project-step:not(.hidden)');
+            if (visible && visible.id !== 'step-3') {
+                e.preventDefault();
+            }
+        });
     }
 
     form.addEventListener('click', function(e) {

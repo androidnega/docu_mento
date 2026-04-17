@@ -15,7 +15,7 @@ class StudentTempProposalUploadController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        $user = $request->attributes->get('dm_user');
+        $user = $request->attributes->get('dm_user') ?? $request->user();
         if (!$user) {
             return response()->json(['ok' => false, 'message' => 'Unauthorized.'], 401);
         }
