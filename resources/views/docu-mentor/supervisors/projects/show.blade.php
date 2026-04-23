@@ -85,7 +85,7 @@
                                 {{ $displayName }}
                             @endif
                         </td>
-                        <td class="px-3 py-2.5 text-slate-600">{{ $member->phone ? $member->phone : 'No phone' }}</td>
+                        <td class="px-3 py-2.5 text-slate-600">{{ $member->docuMentorMemberDisplayPhone() }}</td>
                         <td class="px-3 py-2.5 text-slate-800 font-mono text-xs">{{ $indexLabel ?: '—' }}</td>
                         <td class="px-3 py-2.5 text-right text-xs">
                             @if($project->group->leader_id === $member->id)
@@ -167,7 +167,7 @@
                                 @endif
                                 @if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif
                             </td>
-                            <td class="px-4 py-2 text-xs text-slate-600">{{ $member->phone ?: 'No phone' }}</td>
+                            <td class="px-4 py-2 text-xs text-slate-600">{{ $member->docuMentorMemberDisplayPhone() }}</td>
                             <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
                             <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>

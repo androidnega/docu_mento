@@ -70,7 +70,7 @@ class SupervisorProjectController extends Controller
         $project->load($with);
 
         if ($project->group && $project->group->members->isNotEmpty()) {
-            User::eagerLoadRosterStudentsForDocuMentorMembers($project->group->members);
+            User::eagerLoadDocuMentorMemberProfiles($project->group->members);
         }
 
         $projectFilesTableReady = ProjectFiles::tableExists();

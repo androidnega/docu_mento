@@ -75,7 +75,7 @@ class CoordinatorProjectController extends Controller
             'category', 'chapters', 'supervisors', 'features', 'proposals', 'academicYear',
         ]);
         if ($project->group && $project->group->members->isNotEmpty()) {
-            User::eagerLoadRosterStudentsForDocuMentorMembers($project->group->members);
+            User::eagerLoadDocuMentorMemberProfiles($project->group->members);
         }
         $supervisors = User::where('role', User::ROLE_SUPERVISOR)
             ->orderBy('name')->get();
@@ -259,7 +259,7 @@ class CoordinatorProjectController extends Controller
             'supervisors',
         ]);
         if ($project->group && $project->group->members->isNotEmpty()) {
-            User::eagerLoadRosterStudentsForDocuMentorMembers($project->group->members);
+            User::eagerLoadDocuMentorMemberProfiles($project->group->members);
         }
         $message = "Docu Mentor: Project \"{$project->title}\" alert. Please check your dashboard.";
         $sent = 0;

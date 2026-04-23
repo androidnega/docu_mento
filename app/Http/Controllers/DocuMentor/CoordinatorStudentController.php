@@ -1183,16 +1183,7 @@ class CoordinatorStudentController extends Controller
         $studentAccount->phone_contact = $phone;
         $studentAccount->save();
 
-        $dmUser = $user->docuMentorStudentsInScope()
-            ->whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper(trim($indexNumber))])
-            ->first();
-        if ($dmUser) {
-            $dmUser->name = $name ?? $dmUser->name;
-            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'phone')) {
-                $dmUser->phone = $phone;
-            }
-            $dmUser->save();
-        }
+        User::syncDocuMentorUserFromStudentProfile($studentAccount);
 
         return redirect()->route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex])
             ->with('success', 'Student details updated.');

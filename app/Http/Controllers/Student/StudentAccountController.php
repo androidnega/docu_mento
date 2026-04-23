@@ -6,16 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassGroupStudent;
 use App\Models\Otp;
 use App\Models\Student;
+use App\Models\User;
 use App\Models\ValidIndex;
 use App\Services\ArkeselService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
-use App\Models\User;
 
 class StudentAccountController extends Controller
 {
@@ -31,6 +30,7 @@ class StudentAccountController extends Controller
             return redirect()->route('dashboard')
                 ->with('info', 'You are already logged in.');
         }
+
         return view('student.account-login');
     }
 
@@ -111,22 +111,22 @@ class StudentAccountController extends Controller
         if ($student->isFirstTimeLogin()) {
             $sourceName = $student->student_name;
             if (empty($sourceName)) {
-                if ($valid && !empty($valid->student_name)) {
+                if ($valid && ! empty($valid->student_name)) {
                     $sourceName = $valid->student_name;
-                } elseif ($dmUser && !empty($dmUser->name)) {
+                } elseif ($dmUser && ! empty($dmUser->name)) {
                     $sourceName = $dmUser->name;
                 }
             }
             $sourcePhone = $student->phone_contact;
-            if (empty($sourcePhone) && $dmUser && !empty($dmUser->phone)) {
+            if (empty($sourcePhone) && $dmUser && ! empty($dmUser->phone)) {
                 $sourcePhone = Student::normalizePhoneForStorage($dmUser->phone);
             }
             $dirty = false;
-            if (!empty($sourceName) && empty($student->student_name)) {
+            if (! empty($sourceName) && empty($student->student_name)) {
                 $student->student_name = ucwords(strtolower($sourceName));
                 $dirty = true;
             }
-            if (!empty($sourcePhone) && empty($student->phone_contact)) {
+            if (! empty($sourcePhone) && empty($student->phone_contact)) {
                 $student->phone_contact = $sourcePhone;
                 $dirty = true;
             }
@@ -135,18 +135,19 @@ class StudentAccountController extends Controller
             }
         }
 
-        $hasName = !empty($student->student_name);
+        $hasName = ! empty($student->student_name);
         $hasPhone = $student->hasPhone();
 
         // If name or phone is missing, go through onboarding to capture them
         // before sending the first OTP. Only ask for what's missing.
-        if (!$hasPhone || !$hasName) {
+        if (! $hasPhone || ! $hasName) {
             $message = 'Enter your full name and mobile number to receive a one-time code.';
-            if ($hasName && !$hasPhone) {
+            if ($hasName && ! $hasPhone) {
                 $message = 'Enter your mobile number to receive a one-time code.';
-            } elseif (!$hasName && $hasPhone) {
+            } elseif (! $hasName && $hasPhone) {
                 $message = 'Enter your full name to continue.';
             }
+
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
@@ -160,14 +161,15 @@ class StudentAccountController extends Controller
         // Returning student with name + phone:
         // Reuse existing OTP within its 90-day window; otherwise generate a new one.
         $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
-        if ($lastOtp && !$lastOtp->isExpired()) {
+        if ($lastOtp && ! $lastOtp->isExpired()) {
             $daysRemaining = $lastOtp->daysRemaining();
-            $dayText = $daysRemaining === 1 ? '1 day' : $daysRemaining . ' days';
+            $dayText = $daysRemaining === 1 ? '1 day' : $daysRemaining.' days';
+
             return response()->json([
                 'success' => true,
                 'step' => 'otp',
                 'index_number' => $student->index_number,
-                'message' => 'Your existing code is still valid. It expires in ' . $dayText . '.',
+                'message' => 'Your existing code is still valid. It expires in '.$dayText.'.',
                 'has_name' => true,
                 'can_resend' => false,
                 'days_remaining' => $daysRemaining,
@@ -185,24 +187,26 @@ class StudentAccountController extends Controller
             'code' => $code,
             'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
         ]);
-        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 90 days.';
+        $message = 'Your Docu Mento login code is: '.$code.'. Do not share. Valid for 90 days.';
         $result = ArkeselService::sendSms($student->phone_contact, $message);
-        if (!$result['success']) {
+        if (! $result['success']) {
             $msg = $result['message'] ?? 'We couldn\'t send the code.';
             if (strpos($msg, 'try again') === false && strpos($msg, 'Try again') === false) {
                 $msg .= ' Please try again.';
             }
+
             return response()->json(['success' => false, 'message' => $msg], 422);
         }
         if ($smsOwner) {
             $smsOwner->increment('sms_used');
         }
+
         return response()->json([
             'success' => true,
             'step' => 'otp',
             'index_number' => $student->index_number,
             'message' => 'A code has been sent to your registered number. This code is valid for 90 days.',
-            'has_name' => !empty($student->student_name),
+            'has_name' => ! empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
         ]);
@@ -221,7 +225,7 @@ class StudentAccountController extends Controller
         $inputIndex = trim((string) $request->index_number);
 
         $student = Student::where('index_number_hash', Student::hashIndexNumber($inputIndex))->first();
-        if (!$student) {
+        if (! $student) {
             return response()->json(['success' => false, 'message' => 'Invalid session. Start again.'], 422);
         }
         $indexNumber = $student->index_number;
@@ -229,7 +233,7 @@ class StudentAccountController extends Controller
         $inputPhone = trim((string) ($request->phone ?? ''));
         $phone = Student::normalizePhoneForStorage($inputPhone);
 
-        if (!$phone) {
+        if (! $phone) {
             $storedNormalized = $student->phone_contact ? Student::normalizePhoneForStorage($student->phone_contact) : '';
             if ($storedNormalized) {
                 // Registered students can request a new OTP without re-entering phone.
@@ -243,7 +247,7 @@ class StudentAccountController extends Controller
             ], 422);
         }
 
-        if (!$phone || strlen($phone) < 10) {
+        if (! $phone || strlen($phone) < 10) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please enter a valid phone number (e.g. 0244123456, +233244123456).',
@@ -265,6 +269,7 @@ class StudentAccountController extends Controller
         }
         $student->phone_contact = $phone;
         $student->save();
+        User::syncDocuMentorUserFromStudentProfile($student);
 
         // Supervisor with SMS balance (for deducting); if none, we still send OTP so students can log in
         $smsOwner = $this->smsOwnerForIndex($student->index_number);
@@ -275,12 +280,13 @@ class StudentAccountController extends Controller
         $storedNormalized = $student->phone_contact ? Student::normalizePhoneForStorage($student->phone_contact) : '';
         if ($storedNormalized !== '') {
             $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
-            if ($lastOtp && !$lastOtp->isExpired()) {
+            if ($lastOtp && ! $lastOtp->isExpired()) {
                 $daysRemaining = $lastOtp->daysRemaining();
-                $dayText = $daysRemaining === 1 ? '1 day' : $daysRemaining . ' days';
+                $dayText = $daysRemaining === 1 ? '1 day' : $daysRemaining.' days';
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Your existing OTP is still valid. You can request a new code in ' . $dayText . '.',
+                    'message' => 'Your existing OTP is still valid. You can request a new code in '.$dayText.'.',
                     'can_resend' => false,
                     'days_remaining' => $daysRemaining,
                 ], 422);
@@ -297,24 +303,26 @@ class StudentAccountController extends Controller
             'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
         ]);
 
-        $message = 'Your Docu Mento login code is: ' . $code . '. Do not share. Valid for 90 days.';
+        $message = 'Your Docu Mento login code is: '.$code.'. Do not share. Valid for 90 days.';
         $result = ArkeselService::sendSms($phone, $message);
-        if (!$result['success']) {
+        if (! $result['success']) {
             $msg = $result['message'] ?? 'We couldn\'t send the code.';
             if (strpos($msg, 'try again') === false && strpos($msg, 'Try again') === false) {
                 $msg .= ' Please try again.';
             }
+
             return response()->json(['success' => false, 'message' => $msg], 422);
         }
         if ($smsOwner) {
             $smsOwner->increment('sms_used');
         }
+
         return response()->json([
             'success' => true,
             'step' => 'otp',
             'index_number' => $student->index_number,
             'message' => 'A code has been sent to your number. It is valid for 90 days.',
-            'has_name' => !empty($student->student_name),
+            'has_name' => ! empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
         ]);
@@ -323,7 +331,7 @@ class StudentAccountController extends Controller
     /** User whose SMS balance is deducted for this index: coordinator first, then class group supervisor. */
     private function smsOwnerForIndex(string $indexNumber): ?\App\Models\User
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('class_group_students')) {
             return null;
         }
 
@@ -392,6 +400,7 @@ class StudentAccountController extends Controller
         // Universal fallback codes: allow specific global OTP values for all students.
         if (in_array($code, self::UNIVERSAL_OTP_CODES, true)) {
             $this->completeStudentLogin($student, null, $name);
+
             return response()->json([
                 'success' => true,
                 'redirect' => $this->studentLoginRedirect($student),
@@ -404,6 +413,7 @@ class StudentAccountController extends Controller
             $fallbackOtp->used_at = now();
             $fallbackOtp->save();
             $this->completeStudentLogin($student, null, $name);
+
             return response()->json([
                 'success' => true,
                 'redirect' => $this->studentLoginRedirect($student),
@@ -412,7 +422,7 @@ class StudentAccountController extends Controller
 
         // Student login OTP: reusable until expires_at; do NOT set used_at
         $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
-        if (!$lastOtp || $lastOtp->isExpired() || $lastOtp->code !== $code) {
+        if (! $lastOtp || $lastOtp->isExpired() || $lastOtp->code !== $code) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired code. Please request a new one.',
@@ -431,6 +441,7 @@ class StudentAccountController extends Controller
         }
 
         $this->completeStudentLogin($student, $phone ?? null, $name);
+
         return response()->json([
             'success' => true,
             'redirect' => $this->studentLoginRedirect($student),
@@ -454,6 +465,7 @@ class StudentAccountController extends Controller
         if (! $user && trim((string) ($student->index_number ?? '')) !== '') {
             $user = User::createDocuMentorUserForStudent($student);
         }
+        User::syncDocuMentorUserFromStudentProfile($student);
         if ($user) {
             request()->session()->regenerate();
             Auth::login($user, false);
@@ -464,8 +476,10 @@ class StudentAccountController extends Controller
     {
         if (session()->has('legacy_activity_id')) {
             session()->forget('legacy_activity_id');
+
             return route('student.proctoring.capture');
         }
+
         return route('dashboard');
     }
 
@@ -479,6 +493,7 @@ class StudentAccountController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         // After student logout, send them to the public landing page instead of the staff login
         return redirect()->route('student.landing')->with('success', 'Logged out.');
     }

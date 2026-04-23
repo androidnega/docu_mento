@@ -91,13 +91,14 @@ class StudentDashboardController extends Controller
 
         if ($useTwi) {
             if ($holiday) {
-                $greeting = trim($holiday['twi_greeting'] . ' ' . $lastName . '!');
+                $greeting = trim($holiday['twi_greeting'].' '.$lastName.'!');
                 $badge = [
                     'message' => $holiday['twi_badge'],
                     'icon' => $holiday['icon'],
                     'bg' => $holiday['bg'],
                     'text' => $holiday['text'],
                 ];
+
                 return [$greeting, $badge];
             }
 
@@ -117,12 +118,13 @@ class StudentDashboardController extends Controller
             ];
             $extra = $extras[array_rand($extras)];
 
-            $greeting = $base . ', ' . $lastName . '. ' . $extra;
+            $greeting = $base.', '.$lastName.'. '.$extra;
+
             return [$greeting, null];
         }
 
         $timeGreeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
-        $greeting = $timeGreeting . ', ' . $lastName . '.';
+        $greeting = $timeGreeting.', '.$lastName.'.';
 
         if ($holiday) {
             $badge = [
@@ -131,6 +133,7 @@ class StudentDashboardController extends Controller
                 'bg' => $holiday['bg'],
                 'text' => $holiday['text'],
             ];
+
             return [$greeting, $badge];
         }
 
@@ -224,6 +227,7 @@ class StudentDashboardController extends Controller
         if (! $user) {
             abort(403, 'Not logged in.');
         }
+
         return view('student.dashboard.profile', compact('student'));
     }
 
@@ -240,6 +244,8 @@ class StudentDashboardController extends Controller
         $request->validate(['student_name' => 'nullable|string|max:255']);
         $student->student_name = $request->filled('student_name') ? ucwords(strtolower(trim($request->student_name))) : $student->student_name;
         $student->save();
+        User::syncDocuMentorUserFromStudentProfile($student);
+
         return redirect()->route('dashboard.my-profile')->with('success', 'Profile updated.');
     }
 
@@ -250,6 +256,7 @@ class StudentDashboardController extends Controller
         if (! $user) {
             abort(403, 'Not logged in.');
         }
+
         return view('student.dashboard.calendar', compact('student'));
     }
 
@@ -259,6 +266,7 @@ class StudentDashboardController extends Controller
         if (! $user) {
             abort(403, 'Not logged in.');
         }
+
         return view('student.dashboard.materials');
     }
 }

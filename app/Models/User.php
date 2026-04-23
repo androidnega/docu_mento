@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -198,52 +198,79 @@ class User extends Authenticatable
     }
 
     /**
-     * Global students row (OTP / roster) matched by index number when present.
-     * Case-sensitive on some DB collations; prefer {@see eagerLoadRosterStudentsForDocuMentorMembers} on lists.
+     * After a row in students (profile / OTP) is saved, copy a proper display name and phone
+     * onto all Docu Mentor users with the same index so supervisor/coordinator lists use users.* only.
      */
-    public function rosterStudent(): HasOne
+    public static function syncDocuMentorUserFromStudentProfile(?Student $student): void
     {
-        return $this->hasOne(Student::class, 'index_number', 'index_number');
+        if (! $student || trim((string) ($student->index_number ?? '')) === '') {
+            return;
+        }
+
+        $norm = Student::normalizeIndex($student->index_number);
+        $users = self::query()
+            ->whereIn('role', [self::DM_ROLE_STUDENT, self::DM_ROLE_LEADER])
+            ->whereRaw('LOWER(TRIM(COALESCE(index_number, ""))) = ?', [$norm])
+            ->get();
+
+        $sn = trim((string) ($student->student_name ?? ''));
+        $pc = $student->phone_contact ? Student::normalizePhoneForStorage($student->phone_contact) : null;
+
+        foreach ($users as $u) {
+            if ($sn !== '' && ! self::docuMentorNameIsIndexNumber($sn, (string) $u->index_number, (string) $u->username)) {
+                $u->name = $sn;
+            }
+            if ($pc !== null && $pc !== '') {
+                $u->phone = $pc;
+            }
+            $u->save();
+        }
     }
 
     /**
-     * Batch-match users to students by normalized index hash (one query).
-     * Sets each user's rosterStudent relation so member names resolve on production DBs
-     * where plain index_number join misses due to collation/casing.
+     * Batch-load class roster rows for member lists (names from coordinator class lists, not students table).
+     * Relation key: docuMentorClassGroupStudent (first row per normalized index).
      */
-    public static function eagerLoadRosterStudentsForDocuMentorMembers(Collection $users): void
+    public static function eagerLoadDocuMentorMemberProfiles(Collection $users): void
     {
         if ($users->isEmpty()) {
             return;
         }
 
-        $hashes = [];
-        foreach ($users as $u) {
-            $i = trim((string) ($u->index_number ?? ''));
-            if ($i !== '') {
-                $hashes[] = Student::hashIndexNumber(Student::normalizeIndex($i));
-            }
-        }
-        $hashes = array_values(array_unique(array_filter($hashes)));
-        if ($hashes === []) {
+        if (! Schema::hasTable('class_group_students')) {
             foreach ($users as $u) {
-                $u->setRelation('rosterStudent', null);
+                $u->setRelation('docuMentorClassGroupStudent', null);
             }
 
             return;
         }
 
-        $byHash = Student::query()->whereIn('index_number_hash', $hashes)->get()->keyBy('index_number_hash');
+        $norms = $users->map(fn ($u) => Student::normalizeIndex($u->index_number ?? ''))->filter()->unique()->values()->all();
+        if ($norms === []) {
+            foreach ($users as $u) {
+                $u->setRelation('docuMentorClassGroupStudent', null);
+            }
+
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($norms), '?'));
+        $rows = ClassGroupStudent::query()
+            ->whereRaw('LOWER(TRIM(COALESCE(class_group_students.index_number, ""))) in ('.$placeholders.')', $norms)
+            ->orderBy('id')
+            ->get();
+
+        $byNorm = [];
+        foreach ($rows as $row) {
+            $n = Student::normalizeIndex($row->index_number);
+            if (! isset($byNorm[$n])) {
+                $byNorm[$n] = $row;
+            }
+        }
 
         foreach ($users as $u) {
-            $i = trim((string) ($u->index_number ?? ''));
-            if ($i === '') {
-                $u->setRelation('rosterStudent', null);
-
-                continue;
-            }
-            $h = Student::hashIndexNumber(Student::normalizeIndex($i));
-            $u->setRelation('rosterStudent', $byHash->get($h));
+            $n = Student::normalizeIndex($u->index_number ?? '');
+            $u->setRelation('docuMentorClassGroupStudent', $byNorm[$n] ?? null);
         }
     }
 
@@ -285,18 +312,10 @@ class User extends Authenticatable
 
     /**
      * Human-readable name for Docu Mentor member lists (supervisor/coordinator).
-     * Prefers students.student_name. Never returns the index number as a "name".
+     * Uses the linked user account (synced from student profile) and class roster — not the students table.
      */
     public function docuMentorMemberDisplayName(): string
     {
-        $roster = $this->rosterStudent;
-        if ($roster) {
-            $sn = trim((string) ($roster->student_name ?? ''));
-            if ($sn !== '') {
-                return $sn;
-            }
-        }
-
         $idx = trim((string) ($this->index_number ?? ''));
         $uname = trim((string) ($this->username ?? ''));
         $nm = trim((string) ($this->name ?? ''));
@@ -305,7 +324,28 @@ class User extends Authenticatable
             return $nm;
         }
 
+        $cg = $this->relationLoaded('docuMentorClassGroupStudent') ? $this->getRelation('docuMentorClassGroupStudent') : null;
+        if ($cg instanceof ClassGroupStudent) {
+            $sn = trim((string) ($cg->student_name ?? ''));
+            if ($sn !== '' && ! self::docuMentorNameIsIndexNumber($sn, $idx, $uname)) {
+                return $sn;
+            }
+        }
+
         return '—';
+    }
+
+    /**
+     * Phone for member lists: user account line (kept in sync when students update profile / OTP).
+     */
+    public function docuMentorMemberDisplayPhone(): string
+    {
+        $p = trim((string) ($this->attributes['phone'] ?? ''));
+        if ($p === '' || str_starts_with($p, 'pending_')) {
+            return 'No phone';
+        }
+
+        return $p;
     }
 
     /** Docu Mentor: Groups where this user is leader */

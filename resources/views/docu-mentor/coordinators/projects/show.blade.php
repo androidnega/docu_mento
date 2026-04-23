@@ -266,7 +266,7 @@
                                             {{ $memberDisplay }}
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2.5 text-gray-700">{{ $m->phone ? $m->phone : 'No phone' }}</td>
+                                    <td class="px-3 py-2.5 text-gray-700">{{ $m->docuMentorMemberDisplayPhone() }}</td>
                                     <td class="px-3 py-2.5 text-gray-900 font-mono text-xs">{{ $memberIndexLabel ?: '—' }}</td>
                                     <td class="px-3 py-2.5 text-right">
                                         @if($m->id === $project->group->leader_id)
