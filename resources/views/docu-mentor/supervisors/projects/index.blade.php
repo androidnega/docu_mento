@@ -5,7 +5,12 @@
 @section('content')
 <div class="max-w-6xl mx-auto w-full pt-4 sm:pt-6">
 <h1 class="text-2xl font-bold text-slate-900 mb-2">Supervisor Dashboard</h1>
-<p class="text-slate-500 text-sm mb-6">All assigned projects · Progress (Completed Chapters / 6) · Tagged previous project access</p>
+<p class="text-slate-500 text-sm mb-6">
+    All assigned projects · Progress (Completed Chapters / 6) · Tagged previous project access
+    @if(isset($totalStudentsAcrossProjects) && $totalStudentsAcrossProjects > 0)
+        <span class="text-slate-700 font-medium"> · {{ $totalStudentsAcrossProjects }} student{{ $totalStudentsAcrossProjects === 1 ? '' : 's' }} total</span>
+    @endif
+</p>
 
 @if($projects->isEmpty())
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
@@ -28,6 +33,8 @@
                     <span class="px-2 py-0.5 rounded text-xs {{ $project->approved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                         {{ $project->approved ? 'Approved' : 'Pending' }}
                     </span>
+                    @php $memberCount = $project->group?->members?->count() ?? 0; @endphp
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-900" title="Students in project group">{{ $memberCount }} student{{ $memberCount === 1 ? '' : 's' }}</span>
                     @if($project->parent_project_id)
                         <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700" title="Tagged to previous project">Tagged</span>
                     @endif

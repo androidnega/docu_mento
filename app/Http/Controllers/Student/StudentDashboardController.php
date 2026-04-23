@@ -228,7 +228,7 @@ class StudentDashboardController extends Controller
             abort(403, 'Not logged in.');
         }
 
-        return view('student.dashboard.profile', compact('student'));
+        return view('student.dashboard.profile', compact('student', 'user'));
     }
 
     public function updateProfile(\Illuminate\Http\Request $request)
@@ -238,13 +238,24 @@ class StudentDashboardController extends Controller
         if (! $user) {
             abort(403, 'Not logged in.');
         }
-        if (! $student) {
-            return redirect()->route('dashboard')->with('info', 'Profile is managed from your user account.');
+        if ($student) {
+            $request->validate(['student_name' => 'nullable|string|max:255']);
+            $student->student_name = $request->filled('student_name') ? ucwords(strtolower(trim($request->student_name))) : $student->student_name;
+            $student->save();
+            User::propagateDocuMentorDisplayNameFromStudent($student);
+
+            return redirect()->route('dashboard.my-profile')->with('success', 'Profile updated.');
         }
-        $request->validate(['student_name' => 'nullable|string|max:255']);
-        $student->student_name = $request->filled('student_name') ? ucwords(strtolower(trim($request->student_name))) : $student->student_name;
-        $student->save();
-        User::syncDocuMentorUserFromStudentProfile($student);
+
+        if (! $user->isDocuMentorStudent()) {
+            return redirect()->route('dashboard')->with('info', 'Profile cannot be edited here.');
+        }
+
+        $request->validate(['name' => 'required|string|max:255']);
+        $name = ucwords(strtolower(trim($request->input('name'))));
+        $user->name = $name;
+        $user->save();
+        User::propagateDocuMentorDisplayNameFromUser($user);
 
         return redirect()->route('dashboard.my-profile')->with('success', 'Profile updated.');
     }

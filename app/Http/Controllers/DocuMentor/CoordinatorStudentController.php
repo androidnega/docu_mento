@@ -174,6 +174,9 @@ class CoordinatorStudentController extends Controller
                 $q->where('index_number', 'like', $term)
                     ->orWhere('name', 'like', $term)
                     ->orWhere('email', 'like', $term);
+                if (Schema::hasColumn('users', 'phone')) {
+                    $q->orWhere('phone', 'like', $term);
+                }
             });
         }
         $statusFilter = $request->query('status');
@@ -996,8 +999,16 @@ class CoordinatorStudentController extends Controller
         }
 
         $redirectTo = function (string $message, string $type = 'success') use ($request, $encodedIndex) {
-            if ($request->filled('return_url') && \Illuminate\Support\Str::startsWith($request->return_url, url('/'))) {
-                return redirect($request->return_url)->with($type, $message);
+            if ($request->filled('return_url')) {
+                $target = trim((string) $request->return_url);
+                if (Str::startsWith($target, '/') && ! Str::startsWith($target, '//')) {
+                    return redirect()->to($target)->with($type, $message);
+                }
+                $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+                $targetHost = parse_url($target, PHP_URL_HOST);
+                if ($appHost && $targetHost && strcasecmp((string) $targetHost, (string) $appHost) === 0) {
+                    return redirect()->to($target)->with($type, $message);
+                }
             }
 
             return redirect()->route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex])->with($type, $message);
@@ -1183,7 +1194,7 @@ class CoordinatorStudentController extends Controller
         $studentAccount->phone_contact = $phone;
         $studentAccount->save();
 
-        User::syncDocuMentorUserFromStudentProfile($studentAccount);
+        User::propagateDocuMentorDisplayNameFromStudent($studentAccount);
 
         return redirect()->route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex])
             ->with('success', 'Student details updated.');

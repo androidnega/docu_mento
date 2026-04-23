@@ -128,25 +128,25 @@
                                             {{ $u->is_active ? 'Active' : 'Inactive' }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        @if(!empty($u->group_leader))
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800"><i class="fas fa-crown"></i> Leader</span>
-                                        @else
-                                            <span class="text-slate-400 text-xs">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <div class="flex items-center justify-end gap-1 flex-wrap">
-                                            <a href="{{ route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex]) }}" class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 no-underline" title="View details"><i class="fas fa-eye"></i> View</a>
+                                    <td class="px-4 py-3 align-top">
+                                        <div class="flex flex-col gap-2 items-start">
+                                            @if(!empty($u->group_leader))
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800"><i class="fas fa-crown"></i> Leader</span>
+                                            @else
+                                                <span class="text-slate-400 text-xs">Not leader</span>
+                                            @endif
                                             <form action="{{ route('dashboard.coordinators.students.toggle-leader', ['encodedIndex' => $encodedIndex]) }}" method="post" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="user_id" value="{{ $u->id }}">
-                                                <input type="hidden" name="return_url" value="{{ route('dashboard.coordinators.academic-years.students', ['academicYear' => $academicYear]) }}">
-                                                <button type="submit" class="inline-flex items-center gap-1 rounded border {{ !empty($u->group_leader) ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' }} px-2.5 py-1.5 text-xs font-medium" title="{{ !empty($u->group_leader) ? 'Remove group leader' : 'Set as group leader' }}">
-                                                    <i class="fas {{ !empty($u->group_leader) ? 'fa-user-minus' : 'fa-crown' }}"></i> {{ !empty($u->group_leader) ? 'Remove leader' : 'Set leader' }}
+                                                <input type="hidden" name="return_url" value="{{ route('dashboard.coordinators.academic-years.students', ['academicYear' => $academicYear], false) }}">
+                                                <button type="submit" class="inline-flex items-center gap-1 rounded border {{ !empty($u->group_leader) ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-primary-200 bg-primary-50 text-primary-800 hover:bg-primary-100' }} px-2.5 py-1.5 text-xs font-medium" title="{{ !empty($u->group_leader) ? 'Remove group leader flag' : 'Set as group leader' }}">
+                                                    <i class="fas {{ !empty($u->group_leader) ? 'fa-user-minus' : 'fa-crown' }}"></i> {{ !empty($u->group_leader) ? 'Remove leader' : 'Set as leader' }}
                                                 </button>
                                             </form>
                                         </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <a href="{{ route('dashboard.coordinators.students.show', ['encodedIndex' => $encodedIndex]) }}" class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 no-underline" title="View details"><i class="fas fa-eye"></i> View</a>
                                     </td>
                                 </tr>
                             @endforeach

@@ -228,6 +228,64 @@ class User extends Authenticatable
     }
 
     /**
+     * Push a non-index display name from the students row to Docu Mentor users and class rosters.
+     */
+    public static function propagateDocuMentorDisplayNameFromStudent(?Student $student): void
+    {
+        if (! $student || trim((string) ($student->index_number ?? '')) === '') {
+            return;
+        }
+
+        self::syncDocuMentorUserFromStudentProfile($student);
+
+        $sn = trim((string) ($student->student_name ?? ''));
+        $idx = trim((string) ($student->index_number ?? ''));
+        if ($sn === '' || self::docuMentorNameIsIndexNumber($sn, $idx, null)) {
+            return;
+        }
+
+        if (Schema::hasTable('class_group_students')) {
+            ClassGroupStudent::query()
+                ->whereRaw('LOWER(TRIM(COALESCE(class_group_students.index_number, ""))) = ?', [Student::normalizeIndex($student->index_number)])
+                ->update(['student_name' => $sn]);
+        }
+    }
+
+    /**
+     * When a student/leader updates users.name only (no students row), mirror to students + class rosters when possible.
+     */
+    public static function propagateDocuMentorDisplayNameFromUser(self $actor): void
+    {
+        if (! $actor->isDocuMentorStudent()) {
+            return;
+        }
+
+        $idx = trim((string) ($actor->index_number ?? ''));
+        if ($idx === '') {
+            return;
+        }
+
+        $nm = trim((string) ($actor->name ?? ''));
+        if ($nm === '' || self::docuMentorNameIsIndexNumber($nm, $idx, (string) $actor->username)) {
+            return;
+        }
+
+        if (Schema::hasTable('students')) {
+            $st = Student::query()->where('index_number_hash', Student::hashIndexNumber($idx))->first();
+            if ($st) {
+                $st->student_name = $nm;
+                $st->save();
+            }
+        }
+
+        if (Schema::hasTable('class_group_students')) {
+            ClassGroupStudent::query()
+                ->whereRaw('LOWER(TRIM(COALESCE(class_group_students.index_number, ""))) = ?', [Student::normalizeIndex($idx)])
+                ->update(['student_name' => $nm]);
+        }
+    }
+
+    /**
      * Batch-load data for Docu Mentor member lists: class roster names (optional) and
      * {@see Student} rows for OTP/profile phone numbers (same index hash as login).
      */

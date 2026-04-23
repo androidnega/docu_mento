@@ -32,7 +32,7 @@ class SupervisorProjectController extends Controller
             ? Project::query()
             : $user->supervisedProjects();
 
-        $query->with(['group', 'category', 'academicYear', 'chapters.submissions']);
+        $query->with(['group.members', 'category', 'academicYear', 'chapters.submissions']);
 
         if (request()->boolean('pending') && ! $user->isDocuMentorCoordinator()) {
             $query->whereHas('chapters.submissions', function ($q) use ($user) {
@@ -42,7 +42,18 @@ class SupervisorProjectController extends Controller
 
         $projects = $query->orderByDesc('created_at')->get();
 
-        return view('docu-mentor.supervisors.projects.index', compact('user', 'projects'));
+        $totalStudentsAcrossProjects = 0;
+        $seenStudentIds = [];
+        foreach ($projects as $project) {
+            foreach ($project->group?->members ?? [] as $member) {
+                if ($member && $member->id !== null) {
+                    $seenStudentIds[$member->id] = true;
+                }
+            }
+        }
+        $totalStudentsAcrossProjects = count($seenStudentIds);
+
+        return view('docu-mentor.supervisors.projects.index', compact('user', 'projects', 'totalStudentsAcrossProjects'));
     }
 
     public function show(Project $project): View

@@ -57,7 +57,7 @@
     </dl>
 </section>
 
-{{-- MEMBERS: Name | Phone | Index (index is never shown as name) --}}
+{{-- MEMBERS: Index | Name | Phone (index is never shown as name) --}}
 @if($project->group && $project->group->members->isNotEmpty())
 <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
     <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-3">Members</h2>
@@ -65,9 +65,9 @@
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-100">
+                    <th class="px-3 py-2.5 font-mono normal-case">Index</th>
                     <th class="px-3 py-2.5">Name</th>
                     <th class="px-3 py-2.5">Phone</th>
-                    <th class="px-3 py-2.5 font-mono normal-case">Index</th>
                     <th class="px-3 py-2.5 w-28 text-right"></th>
                 </tr>
             </thead>
@@ -78,6 +78,7 @@
                         $displayName = $member->docuMentorMemberDisplayName();
                     @endphp
                     <tr class="align-middle">
+                        <td class="px-3 py-2.5 text-slate-800 font-mono text-xs">{{ $indexLabel ?: '—' }}</td>
                         <td class="px-3 py-2.5 font-medium text-slate-900">
                             @if($displayName === '—')
                                 <span class="text-slate-400 font-normal">—</span>
@@ -86,7 +87,6 @@
                             @endif
                         </td>
                         <td class="px-3 py-2.5 text-slate-600">{{ $member->docuMentorMemberDisplayPhone() }}</td>
-                        <td class="px-3 py-2.5 text-slate-800 font-mono text-xs">{{ $indexLabel ?: '—' }}</td>
                         <td class="px-3 py-2.5 text-right text-xs">
                             @if($project->group->leader_id === $member->id)
                                 <span class="text-indigo-600 font-semibold">(Leader)</span>
@@ -139,9 +139,9 @@
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 font-mono normal-case">Index</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Name</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Phone</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 font-mono normal-case">Index</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Document score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">System score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Final (avg)</th>
@@ -158,6 +158,7 @@
                             $memberIndex = $member->index_number ?: $member->username;
                         @endphp
                         <tr>
+                            <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
                             <td class="px-4 py-2 text-sm">
                                 @php $gradeName = $member->docuMentorMemberDisplayName(); @endphp
                                 @if($gradeName === '—')
@@ -168,7 +169,6 @@
                                 @if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif
                             </td>
                             <td class="px-4 py-2 text-xs text-slate-600">{{ $member->docuMentorMemberDisplayPhone() }}</td>
-                            <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
                             <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2 text-sm text-slate-600">{{ $finalScore !== null ? $finalScore . '/100' : '—' }}</td>

@@ -246,9 +246,9 @@
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+                                <th class="px-3 py-2.5 font-mono normal-case">Index</th>
                                 <th class="px-3 py-2.5">Name</th>
                                 <th class="px-3 py-2.5">Phone</th>
-                                <th class="px-3 py-2.5 font-mono normal-case">Index</th>
                                 <th class="px-3 py-2.5 w-28 text-right"></th>
                             </tr>
                         </thead>
@@ -259,6 +259,7 @@
                                     $memberDisplay = $m->docuMentorMemberDisplayName();
                                 @endphp
                                 <tr class="align-middle hover:bg-gray-50/80">
+                                    <td class="px-3 py-2.5 text-gray-900 font-mono text-xs">{{ $memberIndexLabel ?: '—' }}</td>
                                     <td class="px-3 py-2.5 font-medium text-gray-900">
                                         @if($memberDisplay === '—')
                                             <span class="text-gray-400 font-normal">—</span>
@@ -267,7 +268,6 @@
                                         @endif
                                     </td>
                                     <td class="px-3 py-2.5 text-gray-700">{{ $m->docuMentorMemberDisplayPhone() }}</td>
-                                    <td class="px-3 py-2.5 text-gray-900 font-mono text-xs">{{ $memberIndexLabel ?: '—' }}</td>
                                     <td class="px-3 py-2.5 text-right">
                                         @if($m->id === $project->group->leader_id)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary-100 text-primary-800">Leader</span>

@@ -83,8 +83,25 @@
             <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 min-h-[44px]">Save changes</button>
         </form>
         @else
-        <p class="text-sm text-gray-600">Your account is linked to your user profile. Name and index are shown in the sidebar. Contact your coordinator to update your details.</p>
-        @if(isset($user) && $user)
+        <p class="text-sm text-gray-600 mb-4">Update the name shown on your projects and to supervisors. Index and phone stay as on your account.</p>
+        @if(isset($user) && $user && $user->isDocuMentorStudent())
+        <form action="{{ route('dashboard.my-profile.update') }}" method="post" class="space-y-4">
+            @csrf
+            @method('PUT')
+            <div>
+                <label for="index_ro" class="block text-sm font-medium text-gray-700 mb-1">Index number</label>
+                <input type="text" id="index_ro" value="{{ $user->index_number ?? '—' }}" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 bg-gray-50 font-mono" readonly disabled>
+            </div>
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+                <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required maxlength="255" placeholder="Your full name" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name">
+                @error('name')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 min-h-[44px]">Save name</button>
+        </form>
+        @elseif(isset($user) && $user)
         <dl class="mt-4 space-y-1 text-sm">
             <div class="flex gap-2"><dt class="text-gray-500 w-24 shrink-0">Name</dt><dd class="text-gray-800">{{ $user->name ?? '—' }}</dd></div>
             <div class="flex gap-2"><dt class="text-gray-500 w-24 shrink-0">Index</dt><dd class="font-mono text-gray-800">{{ $user->index_number ?? '—' }}</dd></div>

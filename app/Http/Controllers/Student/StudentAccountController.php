@@ -269,7 +269,7 @@ class StudentAccountController extends Controller
         }
         $student->phone_contact = $phone;
         $student->save();
-        User::syncDocuMentorUserFromStudentProfile($student);
+        User::propagateDocuMentorDisplayNameFromStudent($student);
 
         // Supervisor with SMS balance (for deducting); if none, we still send OTP so students can log in
         $smsOwner = $this->smsOwnerForIndex($student->index_number);
@@ -465,7 +465,7 @@ class StudentAccountController extends Controller
         if (! $user && trim((string) ($student->index_number ?? '')) !== '') {
             $user = User::createDocuMentorUserForStudent($student);
         }
-        User::syncDocuMentorUserFromStudentProfile($student);
+        User::propagateDocuMentorDisplayNameFromStudent($student);
         if ($user) {
             request()->session()->regenerate();
             Auth::login($user, false);
