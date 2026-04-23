@@ -4,6 +4,7 @@ namespace App\Http\Controllers\DocuMentor;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocuMentor\Project;
+use App\Models\DocuMentor\ProjectFiles;
 use App\Models\DocuMentor\ProjectStudentScore;
 use App\Models\DocuMentor\SupervisorProjectApproval;
 use Illuminate\Http\RedirectResponse;
@@ -48,25 +49,30 @@ class SupervisorProjectController extends Controller
         $user = request()->attributes->get('dm_user');
         $this->authorize('view', $project);
 
-        $project->load([
+        $with = [
             'group.members',
             'category',
             'chapters.submissions.comments',
             'features',
             'proposals',
-            'projectFiles',
             'studentScores',
             'supervisorApprovals',
             'supervisors',
             'parentProject' => fn ($q) => $q->with(['proposals', 'chapters' => fn ($c) => $c->where('order', 6)->with('submissions')]),
-        ]);
+        ];
+        if (ProjectFiles::tableExists()) {
+            $with[] = 'projectFiles';
+        }
+        $project->load($with);
+
+        $projectFilesTableReady = ProjectFiles::tableExists();
 
         $canAccessParent = $project->parent_project_id && (
             ($project->group && $project->group->leader_id === $user->id) ||
             $project->supervisors()->where('users.id', $user->id)->exists()
         );
 
-        return view('docu-mentor.supervisors.projects.show', compact('user', 'project', 'canAccessParent'));
+        return view('docu-mentor.supervisors.projects.show', compact('user', 'project', 'canAccessParent', 'projectFilesTableReady'));
     }
 
     /**

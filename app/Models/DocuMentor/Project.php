@@ -3,6 +3,7 @@
 namespace App\Models\DocuMentor;
 
 use App\Models\User;
+use App\Services\SupabaseStorageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -216,7 +217,11 @@ class Project extends Model
      */
     public function deleteWithRelated(): void
     {
-        $this->load(['chapters.submissions', 'proposals', 'projectFiles', 'studentScores', 'supervisorApprovals']);
+        $load = ['chapters.submissions', 'proposals', 'studentScores', 'supervisorApprovals'];
+        if (ProjectFiles::tableExists()) {
+            $load[] = 'projectFiles';
+        }
+        $this->load($load);
         foreach ($this->chapters as $chapter) {
             foreach ($chapter->submissions as $sub) {
                 if ($sub->file && Storage::disk('public')->exists($sub->file)) {
@@ -232,13 +237,21 @@ class Project extends Model
             }
             $proposal->delete();
         }
-        foreach ($this->projectFiles as $pf) {
-            foreach (['file', 'file_2', 'file_3'] as $field) {
-                if (!empty($pf->$field) && Storage::disk('public')->exists($pf->$field)) {
-                    Storage::disk('public')->delete($pf->$field);
+        if (ProjectFiles::tableExists()) {
+            foreach ($this->projectFiles as $pf) {
+                foreach (['brief_pdf', 'diary_pdf', 'assessment_file', 'assessment_form_file'] as $field) {
+                    $val = $pf->$field ?? null;
+                    if (! $val) {
+                        continue;
+                    }
+                    if (str_starts_with((string) $val, 'supabase:')) {
+                        SupabaseStorageService::deleteDocument(substr((string) $val, strlen('supabase:')));
+                    } elseif (Storage::disk('public')->exists($val)) {
+                        Storage::disk('public')->delete($val);
+                    }
                 }
+                $pf->delete();
             }
-            $pf->delete();
         }
         if ($this->final_submission && Storage::disk('public')->exists($this->final_submission)) {
             Storage::disk('public')->delete($this->final_submission);

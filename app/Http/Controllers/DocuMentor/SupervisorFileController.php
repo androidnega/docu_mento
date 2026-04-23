@@ -20,6 +20,10 @@ class SupervisorFileController extends Controller
     {
         $this->authorize('view', $project);
 
+        if (! ProjectFiles::tableExists()) {
+            return back()->with('error', 'Project file storage is not initialized. Run: php artisan migrate');
+        }
+
         $request->validate([
             'brief_pdf' => 'nullable|file|mimes:pdf|max:10240',
             'diary_pdf' => 'nullable|file|mimes:pdf|max:10240',
@@ -249,7 +253,7 @@ class SupervisorFileController extends Controller
             }
         }
 
-        $pf = $project->projectFiles()->first();
+        $pf = ProjectFiles::tableExists() ? $project->projectFiles()->first() : null;
         if ($pf) {
             foreach (['brief_pdf', 'diary_pdf', 'assessment_file', 'assessment_form_file'] as $f) {
                 $filePath = $pf->$f;

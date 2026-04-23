@@ -267,6 +267,11 @@
         {{-- Upload project files / final submission --}}
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
             <h2 class="font-semibold text-slate-900 mb-4">Upload Files</h2>
+            @if(isset($projectFilesTableReady) && ! $projectFilesTableReady)
+            <div class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900">
+                Brief/diary PDF uploads need a database table that is not on this server yet. Ask an administrator to run <code class="text-xs bg-amber-100 px-1 rounded">php artisan migrate</code> (or deploy the latest migrations), then try again.
+            </div>
+            @endif
             <form action="{{ route('dashboard.docu-mentor.files.upload', $project) }}" method="post" enctype="multipart/form-data" class="space-y-3">
                 @csrf
                 <input type="file" name="brief_pdf" accept=".pdf" class="text-sm w-full">
