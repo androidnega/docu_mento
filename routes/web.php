@@ -237,6 +237,8 @@ Route::middleware('admin.auth')->group(function () {
             Route::get('students/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'studentsList'])->name('students.list');
             Route::get('supervisors', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsIndex'])->name('supervisors.index');
             Route::get('supervisors/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsList'])->name('supervisors.list');
+            Route::post('supervisors/send-login-sms-bulk', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSmsBulk'])->name('supervisors.send-login-sms-bulk');
+            Route::post('supervisors/{user}/send-login-sms', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSms'])->name('supervisors.send-login-sms');
             Route::resource('academic-years', \App\Http\Controllers\DocuMentor\AcademicYearController::class)->parameters(['academic-years' => 'academicYear']);
             Route::resource('categories', \App\Http\Controllers\DocuMentor\CategoryController::class);
             Route::resource('semesters', \App\Http\Controllers\Admin\SemesterController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);

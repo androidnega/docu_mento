@@ -4,6 +4,10 @@
 @section('dashboard_heading', 'Supervisors')
 
 @section('dashboard_content')
+@php
+    $arkeselConfigured = $arkeselConfigured ?? false;
+    $coordinatorSmsRemaining = $coordinatorSmsRemaining ?? 0;
+@endphp
 <div class="w-full space-y-6">
     {{-- Header summary --}}
     <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
@@ -84,7 +88,8 @@
 
     {{-- Filters + table: Name | Phone | Assigned projects | Students --}}
     <section class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2">
                 <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">All supervisors</h2>
                 <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
@@ -113,6 +118,14 @@
                     <option value="without" {{ ($projectsFilter ?? request('projects')) === 'without' ? 'selected' : '' }}>Without projects</option>
                 </select>
             </form>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+                <i class="fas fa-key text-[10px] mr-1"></i>
+                Send login URL, username, and a new password by SMS — <span class="font-semibold tabular-nums">{{ $coordinatorSmsRemaining }}</span> credits remaining.
+                @if(! $arkeselConfigured)
+                    <span class="text-amber-700 dark:text-amber-400 font-medium">Configure Arkesel under Settings → OTP.</span>
+                @endif
+            </p>
         </div>
         @if($supervisors->isEmpty())
             <div class="p-8 text-center text-slate-500">
@@ -123,15 +136,25 @@
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead class="bg-slate-50 dark:bg-slate-900/70">
                         <tr>
+                            <th class="px-3 py-3 text-left w-10" scope="col">
+                                <input type="checkbox" id="idx-supervisors-select-all" class="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500" title="Select all on this page" aria-label="Select all supervisors on this page">
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Name</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Phone</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Assigned projects</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Students</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Login SMS</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
                         @foreach($supervisors as $u)
+                            @php
+                                $canSendRow = $arkeselConfigured && !empty(trim((string)($u->phone ?? ''))) && $coordinatorSmsRemaining >= 1;
+                            @endphp
                             <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/60">
+                                <td class="px-3 py-3">
+                                    <input type="checkbox" name="supervisor_ids[]" value="{{ $u->id }}" form="idx-supervisor-bulk-sms-form" class="idx-supervisor-sms-cb rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500" aria-label="Select {{ $u->name ?? $u->username }}">
+                                </td>
                                 <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-50">
                                     <span class="inline-flex items-center gap-1.5">
                                         <i class="fas fa-user-circle text-slate-400"></i>
@@ -141,11 +164,29 @@
                                 <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $u->phone ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->supervised_projects_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->total_students_count ?? 0 }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <form method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                            @if(! $canSendRow) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel under Settings → OTP.' : (!trim((string)($u->phone ?? '')) ? 'Add a phone number for this supervisor.' : 'No SMS credits left.') }}" @endif
+                                        >Send</button>
+                                    </form>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 dark:bg-slate-100 dark:text-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-white disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
+                    <i class="fas fa-paper-plane text-xs"></i>
+                    Send login SMS to selected
+                </button>
+                <span class="text-xs text-slate-500 dark:text-slate-400">This page only · up to 50 · no phone = skipped</span>
+            </form>
             <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
                 <div>
                     Showing
@@ -191,6 +232,13 @@
     if (projectsSelect) {
         projectsSelect.addEventListener('change', function () {
             form.submit();
+        });
+    }
+
+    var masterIdx = document.getElementById('idx-supervisors-select-all');
+    if (masterIdx) {
+        masterIdx.addEventListener('change', function () {
+            document.querySelectorAll('.idx-supervisor-sms-cb').forEach(function (cb) { cb.checked = masterIdx.checked; });
         });
     }
 })();

@@ -9,6 +9,10 @@
 @endsection
 
 @section('dashboard_content')
+@php
+    $arkeselConfigured = $arkeselConfigured ?? false;
+    $coordinatorSmsRemaining = $coordinatorSmsRemaining ?? 0;
+@endphp
 <div class="w-full space-y-6">
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
         <h1 class="text-lg font-semibold text-slate-900">Academic year: {{ $academicYear->year }}</h1>
@@ -53,10 +57,16 @@
         </div>
     </div>
 
-    {{-- Table: Name | Phone | Email | Assigned projects --}}
+    {{-- Table: Name | Phone | Email | Assigned projects | Login SMS --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 space-y-2">
             <h2 class="text-sm font-semibold text-slate-800">Supervisors ({{ $supervisors->count() }})</h2>
+            <p class="text-xs text-slate-600">
+                Send login URL, username, and a <strong>new</strong> random password by SMS (1 credit per supervisor). Your SMS credits remaining: <span class="font-semibold tabular-nums">{{ $coordinatorSmsRemaining }}</span>.
+                @if(! $arkeselConfigured)
+                    <span class="text-amber-700 font-medium">SMS provider is not configured.</span>
+                @endif
+            </p>
         </div>
         @if($supervisors->isEmpty())
             <div class="p-8 text-center text-slate-500">
@@ -68,25 +78,64 @@
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50">
                         <tr>
+                            <th class="px-3 py-3 text-left w-10" scope="col">
+                                <input type="checkbox" id="ay-supervisors-select-all" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500" title="Select all" aria-label="Select all supervisors for bulk SMS">
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Phone</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned projects</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Login SMS</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 bg-white">
                         @foreach($supervisors as $u)
+                            @php
+                                $canSendRow = $arkeselConfigured && !empty(trim((string)($u->phone ?? ''))) && $coordinatorSmsRemaining >= 1;
+                            @endphp
                             <tr class="hover:bg-slate-50/50">
+                                <td class="px-3 py-3">
+                                    <input type="checkbox" name="supervisor_ids[]" value="{{ $u->id }}" form="ay-supervisor-bulk-sms-form" class="ay-supervisor-sms-cb rounded border-slate-300 text-primary-600 focus:ring-primary-500" aria-label="Select {{ $u->name ?? $u->username }}">
+                                </td>
                                 <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ $u->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm text-slate-600">{{ $u->phone ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm text-slate-600">{{ $u->email ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700">{{ $u->supervised_projects_count ?? 0 }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <form method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                            @if(! $canSendRow) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel under Settings → OTP.' : (!trim((string)($u->phone ?? '')) ? 'Add a phone number for this supervisor.' : 'No SMS credits left.') }}" @endif
+                                        >Send</button>
+                                    </form>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+            <form id="ay-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50/80" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor? (1 SMS credit per successful send.)');">
+                @csrf
+                <input type="hidden" name="academic_year_id" value="{{ $academicYear->id }}">
+                <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
+                    Send login SMS to selected
+                </button>
+                <span class="text-xs text-slate-500">Up to 50 per request. Supervisors without a phone are skipped.</span>
+            </form>
         @endif
     </section>
 </div>
+@push('scripts')
+<script>
+(function () {
+    var master = document.getElementById('ay-supervisors-select-all');
+    if (!master) return;
+    master.addEventListener('change', function () {
+        document.querySelectorAll('.ay-supervisor-sms-cb').forEach(function (cb) { cb.checked = master.checked; });
+    });
+})();
+</script>
+@endpush
 @endsection
