@@ -22,6 +22,16 @@
     @if(session('success'))<div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
 
+    <div class="rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50/90 p-4 shadow-sm ring-1 ring-emerald-500/10">
+        <div class="flex items-start gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-sm font-bold">SMS</span>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-emerald-950">Automatic welcome text</p>
+                <p class="text-xs text-emerald-900/85 mt-1 leading-relaxed">Each <strong>new</strong> supervisor you add here (with a phone number) receives the login link, username, and password by SMS when Arkesel is configured — one credit per supervisor from your allocation.</p>
+            </div>
+        </div>
+    </div>
+
     {{-- Upload Supervisors (CSV) + Add Single Supervisor --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

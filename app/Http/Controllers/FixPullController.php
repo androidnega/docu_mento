@@ -13,12 +13,14 @@ class FixPullController extends Controller
     private function getExpectedKey(): string
     {
         $key = env('MIGRATION_RUN_KEY', self::DEFAULT_SECRET);
+
         return trim((string) $key) !== '' ? trim($key) : self::DEFAULT_SECRET;
     }
 
     private function checkKey(Request $request): bool
     {
         $key = $request->query('key');
+
         return is_string($key) && trim($key) !== '' && trim($key) === $this->getExpectedKey();
     }
 
@@ -32,7 +34,8 @@ class FixPullController extends Controller
         if (! $this->checkKey($request)) {
             $expected = $this->getExpectedKey();
             $base = $request->getSchemeAndHttpHost();
-            $url = $base . '/fix-pull/run?key=' . urlencode($expected);
+            $url = $base.'/fix-pull/run?key='.urlencode($expected);
+
             return response(
                 "Invalid or missing key. Add ?key= to the URL.\n\nTry this (default key):\n{$url}\n\nOr set MIGRATION_RUN_KEY in .env and use that value as key=.",
                 403,
@@ -42,14 +45,14 @@ class FixPullController extends Controller
 
         $basePath = base_path();
 
-        if (! is_dir($basePath . '/.git')) {
+        if (! is_dir($basePath.'/.git')) {
             return response("ERROR: .git not found in {$basePath}", 500, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
 
         // Preserve existing .env on the server: back it up before git reset, restore after.
-        $envPath = $basePath . '/.env';
+        $envPath = $basePath.'/.env';
         $envExisted = is_file($envPath);
         $envBackup = null;
         if ($envExisted) {
@@ -68,7 +71,7 @@ class FixPullController extends Controller
         $outFetch = [];
         exec($cmdFetch, $outFetch, $codeFetch);
         $body .= "Step 1: git fetch origin\n";
-        $body .= implode("\n", $outFetch) . "\n";
+        $body .= implode("\n", $outFetch)."\n";
         $body .= "Exit code: {$codeFetch}\n\n";
 
         // Step 2: get current branch, then reset hard to origin (discards local changes so pull never conflicts)
@@ -79,7 +82,7 @@ class FixPullController extends Controller
         $outReset = [];
         exec($cmdReset, $outReset, $codeReset);
         $body .= "Step 2: git reset --hard origin/{$branch}\n";
-        $body .= implode("\n", $outReset) . "\n";
+        $body .= implode("\n", $outReset)."\n";
         $body .= "Exit code: {$codeReset}\n\n";
 
         // Restore previous .env after reset so server configuration is not overwritten by repo.
@@ -102,7 +105,7 @@ class FixPullController extends Controller
             \Illuminate\Support\Facades\Artisan::call('cache:clear');
             $body .= "Caches cleared.\n\n";
         } catch (\Throwable $e) {
-            $body .= "Cache clear error: " . $e->getMessage() . "\n\n";
+            $body .= 'Cache clear error: '.$e->getMessage()."\n\n";
         }
 
         $body .= "====================================\n";
@@ -126,13 +129,15 @@ class FixPullController extends Controller
     {
         $base = $request->getSchemeAndHttpHost();
         $key = 'DocuMentoMigrate2026Xp9k3m7';
-        $clearCache = $base . '/clear-cache?key=' . urlencode($key);
-        $fixPullRun = $base . '/fix-pull/run?key=' . urlencode($key);
-        $thekey = $base . '/thekey?key=' . urlencode($key);
-        $fixPullPage = $base . '/fix-pull?key=' . urlencode($key);
+        $clearCache = $base.'/clear-cache?key='.urlencode($key);
+        $fixPullRun = $base.'/fix-pull/run?key='.urlencode($key);
+        $thekey = $base.'/thekey?key='.urlencode($key);
+        $fixPullPage = $base.'/fix-pull?key='.urlencode($key);
+        $runMigrationsAuto = $base.'/run-migrations-auto?key='.urlencode($key);
 
         $body = "Docu Mento maintenance routes are active.\n\n";
         $body .= "Use these URLs (same key in .env: MIGRATION_RUN_KEY):\n\n";
+        $body .= "0. Run migrations (sleek UI; then click Run):\n   {$runMigrationsAuto}\n\n";
         $body .= "1. Clear caches (after deploy):\n   {$clearCache}\n\n";
         $body .= "2. Fix git pull (no SSH) – short link:\n   {$thekey}\n\n";
         $body .= "3. Fix git pull – long link:\n   {$fixPullRun}\n\n";
@@ -157,7 +162,7 @@ class FixPullController extends Controller
 
         $base = $request->getSchemeAndHttpHost();
         $key = $request->query('key');
-        $scriptUrl = $base . '/fix-pull/script?key=' . urlencode($key);
+        $scriptUrl = $base.'/fix-pull/script?key='.urlencode($key);
 
         $html = <<<HTML
 <!DOCTYPE html>

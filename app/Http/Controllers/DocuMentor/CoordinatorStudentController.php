@@ -14,12 +14,15 @@ use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\User;
 use App\Services\ArkeselService;
+use App\Services\NewSupervisorWelcomeSmsService;
 use App\Services\SupervisorCredentialSmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -435,6 +438,10 @@ class CoordinatorStudentController extends Controller
         if (User::where('username', $username)->exists()) {
             $username = $username.'_'.substr(uniqid(), -4);
         }
+        $plainSupervisorPassword = null;
+        if ($isSupervisor) {
+            $plainSupervisorPassword = Str::password(12);
+        }
         $userData = [
             'username' => $username,
             'index_number' => $indexNumber,
@@ -443,7 +450,7 @@ class CoordinatorStudentController extends Controller
             'role' => $dmRole,
             'department_id' => $roleModel ? $roleModel->department_id : $deptId,
             'is_active' => true,
-            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+            'password' => Hash::make($plainSupervisorPassword ?? Str::random(32)),
         ];
         if (Schema::hasColumn('users', 'academic_year_id')) {
             $userData['academic_year_id'] = $academicYearId;
@@ -456,8 +463,23 @@ class CoordinatorStudentController extends Controller
             Supervisor::firstOrCreate(['user_id' => $user->id]);
         }
         $redirect = $this->redirectAfterStore($academicYearId, $request->role);
+        $successMsg = 'User added: '.($name ?: $indexNumber).' ('.$request->role.').';
+        if ($isSupervisor && $plainSupervisorPassword !== null) {
+            $sms = NewSupervisorWelcomeSmsService::trySend($admin, $user, $plainSupervisorPassword);
+            if ($sms['sent']) {
+                $successMsg .= ' Login details were sent by SMS (1 coordinator credit).';
+            } elseif ($sms['reason'] === 'no_phone') {
+                $successMsg .= ' Add a phone number on the account to receive login SMS automatically.';
+            } elseif ($sms['reason'] === 'no_arkesel') {
+                $successMsg .= ' Configure Arkesel (Settings → OTP) to send login SMS automatically.';
+            } elseif ($sms['reason'] === 'no_credits') {
+                $successMsg .= ' No SMS credits left — add credits or send login details manually from Supervisors.';
+            } elseif ($sms['reason'] === 'sms_failed') {
+                $successMsg .= ' Welcome SMS could not be sent — use “Send login SMS” on the supervisors list if needed.';
+            }
+        }
 
-        return redirect($redirect)->with('success', 'User added: '.($name ?: $indexNumber).' ('.$request->role.').');
+        return redirect($redirect)->with('success', $successMsg);
     }
 
     /** Redirect to year-scoped students/supervisors page when academic_year_id present; supervisors without year → supervisors index. */
@@ -521,6 +543,7 @@ class CoordinatorStudentController extends Controller
         $deptId = $admin->coordinatorDepartmentId();
         $added = 0;
         $updated = 0;
+        $supervisorWelcomeSmsSent = 0;
         foreach ($rows as $row) {
             $index = trim((string) ($row[$indexCol] ?? ''));
             if ($index === '') {
@@ -583,6 +606,7 @@ class CoordinatorStudentController extends Controller
                 if (User::where('username', $username)->exists()) {
                     $username = $username.'_'.substr(uniqid(), -4);
                 }
+                $plainSupervisorPassword = $isSupervisor ? Str::password(12) : null;
                 $userData = [
                     'username' => $username,
                     'index_number' => $index,
@@ -591,7 +615,7 @@ class CoordinatorStudentController extends Controller
                     'role' => $dmRole,
                     'department_id' => $roleModel ? $roleModel->department_id : $deptId,
                     'is_active' => true,
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+                    'password' => Hash::make($plainSupervisorPassword ?? Str::random(32)),
                 ];
                 if (Schema::hasColumn('users', 'academic_year_id')) {
                     $userData['academic_year_id'] = $academicYearId;
@@ -602,6 +626,12 @@ class CoordinatorStudentController extends Controller
                 $user = User::create($userData);
                 if ($isSupervisor) {
                     Supervisor::firstOrCreate(['user_id' => $user->id]);
+                    if ($plainSupervisorPassword !== null) {
+                        $sms = NewSupervisorWelcomeSmsService::trySend($admin, $user, $plainSupervisorPassword);
+                        if ($sms['sent']) {
+                            $supervisorWelcomeSmsSent++;
+                        }
+                    }
                 }
             }
         }
@@ -610,6 +640,9 @@ class CoordinatorStudentController extends Controller
         $message = $total === 0
             ? 'No valid rows (Index Number required).'
             : 'Added '.$added.' and updated '.$updated.' user(s) for '.($request->role === 'supervisor' ? 'supervisors' : 'students').' in the selected academic year.';
+        if ($isSupervisor && $supervisorWelcomeSmsSent > 0) {
+            $message .= ' Welcome SMS with login details sent for '.$supervisorWelcomeSmsSent.' new supervisor(s) (1 SMS credit each).';
+        }
 
         $redirect = $this->redirectAfterStore($academicYearId, $request->role);
 

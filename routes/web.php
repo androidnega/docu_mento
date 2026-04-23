@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MigrateSqliteToMysqlController;
+use App\Http\Controllers\RunMigrationsAutoController;
 use App\Http\Controllers\RunMigrationsController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -16,6 +17,8 @@ Route::get('/migrate-sqlite-to-mysql', MigrateSqliteToMysqlController::class)->n
 // Creates/updates all tables (e.g. exam_calendar). See MIGRATION-LINK.md.
 // Link: https://your-domain/migration?key=YOUR_SECRET (default key: DocuMentoMigrate2026Xp9k3m7)
 Route::get('/run-migrations', RunMigrationsController::class)->name('migrate.run.pending');
+/** Sleek HTML UI — same key as /run-migrations (MIGRATION_RUN_KEY). Example: …/run-migrations-auto?key=SECRET&run=1 */
+Route::get('/run-migrations-auto', RunMigrationsAutoController::class)->name('migrate.run.auto');
 Route::get('/migration', RunMigrationsController::class)->name('migration');
 // Short link: https://your-domain/themigration?key=YOUR_SECRET
 Route::get('/themigration', RunMigrationsController::class)->name('migration.short');

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\School;
 use App\Models\Setting;
+use App\Models\SmsLog;
 use App\Models\User;
 use App\Services\ArkeselService;
 use Illuminate\Http\RedirectResponse;
@@ -201,6 +202,28 @@ class UserManagementController extends Controller
             if ($result['success']) {
                 return redirect()->route('dashboard.users.index')
                     ->with('success', "Account created! We've sent the login details by SMS — they're all set.");
+            }
+
+            return redirect()->route('dashboard.users.index')
+                ->with('sms_failed', $result['message'] ?? 'SMS could not be sent.')
+                ->with('generated_password', $plainPassword)
+                ->with('created_username', $newUser->username);
+        }
+
+        if ($role === User::ROLE_SUPERVISOR && $newUser->phone && ArkeselService::hasApiKey()) {
+            $loginUrl = url('/login');
+            $message = sprintf(
+                'Docu Mento login. URL: %s Username: %s Password: %s',
+                $loginUrl,
+                $newUser->username,
+                $plainPassword
+            );
+            $result = ArkeselService::sendSms($newUser->phone, $message);
+            $ok = (bool) ($result['success'] ?? false);
+            SmsLog::logSend($newUser->phone, $message, $ok, $result['message'] ?? null, $user->id);
+            if ($ok) {
+                return redirect()->route('dashboard.users.index')
+                    ->with('success', 'Supervisor account created. Welcome SMS with login URL, username, and password was sent.');
             }
 
             return redirect()->route('dashboard.users.index')

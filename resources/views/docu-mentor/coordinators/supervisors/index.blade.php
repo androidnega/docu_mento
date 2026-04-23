@@ -32,8 +32,20 @@
         </div>
     </div>
 
-    @if(session('success'))<div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{{ session('success') }}</div>@endif
-    @if(session('error'))<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
+    @if(session('success'))<div class="rounded-lg border border-green-200 bg-green-50 dark:border-emerald-900/40 dark:bg-emerald-950/40 p-3 text-sm text-green-800 dark:text-emerald-100">{{ session('success') }}</div>@endif
+    @if(session('error'))<div class="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30 p-3 text-sm text-red-800 dark:text-red-200">{{ session('error') }}</div>@endif
+
+    <div class="rounded-2xl border border-emerald-200/60 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-50/95 via-white to-teal-50/80 dark:from-emerald-950/50 dark:via-slate-900 dark:to-teal-950/40 p-4 sm:p-5 shadow-sm ring-1 ring-emerald-500/10 dark:ring-emerald-400/10">
+        <div class="flex items-start gap-3 sm:gap-4">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+                <i class="fas fa-paper-plane text-sm"></i>
+            </span>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-emerald-950 dark:text-emerald-100">New supervisors get an SMS automatically</p>
+                <p class="text-xs sm:text-sm text-emerald-900/80 dark:text-emerald-200/90 mt-1 leading-relaxed">CSV or single add: each <strong>new</strong> account with a phone number is texted the Docu Mento login URL, username, and password (Arkesel + your SMS credits). You can always resend from the table below.</p>
+            </div>
+        </div>
+    </div>
 
     {{-- Upload + Add single --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
