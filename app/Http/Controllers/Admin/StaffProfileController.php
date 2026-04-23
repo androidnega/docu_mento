@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
-use App\Models\Department;
-use App\Models\Faculty;
+use App\Http\Controllers\Controller;
 use App\Services\CloudinaryService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
@@ -17,57 +15,35 @@ use Illuminate\View\View;
 class StaffProfileController extends Controller
 {
     use InteractsWithAdminSession;
+
     public function show(): View|RedirectResponse
     {
         $user = $this->adminUser();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Error');
         }
-        // Load relationships for profile display (course removed with legacy courses tables)
-        $user->load(['institution', 'faculty', 'department', 'department.faculty']);
+        // Backbone: schools → departments (see phase1 migration). Supervisors use school/department only.
+        $user->load(['institution', 'department', 'department.school']);
 
-        $faculties = collect();
-        $facultyDepartments = collect();
-        $selectedFacultyId = null;
-        if ($user->isDocuMentorSupervisor()) {
-            if ($user->institution_id) {
-                $faculties = Faculty::query()
-                    ->where('institution_id', $user->institution_id)
-                    ->orderBy('name')
-                    ->get();
-            } else {
-                $faculties = Faculty::query()->orderBy('name')->get();
-            }
-            $selectedFacultyId = old('faculty_id', $user->faculty_id ?: $user->department?->faculty_id);
-            if ($selectedFacultyId) {
-                $facultyDepartments = Department::query()
-                    ->where('faculty_id', $selectedFacultyId)
-                    ->where(function ($q) {
-                        $q->where('is_active', true)->orWhereNull('is_active');
-                    })
-                    ->orderBy('name')
-                    ->get();
-            }
-        }
-
-        return view('admin.profile.show', compact('user', 'faculties', 'facultyDepartments', 'selectedFacultyId'));
+        return view('admin.profile.show', compact('user'));
     }
 
     public function update(Request $request): RedirectResponse
     {
         $user = $this->adminUser();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Error');
         }
         $rules = [
             'name' => 'nullable|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'username' => 'required|string|max:255|unique:users,username,'.$user->id,
         ];
         $request->validate($rules);
         $user->update([
             'name' => $request->input('name'),
             'username' => $request->input('username'),
         ]);
+
         return redirect()->route('dashboard.profile.show')->with('success', 'Saved');
     }
 
@@ -77,7 +53,7 @@ class StaffProfileController extends Controller
             'avatar' => 'required|image|max:2048',
         ]);
         $user = $this->adminUser();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Error');
         }
 
@@ -87,22 +63,23 @@ class StaffProfileController extends Controller
         if (CloudinaryService::isConfigured()) {
             $mime = $file->getMimeType();
             $data = base64_encode($file->get());
-            $dataUrl = 'data:' . $mime . ';base64,' . $data;
-            $avatarValue = CloudinaryService::upload($dataUrl, 'avatar_' . $user->id);
+            $dataUrl = 'data:'.$mime.';base64,'.$data;
+            $avatarValue = CloudinaryService::upload($dataUrl, 'avatar_'.$user->id);
         }
 
         if ($avatarValue === null) {
-            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+            if ($user->avatar && ! str_starts_with($user->avatar, 'http')) {
                 Storage::disk('public')->delete($user->avatar);
             }
             $avatarValue = $file->store('avatars', 'public');
         } else {
-            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+            if ($user->avatar && ! str_starts_with($user->avatar, 'http')) {
                 Storage::disk('public')->delete($user->avatar);
             }
         }
 
         $user->update(['avatar' => $avatarValue]);
+
         return redirect()->route('dashboard.profile.show')->with('success', 'Saved');
     }
 
@@ -118,13 +95,14 @@ class StaffProfileController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
         $user = $this->adminUser();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Error');
         }
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.'])->withInput();
         }
         $user->update(['password' => Hash::make($request->password)]);
+
         return redirect()->route('dashboard.profile.password')->with('success', 'Saved');
     }
 }

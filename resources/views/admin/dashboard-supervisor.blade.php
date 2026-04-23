@@ -28,14 +28,14 @@
         </div>
     </div>
 
-    {{-- Faculty/Department Notice --}}
-    @if(isset($needsFacultyDepartment) && $needsFacultyDepartment)
-    <div id="faculty-department-notice" class="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/70 dark:bg-amber-900/40 p-4 flex items-start gap-3" role="alert">
+    {{-- School / department notice (backbone structure; no faculty) --}}
+    @if(isset($needsSchoolDepartment) && $needsSchoolDepartment)
+    <div id="school-department-notice" class="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/70 dark:bg-amber-900/40 p-4 flex items-start gap-3" role="alert">
         <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-amber-900 dark:text-amber-100">Complete Your Profile</p>
-            <p class="mt-1 text-sm text-amber-800 dark:text-amber-50">Please select your faculty and department. <a href="{{ route('dashboard.users.edit', ['user' => $user, 'complete_profile' => 1]) }}" class="font-semibold underline hover:text-amber-900 dark:hover:text-amber-200">Update profile</a>.</p>
+            <p class="mt-1 text-sm text-amber-800 dark:text-amber-50">Please select your school and department. <a href="{{ route('dashboard.users.edit', ['user' => $user, 'complete_profile' => 1]) }}" class="font-semibold underline hover:text-amber-900 dark:hover:text-amber-200">Update profile</a>.</p>
         </div>
-        <button type="button" onclick="dismissFacultyDepartmentNotice()" class="flex-shrink-0 text-amber-600 dark:text-amber-200 hover:text-amber-800 dark:hover:text-amber-100" aria-label="Dismiss"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <button type="button" onclick="dismissSchoolDepartmentNotice()" class="flex-shrink-0 text-amber-600 dark:text-amber-200 hover:text-amber-800 dark:hover:text-amber-100" aria-label="Dismiss"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
     </div>
     @endif
 
@@ -218,36 +218,37 @@
         warning.style.display = 'none';
     }
 
-    const FACULTY_NOTICE_KEY = 'faculty_department_notice_dismissed';
-    const FACULTY_DISMISS_HOURS = 24;
+    const SCHOOL_DEPT_NOTICE_KEY = 'school_department_notice_dismissed';
+    const SCHOOL_DEPT_DISMISS_HOURS = 24;
 
-    function dismissFacultyDepartmentNotice() {
-        const notice = document.getElementById('faculty-department-notice');
+    function dismissSchoolDepartmentNotice() {
+        const notice = document.getElementById('school-department-notice');
         if (notice) {
             notice.style.display = 'none';
-            const dismissUntil = Date.now() + (FACULTY_DISMISS_HOURS * 60 * 60 * 1000);
-            localStorage.setItem(FACULTY_NOTICE_KEY, dismissUntil.toString());
+            const dismissUntil = Date.now() + (SCHOOL_DEPT_DISMISS_HOURS * 60 * 60 * 1000);
+            localStorage.setItem(SCHOOL_DEPT_NOTICE_KEY, dismissUntil.toString());
         }
     }
 
-    function shouldShowFacultyNotice() {
-        const dismissed = localStorage.getItem(FACULTY_NOTICE_KEY);
+    function shouldShowSchoolDepartmentNotice() {
+        const dismissed = localStorage.getItem(SCHOOL_DEPT_NOTICE_KEY);
         if (!dismissed) return true;
         const dismissUntil = parseInt(dismissed, 10);
         return Date.now() > dismissUntil;
     }
 
-    const facultyNotice = document.getElementById('faculty-department-notice');
-    if (facultyNotice && !shouldShowFacultyNotice()) {
-        facultyNotice.style.display = 'none';
+    const schoolDeptNotice = document.getElementById('school-department-notice');
+    if (schoolDeptNotice && !shouldShowSchoolDepartmentNotice()) {
+        schoolDeptNotice.style.display = 'none';
     }
 
-    @if(!$needsFacultyDepartment)
-        localStorage.removeItem(FACULTY_NOTICE_KEY);
+    @if(empty($needsSchoolDepartment))
+        localStorage.removeItem(SCHOOL_DEPT_NOTICE_KEY);
+        localStorage.removeItem('faculty_department_notice_dismissed');
     @endif
 
     window.dismissLowSmsWarning = dismissLowSmsWarning;
-    window.dismissFacultyDepartmentNotice = dismissFacultyDepartmentNotice;
+    window.dismissSchoolDepartmentNotice = dismissSchoolDepartmentNotice;
 })();
 </script>
 @endpush

@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
+use App\Http\Controllers\Controller;
 use App\Models\Department;
-use App\Models\Faculty;
 use App\Models\School;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
@@ -92,26 +91,7 @@ class DepartmentController extends Controller
 
         return response()->json([
             'success' => true,
-            'departments' => $departments->map(fn($d) => [
-                'id' => $d->id,
-                'name' => $d->name,
-            ]),
-        ]);
-    }
-
-    /** Departments for a faculty (AJAX for supervisor profile and legacy institution/faculty flows). */
-    public function byFaculty(Faculty $faculty): JsonResponse
-    {
-        $departments = $faculty->departments()
-            ->where(function ($q) {
-                $q->where('is_active', true)->orWhereNull('is_active');
-            })
-            ->orderBy('name')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'departments' => $departments->map(fn($d) => [
+            'departments' => $departments->map(fn ($d) => [
                 'id' => $d->id,
                 'name' => $d->name,
             ]),

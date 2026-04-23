@@ -260,7 +260,7 @@ class UserManagementController extends Controller
             $departments = Department::where('school_id', $selectedSchoolId)->orderBy('name')->get();
         }
 
-        // Check if this is a profile completion flow (supervisor editing themselves and missing faculty/department)
+        // Profile completion: supervisor editing themselves and missing school/department
         $isProfileCompletion = $request->has('complete_profile') &&
                                ! $isSuperAdmin &&
                                $currentUser &&
@@ -360,6 +360,11 @@ class UserManagementController extends Controller
             $user->department_id = (int) $request->department_id;
         } elseif ($request->has('department_id') && $request->department_id === '') {
             $user->department_id = null;
+        }
+
+        // Supervisors use school-backed departments only; drop legacy faculty link when they set department.
+        if (! $isSuperAdmin && $currentUser && $currentUser->id === $user->id && $user->isDocuMentorSupervisor() && $request->filled('department_id')) {
+            $user->faculty_id = null;
         }
 
         if ($canEditPhone && $request->has('phone')) {

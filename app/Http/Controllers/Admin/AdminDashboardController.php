@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
-use App\Models\DocuMentor\Chapter;
-use App\Models\DocuMentor\Submission;
+use App\Http\Controllers\Controller;
 use App\Models\DocuMentor\AcademicYear;
+use App\Models\DocuMentor\Chapter;
 use App\Models\DocuMentor\Project;
+use App\Models\DocuMentor\Submission;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CloudinaryService;
@@ -25,6 +25,7 @@ class AdminDashboardController extends Controller
         if ($user && $user->role === User::ROLE_SUPER_ADMIN) {
             return $this->adminDashboard();
         }
+
         return $this->supervisorDashboard();
     }
 
@@ -137,7 +138,7 @@ class AdminDashboardController extends Controller
                 $dbMeta['migrations_total'] = DB::table('migrations')->count();
                 $last = DB::table('migrations')->orderByDesc('batch')->orderByDesc('id')->first();
                 if ($last) {
-                    $dbMeta['last_migration'] = $last->migration . ' (batch ' . $last->batch . ')';
+                    $dbMeta['last_migration'] = $last->migration.' (batch '.$last->batch.')';
                 }
             }
         } catch (\Throwable $e) {
@@ -163,7 +164,7 @@ class AdminDashboardController extends Controller
     public function supervisorDashboard(): View
     {
         $user = $this->adminUser();
-        $needsFacultyDepartment = $user && $user->isDocuMentorSupervisor() && (! $user->faculty_id || ! $user->department_id);
+        $needsSchoolDepartment = $user && $user->isDocuMentorSupervisor() && ! $user->department_id;
 
         $assignedProjects = collect();
         $pendingSubmissionsCount = 0;
@@ -193,7 +194,7 @@ class AdminDashboardController extends Controller
         $activeAcademicYear = \App\Models\DocuMentor\AcademicYear::active();
 
         return view('admin.dashboard-supervisor', compact(
-            'needsFacultyDepartment',
+            'needsSchoolDepartment',
             'assignedProjects',
             'pendingSubmissionsCount',
             'commentsFollowUpCount',

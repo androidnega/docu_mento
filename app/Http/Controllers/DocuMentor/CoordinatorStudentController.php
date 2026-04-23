@@ -835,14 +835,12 @@ class CoordinatorStudentController extends Controller
                     DB::raw('MAX(students.phone_contact) as phone_contact'),
                     DB::raw('MAX(class_groups.academic_year_id) as academic_year_id'),
                     DB::raw('MAX(departments.name) as department_name'),
-                    DB::raw('MAX(faculties.name) as faculty_name'),
                     DB::raw('MAX(schools.name) as school_name'),
                     DB::raw('MAX(academic_years.year) as year_group')
                 )
                 ->join('class_groups', 'class_group_students.class_group_id', '=', 'class_groups.id')
                 ->leftJoin('users as supervisors', 'class_groups.supervisor_id', '=', 'supervisors.id')
                 ->leftJoin('departments', 'supervisors.department_id', '=', 'departments.id')
-                ->leftJoin('faculties', 'supervisors.faculty_id', '=', 'faculties.id')
                 ->leftJoin('schools', 'departments.school_id', '=', 'schools.id')
                 ->leftJoin('academic_years', 'class_groups.academic_year_id', '=', 'academic_years.id')
                 ->leftJoin('students', 'class_group_students.index_number', '=', 'students.index_number')
@@ -894,7 +892,7 @@ class CoordinatorStudentController extends Controller
                     'phone_contact' => $row->phone_contact,
                     'qualification_type' => null,
                     'institution' => $row->school_name ?? null,
-                    'faculty' => $row->faculty_name ?? null,
+                    'faculty' => null,
                     'department' => $row->department_name ?? null,
                     'year_group' => $row->year_group ?? null,
                     'source' => 'class_group',
@@ -932,7 +930,7 @@ class CoordinatorStudentController extends Controller
         $phone = $dmUser?->phone ?? $studentAccount?->phone_contact ?? null;
 
         $institution = $dmUser?->department?->school?->name ?? null;
-        $faculty = $dmUser?->department?->faculty?->name ?? null;
+        $faculty = null;
         $department = $dmUser?->department?->name ?? null;
         $yearGroup = null;
         $qualificationType = null;

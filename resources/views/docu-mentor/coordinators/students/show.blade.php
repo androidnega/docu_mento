@@ -74,10 +74,10 @@
                         <span class="text-sm text-gray-600 dark:text-slate-300">No</span>
                     @endif
                 </div>
-                @if($institution || $faculty || $department)
+                @if($institution || $department)
                 <div class="sm:col-span-2 rounded-xl bg-gray-50/70 dark:bg-slate-800/70 p-4">
-                    <p class="text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wide mb-1">Institution / Faculty / Department</p>
-                    <p class="text-sm text-gray-900 dark:text-slate-50">{{ implode(' · ', array_filter([$institution, $faculty, $department])) ?: '—' }}</p>
+                    <p class="text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wide mb-1">School / Department</p>
+                    <p class="text-sm text-gray-900 dark:text-slate-50">{{ implode(' · ', array_filter([$institution, $department])) ?: '—' }}</p>
                 </div>
                 @endif
             </div>
