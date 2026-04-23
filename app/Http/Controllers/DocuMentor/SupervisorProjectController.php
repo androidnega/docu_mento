@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DocuMentor\Project;
 use App\Models\DocuMentor\ProjectStudentScore;
 use App\Models\DocuMentor\SupervisorProjectApproval;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -32,7 +32,7 @@ class SupervisorProjectController extends Controller
 
         $query->with(['group', 'category', 'academicYear', 'chapters.submissions']);
 
-        if (request()->boolean('pending') && !$user->isDocuMentorCoordinator()) {
+        if (request()->boolean('pending') && ! $user->isDocuMentorCoordinator()) {
             $query->whereHas('chapters.submissions', function ($q) use ($user) {
                 $q->whereDoesntHave('comments', fn ($c) => $c->where('user_id', $user->id));
             });
@@ -49,7 +49,15 @@ class SupervisorProjectController extends Controller
         $this->authorize('view', $project);
 
         $project->load([
-            'group.members', 'category', 'chapters.submissions.comments.user', 'features', 'proposals', 'projectFiles', 'studentScores', 'supervisorApprovals',
+            'group.members',
+            'category',
+            'chapters.submissions.comments',
+            'features',
+            'proposals',
+            'projectFiles',
+            'studentScores',
+            'supervisorApprovals',
+            'supervisors',
             'parentProject' => fn ($q) => $q->with(['proposals', 'chapters' => fn ($c) => $c->where('order', 6)->with('submissions')]),
         ]);
 
@@ -72,10 +80,10 @@ class SupervisorProjectController extends Controller
         $this->authorize('view', $project);
 
         // WHEN CAN SUPERVISORS GRADE? Only when project.is_completed = true AND all supervisors have approved.
-        if (!$project->isFullyCompleted()) {
+        if (! $project->isFullyCompleted()) {
             return back()->with('error', 'Project must have all 6 chapters completed before grading.');
         }
-        if (!$project->allSupervisorsApproved()) {
+        if (! $project->allSupervisorsApproved()) {
             return back()->with('error', 'All supervisors must approve the project before grading.');
         }
         $project->markCompletedIfReady(); // Step 1: set is_completed = true when both conditions met
@@ -114,10 +122,10 @@ class SupervisorProjectController extends Controller
     {
         $user = request()->attributes->get('dm_user');
         $this->authorize('view', $project);
-        if (!$project->supervisors()->where('users.id', $user->id)->exists()) {
+        if (! $project->supervisors()->where('users.id', $user->id)->exists()) {
             return back()->with('error', 'You are not a supervisor of this project.');
         }
-        if (!$project->isFullyCompleted()) {
+        if (! $project->isFullyCompleted()) {
             return back()->with('error', 'All 6 chapters must be completed before you can approve the project.');
         }
 
@@ -125,9 +133,10 @@ class SupervisorProjectController extends Controller
             ['project_id' => $project->id, 'user_id' => $user->id],
             ['approved' => false, 'approved_at' => null]
         );
-        if (!$approval->approved) {
+        if (! $approval->approved) {
             $approval->update(['approved' => true, 'approved_at' => now()]);
             $project->markCompletedIfReady();
+
             return back()->with('success', 'Project approved. Grading will be available once all supervisors have approved.');
         }
 

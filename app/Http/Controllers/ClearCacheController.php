@@ -2,24 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\MigrationRunnerKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClearCacheController extends Controller
 {
-    /** Use same secret as run-migrations; set MIGRATION_RUN_KEY in .env on live. */
-    private const DEFAULT_SECRET = 'DocuMentoMigrate2026Xp9k3m7';
-
     /**
      * Clear Laravel caches via URL with a secret key.
      * Visit: https://YOUR-LIVE-SITE.com/clear-cache?key=YOUR_SECRET
+     * If MIGRATION_RUN_KEY is empty, ?key= may be omitted (same one-click rules as migrations).
      */
     public function __invoke(Request $request): Response
     {
-        $secret = env('MIGRATION_RUN_KEY', self::DEFAULT_SECRET);
-        if ($request->query('key') !== $secret) {
-            return response('Invalid or missing key. Use: ?key=YOUR_SECRET (set MIGRATION_RUN_KEY in .env on server).', 403, [
+        $provided = $request->query('key');
+        if (! MigrationRunnerKey::validate(is_string($provided) ? $provided : null)) {
+            return response('Invalid or missing key. With MIGRATION_RUN_KEY empty you may omit ?key=. Otherwise set MIGRATION_RUN_KEY in .env.', 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
@@ -42,7 +41,7 @@ class ClearCacheController extends Controller
             $lines[] = '========================================================';
             $lines[] = 'SUCCESS: All caches cleared. Reload your site.';
         } catch (\Throwable $e) {
-            $lines[] = 'ERROR: ' . $e->getMessage();
+            $lines[] = 'ERROR: '.$e->getMessage();
             $lines[] = $e->getTraceAsString();
         }
 

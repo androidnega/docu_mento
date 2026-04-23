@@ -3,8 +3,8 @@
 namespace App\Models\DocuMentor;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AcademicYear extends Model
 {
@@ -19,10 +19,31 @@ class AcademicYear extends Model
         'submission_deadline' => 'date',
     ];
 
-    /** If no submission_deadline set: default = September 30 of that academic year (Coordinator Flow spec). */
-    public function getEffectiveDeadlineAttribute(): \Carbon\Carbon
+    /**
+     * If no submission_deadline set: default = September 30 of the year following the academic year start
+     * (Coordinator Flow spec). Supports year labels like "2024-2025" without throwing.
+     */
+    public function getEffectiveDeadlineAttribute(): \Carbon\CarbonInterface
     {
-        return $this->submission_deadline ?? \Carbon\Carbon::parse($this->year)->addYear()->setMonth(9)->setDay(30);
+        if ($this->submission_deadline) {
+            return \Carbon\Carbon::parse($this->submission_deadline)->startOfDay();
+        }
+
+        $raw = trim((string) ($this->attributes['year'] ?? ''));
+        $start = null;
+        if ($raw !== '' && preg_match('/^(\d{4})\s*[-\/]\s*(\d{4})\b/', $raw, $m)) {
+            $start = \Carbon\Carbon::createMidnightDate((int) $m[1], 1, 1);
+        } elseif ($raw !== '' && preg_match('/^(\d{4})\b/', $raw, $m)) {
+            $start = \Carbon\Carbon::createMidnightDate((int) $m[1], 1, 1);
+        } else {
+            try {
+                $start = \Carbon\Carbon::parse($raw !== '' ? $raw : (string) now()->year)->startOfDay();
+            } catch (\Throwable) {
+                $start = now()->startOfDay();
+            }
+        }
+
+        return $start->copy()->addYear()->month(9)->day(30)->startOfDay();
     }
 
     public function department(): BelongsTo

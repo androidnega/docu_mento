@@ -2,31 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\MigrationRunnerKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\HttpFoundation\Response;
 
 class RunMigrationsController extends Controller
 {
-    /** Default secret; override with MIGRATION_RUN_KEY in .env for production. */
-    private const DEFAULT_SECRET = 'DocuMentoMigrate2026Xp9k3m7';
-
     /**
      * Run pending Laravel migrations via URL with a secret key.
      * Visit: https://yoursite.com/run-migrations?key=YOUR_SECRET
+     * If MIGRATION_RUN_KEY is empty in .env, ?key= may be omitted (one-click; secret derived from APP_KEY).
      * Fix git pull (no SSH): same URL with &action=fixpull
      * Visit: https://your-domain.com/migration?key=YOUR_SECRET&action=fixpull
      */
     public function __invoke(Request $request): Response
     {
-        $secret = trim((string) env('MIGRATION_RUN_KEY', self::DEFAULT_SECRET));
-        if ($secret === '') {
-            $secret = self::DEFAULT_SECRET;
-        }
-        if ($request->query('key') !== $secret) {
+        $provided = $request->query('key');
+        if (! MigrationRunnerKey::validate(is_string($provided) ? $provided : null)) {
             $base = $request->getSchemeAndHttpHost();
-            $tryUrl = $base . '/run-migrations?key=' . urlencode(self::DEFAULT_SECRET) . '&action=fixpull';
-            return response("Invalid or missing key. Try: {$tryUrl}\nSet MIGRATION_RUN_KEY in .env to use your own secret.", 403, [
+            $hint = MigrationRunnerKey::oneClickModeEnabled()
+                ? "Invalid key. With an empty MIGRATION_RUN_KEY you may omit ?key= or use the derived secret.\nTry: {$base}/run-migrations\n"
+                : "Invalid or missing key. Set MIGRATION_RUN_KEY in .env and pass ?key= that value.\n";
+
+            return response($hint, 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
@@ -41,7 +40,7 @@ class RunMigrationsController extends Controller
         try {
             $output .= "Step 1: Run migrate --force...\n";
             Artisan::call('migrate', ['--force' => true]);
-            $output .= trim(Artisan::output()) . "\n\n";
+            $output .= trim(Artisan::output())."\n\n";
 
             $output .= "Step 2: Clear caches...\n";
             Artisan::call('config:clear');
@@ -53,7 +52,7 @@ class RunMigrationsController extends Controller
             $output .= "=======================================\n";
             $output .= "SUCCESS: Pending migrations executed.\n";
         } catch (\Throwable $e) {
-            $output .= "ERROR: " . $e->getMessage() . "\n";
+            $output .= 'ERROR: '.$e->getMessage()."\n";
             $output .= $e->getTraceAsString();
         }
 
@@ -66,14 +65,14 @@ class RunMigrationsController extends Controller
     private function runFixPull(): Response
     {
         $basePath = base_path();
-        if (! is_dir($basePath . '/.git')) {
+        if (! is_dir($basePath.'/.git')) {
             return response("ERROR: .git not found in {$basePath}", 500, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
         }
 
         // Preserve existing .env on the server: back it up before git reset, restore after.
-        $envPath = $basePath . '/.env';
+        $envPath = $basePath.'/.env';
         $envExisted = is_file($envPath);
         $envBackup = null;
         if ($envExisted) {
@@ -85,13 +84,14 @@ class RunMigrationsController extends Controller
             $git = 'git';
         }
         $run = function (string $cmd) use ($basePath, $git): string {
-            $full = 'cd ' . escapeshellarg($basePath) . ' && ' . $git . ' ' . $cmd . ' 2>&1';
+            $full = 'cd '.escapeshellarg($basePath).' && '.$git.' '.$cmd.' 2>&1';
+
             return trim((string) shell_exec($full));
         };
         $body = "Docu Mento: Fix pull (reset to remote)\n====================================\n\n";
-        $body .= "Step 1: git fetch origin\n" . $run('fetch origin') . "\n\n";
+        $body .= "Step 1: git fetch origin\n".$run('fetch origin')."\n\n";
         $branch = $run('rev-parse --abbrev-ref HEAD') ?: 'main';
-        $body .= "Step 2: git reset --hard origin/{$branch}\n" . $run('reset --hard origin/' . $branch) . "\n\n";
+        $body .= "Step 2: git reset --hard origin/{$branch}\n".$run('reset --hard origin/'.$branch)."\n\n";
 
         // Restore previous .env after reset so server configuration is not overwritten by repo.
         if ($envExisted && is_string($envBackup)) {
@@ -112,9 +112,10 @@ class RunMigrationsController extends Controller
             Artisan::call('cache:clear');
             $body .= "Caches cleared.\n\n";
         } catch (\Throwable $e) {
-            $body .= $e->getMessage() . "\n\n";
+            $body .= $e->getMessage()."\n\n";
         }
         $body .= "====================================\nSUCCESS: Code matches remote (origin/{$branch}).\n";
+
         return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
     }
 }

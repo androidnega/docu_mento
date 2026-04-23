@@ -2,32 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\MigrationRunnerKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Sleek HTML UI for running pending migrations (same security as RunMigrationsController).
- * Official path: /run-migrations-auto?key=YOUR_SECRET&run=1
+ * Sleek HTML UI for running pending migrations (same rules as RunMigrationsController).
+ * One-click: leave MIGRATION_RUN_KEY empty — open /run-migrations-auto then Run (optional ?key= if set).
  */
 class RunMigrationsAutoController extends Controller
 {
-    private const DEFAULT_SECRET = 'DocuMentoMigrate2026Xp9k3m7';
-
     public function __invoke(Request $request): Response
     {
-        $secret = trim((string) env('MIGRATION_RUN_KEY', self::DEFAULT_SECRET));
-        if ($secret === '') {
-            $secret = self::DEFAULT_SECRET;
-        }
-
-        $provided = trim((string) $request->query('key', ''));
-        if ($provided !== $secret) {
+        $provided = $request->query('key');
+        $ok = MigrationRunnerKey::validate(is_string($provided) ? $provided : null);
+        if (! $ok) {
             return response()->view('maintenance.run-migrations-auto', [
                 'secretOk' => false,
                 'ran' => false,
                 'output' => '',
                 'error' => null,
+                'oneClickMode' => MigrationRunnerKey::oneClickModeEnabled(),
             ], 403);
         }
 
@@ -54,6 +50,7 @@ class RunMigrationsAutoController extends Controller
             'ran' => $ran,
             'output' => trim($output),
             'error' => $error,
+            'oneClickMode' => MigrationRunnerKey::oneClickModeEnabled(),
         ], $error ? 500 : 200);
     }
 }

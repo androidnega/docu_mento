@@ -122,14 +122,21 @@
 
         @if(empty($secretOk))
             <h1>Access restricted</h1>
-            <p class="sub">This page runs database migrations. Add your secret key to the URL query string (same as <code style="color:var(--accent);">MIGRATION_RUN_KEY</code> in <code style="color:var(--accent);">.env</code>).</p>
-            <div class="alert alert-warn">
-                Example: <span style="word-break:break-all;">https://documento.neckpressing.com/run-migrations-auto?key=YOUR_SECRET</span>
-            </div>
-            <p class="sub" style="margin-top:1.5rem;">If you have not set a custom key, the default from deployment docs may apply — change it in production.</p>
+            @if(!empty($oneClickMode))
+                <p class="sub">This URL was opened with a <code style="color:var(--accent);">key=</code> value that did not match this server. With <code style="color:var(--accent);">MIGRATION_RUN_KEY</code> left empty in <code style="color:var(--accent);">.env</code>, open the page <strong>without</strong> any query string.</p>
+                <div class="alert alert-ok" style="word-break:break-all;">{{ url('/run-migrations-auto') }}</div>
+            @else
+                <p class="sub">This page runs database migrations. Set <code style="color:var(--accent);">MIGRATION_RUN_KEY</code> in <code style="color:var(--accent);">.env</code> and open this URL with <code style="color:var(--accent);">?key=…</code> matching that value.</p>
+                <div class="alert alert-warn">
+                    Example: <span style="word-break:break-all;">https://documento.neckpressing.com/run-migrations-auto?key=YOUR_SECRET</span>
+                </div>
+            @endif
         @else
             <h1>Run migrations</h1>
             <p class="sub">Apply pending Laravel migrations and refresh caches. Use after deploying code that adds or changes tables.</p>
+            @if(!empty($oneClickMode))
+                <div class="alert alert-ok">One-click mode: <code style="color:#022c22;">MIGRATION_RUN_KEY</code> is empty, so you do not need a manual key. Access is still tied to this app&rsquo;s <code style="color:#022c22;">APP_KEY</code>.</div>
+            @endif
 
             @if(!empty($ran))
                 @if(!empty($error))
@@ -143,7 +150,15 @@
                         <pre class="out">{{ $output ?: '(no console output)' }}</pre>
                     </div>
                 @endif
-                <a class="btn btn-ghost" href="{{ url()->current() }}?key={{ urlencode(request('key')) }}">← Back</a>
+                @php
+                    $oneClick = !empty($oneClickMode);
+                    $backQuery = [];
+                    if (!$oneClick && request()->filled('key')) {
+                        $backQuery['key'] = request('key');
+                    }
+                    $backHref = $backQuery ? url()->current() . '?' . http_build_query($backQuery) : url()->current();
+                @endphp
+                <a class="btn btn-ghost" href="{{ $backHref }}">← Back</a>
             @else
                 <div class="card">
                     <ul class="steps">
@@ -152,9 +167,14 @@
                         <li>Safe to run multiple times (only pending migrations apply)</li>
                     </ul>
                 </div>
-                <div class="alert alert-warn">Only run this when you trust this URL. Anyone with the key can modify the database schema.</div>
+                <div class="alert alert-warn">Only run after deploy when you trust who can reach this URL. Anyone who can open it can modify the database schema.</div>
                 @php
-                    $runHref = url()->current() . '?' . http_build_query(['key' => request('key'), 'run' => '1']);
+                    $oneClick = !empty($oneClickMode);
+                    $runQuery = ['run' => '1'];
+                    if (!$oneClick && request()->filled('key')) {
+                        $runQuery['key'] = request('key');
+                    }
+                    $runHref = url()->current() . '?' . http_build_query($runQuery);
                 @endphp
                 <a class="btn btn-primary" href="{{ $runHref }}" onclick="return confirm('Run pending migrations on this server now?');">Run migrations now</a>
             @endif
