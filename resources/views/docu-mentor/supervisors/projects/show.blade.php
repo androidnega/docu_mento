@@ -57,23 +57,46 @@
     </dl>
 </section>
 
-{{-- MEMBERS: name, index/username, phone --}}
+{{-- MEMBERS: Name | Phone | Index (index is never shown as name) --}}
 @if($project->group && $project->group->members->isNotEmpty())
 <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
     <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-3">Members</h2>
-    <ul class="divide-y divide-slate-100 rounded-lg border border-slate-100 overflow-hidden">
-        @foreach($project->group->members as $member)
-            @php
-                $indexLabel = $member->index_number ?: $member->username;
-            @endphp
-            <li class="px-3 py-2.5 text-sm bg-white flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span class="font-medium text-slate-900 min-w-[8rem]">{{ $member->docuMentorMemberDisplayName() }}</span>
-                <span class="text-slate-600 font-mono text-xs">{{ $indexLabel }}</span>
-                <span class="text-slate-600 text-xs sm:ml-auto">{{ $member->phone ? $member->phone : 'No phone' }}</span>
-                @if($project->group->leader_id === $member->id)<span class="text-indigo-600 font-medium text-xs">(Leader)</span>@endif
-            </li>
-        @endforeach
-    </ul>
+    <div class="overflow-x-auto rounded-lg border border-slate-100">
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-100">
+                    <th class="px-3 py-2.5">Name</th>
+                    <th class="px-3 py-2.5">Phone</th>
+                    <th class="px-3 py-2.5 font-mono normal-case">Index</th>
+                    <th class="px-3 py-2.5 w-28 text-right"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                @foreach($project->group->members as $member)
+                    @php
+                        $indexLabel = $member->index_number ?: $member->username;
+                        $displayName = $member->docuMentorMemberDisplayName();
+                    @endphp
+                    <tr class="align-middle">
+                        <td class="px-3 py-2.5 font-medium text-slate-900">
+                            @if($displayName === '—')
+                                <span class="text-slate-400 font-normal">—</span>
+                            @else
+                                {{ $displayName }}
+                            @endif
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-600">{{ $member->phone ? $member->phone : 'No phone' }}</td>
+                        <td class="px-3 py-2.5 text-slate-800 font-mono text-xs">{{ $indexLabel ?: '—' }}</td>
+                        <td class="px-3 py-2.5 text-right text-xs">
+                            @if($project->group->leader_id === $member->id)
+                                <span class="text-indigo-600 font-semibold">(Leader)</span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </section>
 @endif
 
@@ -116,9 +139,9 @@
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Student</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Index</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Name</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Phone</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 font-mono normal-case">Index</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Document score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">System score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Final (avg)</th>
@@ -136,11 +159,16 @@
                         @endphp
                         <tr>
                             <td class="px-4 py-2 text-sm">
-                                <span class="font-medium text-slate-900">{{ $member->docuMentorMemberDisplayName() }}</span>
+                                @php $gradeName = $member->docuMentorMemberDisplayName(); @endphp
+                                @if($gradeName === '—')
+                                    <span class="text-slate-400">—</span>
+                                @else
+                                    <span class="font-medium text-slate-900">{{ $gradeName }}</span>
+                                @endif
                                 @if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif
                             </td>
+                            <td class="px-4 py-2 text-xs text-slate-600">{{ $member->phone ?: 'No phone' }}</td>
                             <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
-                            <td class="px-4 py-2 text-xs text-slate-600">{{ $member->phone ?: '—' }}</td>
                             <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2 text-sm text-slate-600">{{ $finalScore !== null ? $finalScore . '/100' : '—' }}</td>

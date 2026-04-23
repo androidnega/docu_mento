@@ -7,6 +7,7 @@ use App\Models\DocuMentor\Project;
 use App\Models\DocuMentor\ProjectFiles;
 use App\Models\DocuMentor\ProjectStudentScore;
 use App\Models\DocuMentor\SupervisorProjectApproval;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -52,7 +53,7 @@ class SupervisorProjectController extends Controller
         $with = [
             'group' => fn ($q) => $q->with([
                 'leader',
-                'members' => fn ($m) => $m->with('rosterStudent'),
+                'members',
             ]),
             'category',
             'chapters.submissions.comments',
@@ -67,6 +68,10 @@ class SupervisorProjectController extends Controller
             $with[] = 'projectFiles';
         }
         $project->load($with);
+
+        if ($project->group && $project->group->members->isNotEmpty()) {
+            User::eagerLoadRosterStudentsForDocuMentorMembers($project->group->members);
+        }
 
         $projectFilesTableReady = ProjectFiles::tableExists();
 

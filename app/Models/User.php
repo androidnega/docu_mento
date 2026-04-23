@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
@@ -198,6 +199,7 @@ class User extends Authenticatable
 
     /**
      * Global students row (OTP / roster) matched by index number when present.
+     * Case-sensitive on some DB collations; prefer {@see eagerLoadRosterStudentsForDocuMentorMembers} on lists.
      */
     public function rosterStudent(): HasOne
     {
@@ -205,8 +207,85 @@ class User extends Authenticatable
     }
 
     /**
+     * Batch-match users to students by normalized index hash (one query).
+     * Sets each user's rosterStudent relation so member names resolve on production DBs
+     * where plain index_number join misses due to collation/casing.
+     */
+    public static function eagerLoadRosterStudentsForDocuMentorMembers(Collection $users): void
+    {
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $hashes = [];
+        foreach ($users as $u) {
+            $i = trim((string) ($u->index_number ?? ''));
+            if ($i !== '') {
+                $hashes[] = Student::hashIndexNumber(Student::normalizeIndex($i));
+            }
+        }
+        $hashes = array_values(array_unique(array_filter($hashes)));
+        if ($hashes === []) {
+            foreach ($users as $u) {
+                $u->setRelation('rosterStudent', null);
+            }
+
+            return;
+        }
+
+        $byHash = Student::query()->whereIn('index_number_hash', $hashes)->get()->keyBy('index_number_hash');
+
+        foreach ($users as $u) {
+            $i = trim((string) ($u->index_number ?? ''));
+            if ($i === '') {
+                $u->setRelation('rosterStudent', null);
+
+                continue;
+            }
+            $h = Student::hashIndexNumber(Student::normalizeIndex($i));
+            $u->setRelation('rosterStudent', $byHash->get($h));
+        }
+    }
+
+    /**
+     * True when $name is the same identifier as the student's index (any common casing/spacing variant).
+     */
+    public static function docuMentorNameIsIndexNumber(?string $name, ?string $indexNumber, ?string $username = null): bool
+    {
+        $nm = trim((string) $name);
+        $idx = trim((string) $indexNumber);
+        $uname = trim((string) $username);
+        if ($nm === '') {
+            return false;
+        }
+        if ($idx !== '' && strcasecmp($nm, $idx) === 0) {
+            return true;
+        }
+        if ($idx !== '' && Student::normalizeIndex($nm) === Student::normalizeIndex($idx) && Student::normalizeIndex($idx) !== '') {
+            return true;
+        }
+        if ($idx !== '' && self::docuMentorMemberIdentitySignature($nm) === self::docuMentorMemberIdentitySignature($idx)
+            && self::docuMentorMemberIdentitySignature($idx) !== '') {
+            return true;
+        }
+        if ($uname !== '' && strcasecmp($nm, $uname) === 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Letters/digits only, uppercased — for comparing index-like strings across punctuation/case.
+     */
+    public static function docuMentorMemberIdentitySignature(?string $value): string
+    {
+        return strtoupper(preg_replace('/[^A-Za-z0-9]+/', '', (string) $value));
+    }
+
+    /**
      * Human-readable name for Docu Mentor member lists (supervisor/coordinator).
-     * Prefers students.student_name; avoids repeating the index when users.name is only a copy of the index.
+     * Prefers students.student_name. Never returns the index number as a "name".
      */
     public function docuMentorMemberDisplayName(): string
     {
@@ -222,10 +301,7 @@ class User extends Authenticatable
         $uname = trim((string) ($this->username ?? ''));
         $nm = trim((string) ($this->name ?? ''));
 
-        $nameIsOnlyIndex = $idx !== '' && strcasecmp($nm, $idx) === 0;
-        $nameIsOnlyUsername = $uname !== '' && strcasecmp($nm, $uname) === 0;
-
-        if ($nm !== '' && ! $nameIsOnlyIndex && ! $nameIsOnlyUsername) {
+        if ($nm !== '' && ! self::docuMentorNameIsIndexNumber($nm, $idx, $uname)) {
             return $nm;
         }
 

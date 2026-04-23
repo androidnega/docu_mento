@@ -242,46 +242,42 @@
         </div>
         @if($project->group)
             @if(($project->group->members ?? []) !== [])
-                <ul class="space-y-3">
-                    @foreach($project->group->members ?? [] as $m)
-                        @php
-                            $colors = [
-                                ['bg' => 'bg-primary-50/60', 'border' => 'border-primary-100', 'label' => 'text-primary-700'],
-                                ['bg' => 'bg-indigo-50/60', 'border' => 'border-indigo-100', 'label' => 'text-indigo-700'],
-                                ['bg' => 'bg-sky-50/60', 'border' => 'border-sky-100', 'label' => 'text-sky-700'],
-                                ['bg' => 'bg-emerald-50/60', 'border' => 'border-emerald-100', 'label' => 'text-emerald-700'],
-                                ['bg' => 'bg-amber-50/60', 'border' => 'border-amber-100', 'label' => 'text-amber-700'],
-                                ['bg' => 'bg-violet-50/60', 'border' => 'border-violet-100', 'label' => 'text-violet-700'],
-                            ];
-                            $style = $colors[$loop->index % 6];
-                        @endphp
-                        <li class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 {{ $style['border'] }} {{ $style['bg'] }} hover:opacity-95 transition-opacity">
-                            <div class="min-w-0 flex-1">
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+                                <th class="px-3 py-2.5">Name</th>
+                                <th class="px-3 py-2.5">Phone</th>
+                                <th class="px-3 py-2.5 font-mono normal-case">Index</th>
+                                <th class="px-3 py-2.5 w-28 text-right"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            @foreach($project->group->members ?? [] as $m)
                                 @php
                                     $memberIndexLabel = $m->index_number ?: $m->username;
                                     $memberDisplay = $m->docuMentorMemberDisplayName();
                                 @endphp
-                                <p class="text-sm font-semibold text-gray-900 truncate">
-                                    {{ $memberDisplay !== '—' ? $memberDisplay : ($memberIndexLabel ?: '—') }}
-                                </p>
-                                <p class="mt-0.5 text-xs text-gray-700 truncate font-mono">
-                                    @if($memberDisplay !== '—' && $memberIndexLabel)
-                                        <span>{{ $memberIndexLabel }}</span>
-                                    @endif
-                                    @if($m->phone)
-                                        @if($memberDisplay !== '—' || $memberIndexLabel)
-                                            <span class="text-gray-400 mx-1">•</span>
+                                <tr class="align-middle hover:bg-gray-50/80">
+                                    <td class="px-3 py-2.5 font-medium text-gray-900">
+                                        @if($memberDisplay === '—')
+                                            <span class="text-gray-400 font-normal">—</span>
+                                        @else
+                                            {{ $memberDisplay }}
                                         @endif
-                                        <span class="font-mono">{{ $m->phone }}</span>
-                                    @endif
-                                </p>
-                            </div>
-                            @if($m->id === $project->group->leader_id)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary-100 text-primary-800 shrink-0">Leader</span>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
+                                    </td>
+                                    <td class="px-3 py-2.5 text-gray-700">{{ $m->phone ? $m->phone : 'No phone' }}</td>
+                                    <td class="px-3 py-2.5 text-gray-900 font-mono text-xs">{{ $memberIndexLabel ?: '—' }}</td>
+                                    <td class="px-3 py-2.5 text-right">
+                                        @if($m->id === $project->group->leader_id)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary-100 text-primary-800">Leader</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @else
                 <p class="text-gray-500 text-sm rounded-lg bg-slate-50/80 px-3 py-2.5 border border-slate-200">No members in this group.</p>
             @endif
