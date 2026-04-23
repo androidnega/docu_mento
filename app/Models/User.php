@@ -228,8 +228,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Batch-load class roster rows for member lists (names from coordinator class lists, not students table).
-     * Relation key: docuMentorClassGroupStudent (first row per normalized index).
+     * Batch-load data for Docu Mentor member lists: class roster names (optional) and
+     * {@see Student} rows for OTP/profile phone numbers (same index hash as login).
      */
     public static function eagerLoadDocuMentorMemberProfiles(Collection $users): void
     {
@@ -237,40 +237,71 @@ class User extends Authenticatable
             return;
         }
 
-        if (! Schema::hasTable('class_group_students')) {
+        if (Schema::hasTable('class_group_students')) {
+            $norms = $users->map(fn ($u) => Student::normalizeIndex($u->index_number ?? ''))->filter()->unique()->values()->all();
+            if ($norms !== []) {
+                $placeholders = implode(',', array_fill(0, count($norms), '?'));
+                $rows = ClassGroupStudent::query()
+                    ->whereRaw('LOWER(TRIM(COALESCE(class_group_students.index_number, ""))) in ('.$placeholders.')', $norms)
+                    ->orderBy('id')
+                    ->get();
+                $byNorm = [];
+                foreach ($rows as $row) {
+                    $n = Student::normalizeIndex($row->index_number);
+                    if (! isset($byNorm[$n])) {
+                        $byNorm[$n] = $row;
+                    }
+                }
+                foreach ($users as $u) {
+                    $n = Student::normalizeIndex($u->index_number ?? '');
+                    $u->setRelation('docuMentorClassGroupStudent', $byNorm[$n] ?? null);
+                }
+            } else {
+                foreach ($users as $u) {
+                    $u->setRelation('docuMentorClassGroupStudent', null);
+                }
+            }
+        } else {
             foreach ($users as $u) {
                 $u->setRelation('docuMentorClassGroupStudent', null);
+            }
+        }
+
+        if (! Schema::hasTable('students')) {
+            foreach ($users as $u) {
+                $u->setRelation('docuMentorPhoneStudent', null);
             }
 
             return;
         }
 
-        $norms = $users->map(fn ($u) => Student::normalizeIndex($u->index_number ?? ''))->filter()->unique()->values()->all();
-        if ($norms === []) {
+        $hashes = [];
+        foreach ($users as $u) {
+            $i = trim((string) ($u->index_number ?? ''));
+            if ($i !== '') {
+                $hashes[] = Student::hashIndexNumber(Student::normalizeIndex($i));
+            }
+        }
+        $hashes = array_values(array_unique(array_filter($hashes)));
+        if ($hashes === []) {
             foreach ($users as $u) {
-                $u->setRelation('docuMentorClassGroupStudent', null);
+                $u->setRelation('docuMentorPhoneStudent', null);
             }
 
             return;
         }
 
-        $placeholders = implode(',', array_fill(0, count($norms), '?'));
-        $rows = ClassGroupStudent::query()
-            ->whereRaw('LOWER(TRIM(COALESCE(class_group_students.index_number, ""))) in ('.$placeholders.')', $norms)
-            ->orderBy('id')
-            ->get();
-
-        $byNorm = [];
-        foreach ($rows as $row) {
-            $n = Student::normalizeIndex($row->index_number);
-            if (! isset($byNorm[$n])) {
-                $byNorm[$n] = $row;
-            }
-        }
+        $byHash = Student::query()->whereIn('index_number_hash', $hashes)->get()->keyBy('index_number_hash');
 
         foreach ($users as $u) {
-            $n = Student::normalizeIndex($u->index_number ?? '');
-            $u->setRelation('docuMentorClassGroupStudent', $byNorm[$n] ?? null);
+            $i = trim((string) ($u->index_number ?? ''));
+            if ($i === '') {
+                $u->setRelation('docuMentorPhoneStudent', null);
+
+                continue;
+            }
+            $h = Student::hashIndexNumber(Student::normalizeIndex($i));
+            $u->setRelation('docuMentorPhoneStudent', $byHash->get($h));
         }
     }
 
@@ -336,16 +367,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Phone for member lists: user account line (kept in sync when students update profile / OTP).
+     * Phone for member lists: prefer users.phone; then OTP account phone_contact on students (same index hash).
+     * Many logins use students.phone_contact while users.phone stays empty or pending_* until sync runs.
      */
     public function docuMentorMemberDisplayPhone(): string
     {
         $p = trim((string) ($this->attributes['phone'] ?? ''));
-        if ($p === '' || str_starts_with($p, 'pending_')) {
-            return 'No phone';
+        if ($p !== '' && ! str_starts_with($p, 'pending_')) {
+            return $p;
         }
 
-        return $p;
+        $stu = $this->relationLoaded('docuMentorPhoneStudent') ? $this->getRelation('docuMentorPhoneStudent') : null;
+        if ($stu instanceof Student) {
+            $raw = trim((string) ($stu->phone_contact ?? ''));
+            if ($raw !== '') {
+                return Student::normalizePhoneForStorage($raw) ?? $raw;
+            }
+        }
+
+        return 'No phone';
     }
 
     /** Docu Mentor: Groups where this user is leader */
