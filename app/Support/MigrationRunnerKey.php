@@ -5,7 +5,8 @@ namespace App\Support;
 /**
  * Shared secret for URL-triggered migrations / cache clears.
  * If MIGRATION_RUN_KEY is unset or empty in .env, a deterministic secret is derived from APP_KEY
- * and requests may omit ?key= (one-click). If MIGRATION_RUN_KEY is set, ?key= must match exactly.
+ * and requests may omit ?key= (one-click). The documented legacy default key remains accepted in
+ * that mode so existing bookmarks keep working. If MIGRATION_RUN_KEY is set, ?key= must match exactly.
  */
 final class MigrationRunnerKey
 {
@@ -38,7 +39,15 @@ final class MigrationRunnerKey
         $given = trim((string) ($provided ?? ''));
 
         if (self::oneClickModeEnabled()) {
-            return $given === '' || hash_equals($expected, $given);
+            if ($given === '' || hash_equals($expected, $given)) {
+                return true;
+            }
+            // env.example / old docs use DEFAULT_LEGACY; expected may be HMAC(APP_KEY) instead.
+            if ($expected !== self::DEFAULT_LEGACY && hash_equals(self::DEFAULT_LEGACY, $given)) {
+                return true;
+            }
+
+            return false;
         }
 
         return hash_equals($expected, $given);
