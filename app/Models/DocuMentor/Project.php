@@ -23,12 +23,19 @@ class Project extends Model
 
     /** 10. STATUS FLOW: Draft → Submitted → Approved / Rejected → In Progress → Completed → Graded */
     const STATUS_DRAFT = 'draft';
+
     const STATUS_SUBMITTED = 'submitted';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_REJECTED = 'rejected';
+
     const STATUS_IN_PROGRESS = 'in_progress';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_GRADED = 'graded';
+
     const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -66,6 +73,7 @@ class Project extends Model
                 return $chapter;
             }
         }
+
         return $this->chapters()->find($chapterRef);
     }
 
@@ -81,6 +89,7 @@ class Project extends Model
                 $q->where('approved', true)->orWhereNotNull('approved_at');
             })
             ->pluck('user_id');
+
         return $supervisorIds->diff($approvedUserIds)->isEmpty();
     }
 
@@ -101,7 +110,7 @@ class Project extends Model
     {
         if ($this->canSupervisorsGrade() && $this->status !== self::STATUS_COMPLETED && $this->status !== self::STATUS_GRADED) {
             $this->update(['status' => self::STATUS_COMPLETED, 'is_completed' => true]);
-        } elseif ($this->canSupervisorsGrade() && !$this->is_completed) {
+        } elseif ($this->canSupervisorsGrade() && ! $this->is_completed) {
             $this->update(['is_completed' => true]);
         }
     }
@@ -117,6 +126,7 @@ class Project extends Model
             return null;
         }
         $sum = $scores->sum(fn (ProjectStudentScore $s) => ($s->document_score ?? 0) + ($s->system_score ?? 0));
+
         return round($sum / $scores->count(), 2);
     }
 
@@ -126,13 +136,16 @@ class Project extends Model
     public function getFinalScoresByStudent(): \Illuminate\Support\Collection
     {
         $byStudent = $this->studentScores->groupBy('student_id');
+
         return $byStudent->map(function ($rows) {
             $sum = $rows->sum(fn (ProjectStudentScore $s) => ($s->document_score ?? 0) + ($s->system_score ?? 0));
+
             return round($sum / $rows->count(), 2);
         });
     }
 
     const UPDATED_AT = 'updated_at';
+
     const CREATED_AT = 'created_at';
 
     public function academicYear(): BelongsTo
@@ -260,7 +273,9 @@ class Project extends Model
         $this->supervisorApprovals()->delete();
         $this->supervisors()->detach();
         $this->features()->delete();
-        DocumentAiReview::where('project_id', $this->id)->delete();
+        if (DocumentAiReview::tableExists()) {
+            DocumentAiReview::where('project_id', $this->id)->delete();
+        }
         $this->delete();
     }
 }
