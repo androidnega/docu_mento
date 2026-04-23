@@ -9,29 +9,58 @@ use App\Models\User;
 class ProjectPolicy
 {
     /**
+     * Supervisors assigned on the project, or supervisors of a child project tagged to this parent.
+     */
+    public static function supervisorHasProjectAccess(User $user, Project $project): bool
+    {
+        if ($user->supervisedProjects()->where('projects.id', $project->id)->exists()) {
+            return true;
+        }
+
+        return Project::where('parent_project_id', $project->id)
+            ->whereHas('supervisors', fn ($q) => $q->where('users.id', $user->id))
+            ->exists();
+    }
+
+    /**
+     * True when the user should be treated as Docu Mentor supervisor staff (role, pivot, or child-project supervisor).
+     */
+    public static function userHasSupervisorStaffContext(User $user): bool
+    {
+        if ($user->isDocuMentorSupervisor()) {
+            return true;
+        }
+        if ($user->supervisedProjects()->exists()) {
+            return true;
+        }
+
+        return Project::query()
+            ->whereNotNull('parent_project_id')
+            ->whereHas('supervisors', fn ($q) => $q->where('users.id', $user->id))
+            ->exists();
+    }
+
+    /** Supervisor staff who is assigned to this project (directly or via parent/child tagging). */
+    public static function canSupervisorUserAccessProject(User $user, Project $project): bool
+    {
+        return self::userHasSupervisorStaffContext($user)
+            && self::supervisorHasProjectAccess($user, $project);
+    }
+
+    /**
      * Student: own group projects. Supervisor: supervised. Coordinator: all.
      */
     public function viewAny(User $user): bool
     {
         return $user->isDocuMentorStudent()
-            || $user->isDocuMentorSupervisor()
-            || $user->isDocuMentorCoordinator();
+            || $user->isDocuMentorCoordinator()
+            || self::userHasSupervisorStaffContext($user);
     }
 
     public function view(User $user, Project $project): bool
     {
         if ($user->isDocuMentorCoordinator()) {
             return true;
-        }
-        if ($user->isDocuMentorSupervisor()) {
-            if ($user->supervisedProjects()->where('projects.id', $project->id)->exists()) {
-                return true;
-            }
-            // If tagged to previous project: supervisor of a child project can access parent (proposal + Ch6).
-            if (Project::where('parent_project_id', $project->id)->whereHas('supervisors', fn ($q) => $q->where('users.id', $user->id))->exists()) {
-                return true;
-            }
-            return false;
         }
         if ($user->isDocuMentorStudent()) {
             if ($user->docuMentorGroups()->where('groups.id', $project->group_id)->exists()) {
@@ -42,6 +71,9 @@ class ProjectPolicy
                 return true;
             }
             return false;
+        }
+        if (self::canSupervisorUserAccessProject($user, $project)) {
+            return true;
         }
         return false;
     }
@@ -76,15 +108,13 @@ class ProjectPolicy
         if ($chapter->project_id !== $project->id) {
             return false;
         }
-        $staffMaySubmitWhenClosed = $user->isDocuMentorSupervisor() || $user->isDocuMentorCoordinator();
+        $staffMaySubmitWhenClosed = $user->isDocuMentorCoordinator()
+            || self::userHasSupervisorStaffContext($user);
         if (! $chapter->is_open && ! $staffMaySubmitWhenClosed) {
             return false;
         }
         if ($user->isDocuMentorCoordinator()) {
             return true;
-        }
-        if ($user->isDocuMentorSupervisor()) {
-            return $user->supervisedProjects()->where('projects.id', $project->id)->exists();
         }
         if ($user->isDocuMentorStudent()) {
             // Member of project's group (via group_members)
@@ -96,6 +126,9 @@ class ProjectPolicy
                 return true;
             }
             return false;
+        }
+        if (self::canSupervisorUserAccessProject($user, $project)) {
+            return true;
         }
         return false;
     }

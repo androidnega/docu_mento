@@ -24,6 +24,7 @@ class SupervisorSubmissionController extends Controller
         if (! $user) {
             abort(403, 'You must be signed in to upload a submission.');
         }
+        $this->authorize('view', $project);
         $this->authorize('createSubmission', [$project, $chapter]);
 
         $isChapter6 = $chapter->order === 6;
@@ -34,7 +35,7 @@ class SupervisorSubmissionController extends Controller
             ]);
         } else {
             $request->validate([
-                'file' => 'required|file|mimes:pdf,docx,txt|max:1024',
+                'file' => 'required|file|mimes:pdf,doc,docx,txt|max:1024',
                 'comment' => 'nullable|string|max:1000',
             ]);
         }

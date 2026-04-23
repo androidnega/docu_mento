@@ -17,11 +17,11 @@ class ChapterPolicy
         if ($user->isDocuMentorCoordinator()) {
             return true;
         }
-        if ($user->isDocuMentorSupervisor()) {
-            return $user->supervisedProjects()->where('projects.id', $project->id)->exists();
-        }
         if ($user->isDocuMentorStudent()) {
             return $user->docuMentorGroups()->where('groups.id', $project->group_id)->exists();
+        }
+        if (ProjectPolicy::canSupervisorUserAccessProject($user, $project)) {
+            return true;
         }
         return false;
     }
@@ -35,7 +35,7 @@ class ChapterPolicy
         if (!$project) {
             return false;
         }
-        return $user->supervisedProjects()->where('projects.id', $project->id)->exists();
+        return ProjectPolicy::canSupervisorUserAccessProject($user, $project);
     }
 
     private function canSupervise(User $user, ?Project $project): bool

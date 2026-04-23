@@ -14,16 +14,19 @@ class SubmissionPolicy
         if ($chapter->project_id !== $project->id) {
             return false;
         }
-        $staffMaySubmitWhenClosed = $user->isDocuMentorSupervisor() || $user->isDocuMentorCoordinator();
+        $staffMaySubmitWhenClosed = $user->isDocuMentorCoordinator()
+            || ProjectPolicy::userHasSupervisorStaffContext($user);
         if (! $chapter->is_open && ! $staffMaySubmitWhenClosed) {
             return false;
         }
-        if ($user->isDocuMentorCoordinator() || $user->isDocuMentorSupervisor()) {
-            return $user->supervisedProjects()->where('projects.id', $project->id)->exists()
-                || $user->isDocuMentorCoordinator();
+        if ($user->isDocuMentorCoordinator()) {
+            return true;
         }
         if ($user->isDocuMentorStudent()) {
             return $user->docuMentorGroups()->where('groups.id', $project->group_id)->exists();
+        }
+        if (ProjectPolicy::canSupervisorUserAccessProject($user, $project)) {
+            return true;
         }
         return false;
     }
@@ -38,22 +41,32 @@ class SubmissionPolicy
         if ($user->isDocuMentorCoordinator()) {
             return true;
         }
-        if ($user->isDocuMentorSupervisor()) {
-            return $user->supervisedProjects()->where('projects.id', $project->id)->exists();
-        }
         if ($user->isDocuMentorStudent()) {
             return $user->docuMentorGroups()->where('groups.id', $project->group_id)->exists();
+        }
+        if (ProjectPolicy::canSupervisorUserAccessProject($user, $project)) {
+            return true;
         }
         return false;
     }
 
     public function update(User $user, Submission $submission): bool
     {
-        return $user->isDocuMentorSupervisor() || $user->isDocuMentorCoordinator();
+        if ($user->isDocuMentorCoordinator()) {
+            return true;
+        }
+        $project = $submission->chapter?->project;
+
+        return $project && ProjectPolicy::canSupervisorUserAccessProject($user, $project);
     }
 
     public function delete(User $user, Submission $submission): bool
     {
-        return $user->isDocuMentorSupervisor() || $user->isDocuMentorCoordinator();
+        if ($user->isDocuMentorCoordinator()) {
+            return true;
+        }
+        $project = $submission->chapter?->project;
+
+        return $project && ProjectPolicy::canSupervisorUserAccessProject($user, $project);
     }
 }

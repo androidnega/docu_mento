@@ -106,11 +106,11 @@
         @if($canManageSubmissions)
             <form action="{{ route('dashboard.docu-mentor.submissions.store', [$project, $chapter->order]) }}" method="post" enctype="multipart/form-data" class="space-y-4 p-4 rounded-lg bg-slate-50 border border-slate-200 mb-6">
                 @csrf
-                <p class="text-xs text-slate-600">{{ $chapter->order === 6 ? 'ZIP only (no size limit).' : 'PDF, DOCX or TXT, max 1MB.' }}</p>
+                <p class="text-xs text-slate-600">{{ $chapter->order === 6 ? 'ZIP only (no size limit).' : 'PDF, DOC, DOCX or TXT, max 1MB.' }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
                     <div class="lg:col-span-5">
                         <label for="sub_file" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">File</label>
-                        <input id="sub_file" type="file" name="file" accept="{{ $chapter->order === 6 ? '.zip' : '.pdf,.docx,.txt' }}" required
+                        <input id="sub_file" type="file" name="file" accept="{{ $chapter->order === 6 ? '.zip' : '.pdf,.doc,.docx,.txt' }}" required
                             class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     </div>
                     <div class="lg:col-span-4">

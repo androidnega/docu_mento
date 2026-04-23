@@ -287,9 +287,7 @@ Route::middleware('admin.auth')->group(function () {
         Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
             Route::get('projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
             Route::get('projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
-            Route::get('projects/{project}/chapters/{chapterRef}/submissions', function (\App\Models\DocuMentor\Project $project, int $chapterRef) {
-                return redirect()->route('dashboard.docu-mentor.chapters.show', [$project, $chapterRef]);
-            })->whereNumber('chapterRef');
+            Route::get('projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->whereNumber('chapterRef');
             Route::get('projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
             Route::put('projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
             Route::post('projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');
