@@ -66,6 +66,19 @@ class FixPullController extends Controller
 
         $body = "Docu Mento: Reset + Update from remote (no merge)\n====================================\n\n";
 
+        // cPanel / crashed git often leaves index.lock; git then refuses every command until it is removed.
+        $gitDir = $basePath.DIRECTORY_SEPARATOR.'.git';
+        foreach (['index.lock', 'shallow.lock', 'HEAD.lock', 'config.lock'] as $lockName) {
+            $lock = $gitDir.DIRECTORY_SEPARATOR.$lockName;
+            if (is_file($lock)) {
+                if (@unlink($lock)) {
+                    $body .= "Removed stale .git/{$lockName} (interrupted git left this file).\n\n";
+                } else {
+                    $body .= "WARNING: could not delete .git/{$lockName} — remove it in cPanel File Manager, then run this URL again.\n\n";
+                }
+            }
+        }
+
         // Step 1: fetch from remote
         $cmdFetch = sprintf('cd %s && %s fetch origin 2>&1', escapeshellarg($basePath), escapeshellcmd($git));
         $outFetch = [];
