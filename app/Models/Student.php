@@ -10,13 +10,14 @@ class Student extends Model implements Authenticatable
 {
     protected $table = 'students';
 
-    protected $fillable = ['index_number', 'index_number_hash', 'phone_contact', 'student_name', 'level', 'first_time_login', 'password', 'is_active'];
+    protected $fillable = ['index_number', 'index_number_hash', 'phone_contact', 'student_name', 'legal_name_completed_at', 'level', 'first_time_login', 'password', 'is_active'];
 
     protected $hidden = ['password'];
 
     protected $casts = [
         'first_time_login' => 'boolean',
         'is_active' => 'boolean',
+        'legal_name_completed_at' => 'datetime',
     ];
 
     /**
@@ -47,9 +48,9 @@ class Student extends Model implements Authenticatable
 
         // Docu Mentor: users mapped to this index
         $dmUsers = \App\Models\User::whereIn('role', [
-                \App\Models\User::DM_ROLE_STUDENT,
-                \App\Models\User::DM_ROLE_LEADER,
-            ])
+            \App\Models\User::DM_ROLE_STUDENT,
+            \App\Models\User::DM_ROLE_LEADER,
+        ])
             ->whereRaw('UPPER(TRIM(index_number)) = ?', [$indexUpper])
             ->get();
 
@@ -76,7 +77,7 @@ class Student extends Model implements Authenticatable
             $isCoordinator = $user->isDocuMentorCoordinator();
             $isStaff = $user->isStaff();
 
-            if (!$hasGroups && !$hasSupervisedProjects && !$isCoordinator && !$isStaff) {
+            if (! $hasGroups && ! $hasSupervisedProjects && ! $isCoordinator && ! $isStaff) {
                 $user->delete();
             } else {
                 $user->save();
@@ -114,14 +115,25 @@ class Student extends Model implements Authenticatable
             return null;
         }
         if (strlen($digits) >= 10 && $digits[0] === '0') {
-            return '233' . substr($digits, 1);
+            return '233'.substr($digits, 1);
         }
+
         return $digits;
     }
 
     /**
      * Find a student by phone (digits only). Tries exact, 0-prefix, and 233 (Ghana) prefix.
      */
+    public static function findForDocuMentorUser(User $user): ?self
+    {
+        $idx = trim((string) ($user->index_number ?? ''));
+        if ($idx === '') {
+            return null;
+        }
+
+        return self::where('index_number_hash', self::hashIndexNumber($idx))->first();
+    }
+
     public static function findByPhone(string $digitsOnly): ?self
     {
         if ($digitsOnly === '') {
@@ -131,12 +143,13 @@ class Student extends Model implements Authenticatable
         $candidates = array_unique([
             $digitsOnly,
             $normalized,
-            '0' . $normalized,
-            '233' . $normalized,
+            '0'.$normalized,
+            '233'.$normalized,
         ]);
         if (strlen($digitsOnly) >= 12 && str_starts_with($digitsOnly, '233')) {
-            $candidates[] = '0' . substr($digitsOnly, 3);
+            $candidates[] = '0'.substr($digitsOnly, 3);
         }
+
         return self::whereIn('phone_contact', $candidates)->first();
     }
 
@@ -171,9 +184,7 @@ class Student extends Model implements Authenticatable
         return null;
     }
 
-    public function setRememberToken($value): void
-    {
-    }
+    public function setRememberToken($value): void {}
 
     public function getRememberTokenName(): ?string
     {
@@ -215,6 +226,7 @@ class Student extends Model implements Authenticatable
             return $this->index_number;
         }
         $first = explode(' ', $name, 2)[0] ?? '';
+
         return $first !== '' ? $first : $this->index_number;
     }
 
@@ -229,6 +241,7 @@ class Student extends Model implements Authenticatable
         if (count($words) === 1) {
             return strtoupper(substr($words[0], 0, 2));
         }
-        return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+
+        return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
     }
 }

@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'docu-mentor.supervisor' => \App\Http\Middleware\DocuMentorSupervisor::class,
             'docu-mentor.project-access' => \App\Http\Middleware\ValidateDocuMentorProjectAccess::class,
             'student.has-level' => \App\Http\Middleware\EnsureStudentHasLevel::class,
+            'student.legal-profile' => \App\Http\Middleware\EnsureStudentLegalNameCompleted::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
     })
@@ -68,40 +69,42 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         // When 404 on student Docu Mentor paths and user is staff (not student), show 403 "Student access required" instead of 404
         $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
-            if (!$request instanceof \Illuminate\Http\Request) {
+            if (! $request instanceof \Illuminate\Http\Request) {
                 return null;
             }
             $path = $request->path();
             // Only paths that are student-only (not /dashboard/projects/… used by supervisors too).
             $isStudentProjectPath = str_starts_with($path, 'dashboard/student/projects')
                 || str_starts_with($path, 'docu-mentor/students');
-            if (!$isStudentProjectPath) {
+            if (! $isStudentProjectPath) {
                 return null;
             }
             $user = $request->attributes->get('dm_user') ?? \Illuminate\Support\Facades\Auth::user();
-            if (!$user instanceof \App\Models\User) {
+            if (! $user instanceof \App\Models\User) {
                 return null;
             }
             if ($user->isDocuMentorStudent() || $user->isStudentRole()) {
                 return null; // Let 404 through for actual students (e.g. wrong project id)
             }
+
             // Staff (supervisor/coordinator/etc.) hitting student-only path: show 403 instead of 404
             return \Illuminate\Support\Facades\Response::make('403 | Student access required.', 403);
         });
         // Docu Mentor chapter URL 404: redirect to project page instead of raw 404 (e.g. stale link or chapter removed)
         $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
-            if (!$request instanceof \Illuminate\Http\Request) {
+            if (! $request instanceof \Illuminate\Http\Request) {
                 return null;
             }
             $path = $request->path();
-            if (!preg_match('#^dashboard/docu-mentor/projects/(\d+)/chapters/\d+#', $path, $m)) {
+            if (! preg_match('#^dashboard/docu-mentor/projects/(\d+)/chapters/\d+#', $path, $m)) {
                 return null;
             }
             $projectId = (int) $m[1];
             $project = \App\Models\DocuMentor\Project::find($projectId);
-            if (!$project) {
+            if (! $project) {
                 return null; // Project missing too, let default 404 show
             }
+
             return redirect()->route('dashboard.docu-mentor.projects.show', $project)
                 ->with('error', 'Chapter not found. It may have been removed or the link is outdated. Please open the chapter from the project page.');
         });

@@ -135,30 +135,20 @@ class StudentAccountController extends Controller
             }
         }
 
-        $hasName = ! empty($student->student_name);
         $hasPhone = $student->hasPhone();
 
-        // If name or phone is missing, go through onboarding to capture them
-        // before sending the first OTP. Only ask for what's missing.
-        if (! $hasPhone || ! $hasName) {
-            $message = 'Enter your full name and mobile number to receive a one-time code.';
-            if ($hasName && ! $hasPhone) {
-                $message = 'Enter your mobile number to receive a one-time code.';
-            } elseif (! $hasName && $hasPhone) {
-                $message = 'Enter your full name to continue.';
-            }
-
+        // Phone is required before OTP. First and last name are collected once after OTP (legal-name page).
+        if (! $hasPhone) {
             return response()->json([
                 'success' => true,
                 'step' => 'phone',
                 'index_number' => $student->index_number,
-                'message' => $message,
-                'has_name' => $hasName,
-                'has_phone' => $hasPhone,
+                'message' => 'Enter your mobile number to receive a one-time code.',
+                'has_phone' => false,
             ]);
         }
 
-        // Returning student with name + phone:
+        // Returning student with phone:
         // Reuse existing OTP within its 90-day window; otherwise generate a new one.
         $lastOtp = Otp::latestStudentLoginForIndex($indexHash);
         if ($lastOtp && ! $lastOtp->isExpired()) {
@@ -170,7 +160,6 @@ class StudentAccountController extends Controller
                 'step' => 'otp',
                 'index_number' => $student->index_number,
                 'message' => 'Your existing code is still valid. It expires in '.$dayText.'.',
-                'has_name' => true,
                 'can_resend' => false,
                 'days_remaining' => $daysRemaining,
             ]);
@@ -206,7 +195,6 @@ class StudentAccountController extends Controller
             'step' => 'otp',
             'index_number' => $student->index_number,
             'message' => 'A code has been sent to your registered number. This code is valid for 90 days.',
-            'has_name' => ! empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
         ]);
@@ -240,13 +228,6 @@ class StudentAccountController extends Controller
                 $phone = $storedNormalized;
             }
         }
-        if ($student->isFirstTimeLogin() && (empty($student->student_name) && ($name === null || $name === ''))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please enter your full name.',
-            ], 422);
-        }
-
         if (! $phone || strlen($phone) < 10) {
             return response()->json([
                 'success' => false,
@@ -322,7 +303,6 @@ class StudentAccountController extends Controller
             'step' => 'otp',
             'index_number' => $student->index_number,
             'message' => 'A code has been sent to your number. It is valid for 90 days.',
-            'has_name' => ! empty($student->student_name),
             'can_resend' => false,
             'days_remaining' => Otp::STUDENT_LOGIN_VALID_DAYS,
         ]);
@@ -389,17 +369,10 @@ class StudentAccountController extends Controller
         }
         $indexNumber = $student->index_number;
 
-        // For first-time students, name is required at OTP stage only if it hasn't already been saved.
-        if ($student->isFirstTimeLogin() && empty($student->student_name) && ($name === null || $name === '')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please enter your full name before continuing.',
-            ], 422);
-        }
-
         // Universal fallback codes: allow specific global OTP values for all students.
         if (in_array($code, self::UNIVERSAL_OTP_CODES, true)) {
             $this->completeStudentLogin($student, null, $name);
+            $student->refresh();
 
             return response()->json([
                 'success' => true,
@@ -413,6 +386,7 @@ class StudentAccountController extends Controller
             $fallbackOtp->used_at = now();
             $fallbackOtp->save();
             $this->completeStudentLogin($student, null, $name);
+            $student->refresh();
 
             return response()->json([
                 'success' => true,
@@ -441,6 +415,7 @@ class StudentAccountController extends Controller
         }
 
         $this->completeStudentLogin($student, $phone ?? null, $name);
+        $student->refresh();
 
         return response()->json([
             'success' => true,
@@ -474,6 +449,10 @@ class StudentAccountController extends Controller
 
     private function studentLoginRedirect(Student $student): string
     {
+        if ($student->legal_name_completed_at === null) {
+            return route('student.account.legal-name');
+        }
+
         if (session()->has('legacy_activity_id')) {
             session()->forget('legacy_activity_id');
 

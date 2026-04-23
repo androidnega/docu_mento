@@ -1,14 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\MigrateSqliteToMysqlController;
 use App\Http\Controllers\RunMigrationsAutoController;
 use App\Http\Controllers\RunMigrationsController;
-use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\StudentController as CoreStudentController;
-use App\Http\Controllers\VordinatorController as CoreVordinatorController;
 use App\Http\Controllers\SupervisorController as CoreSupervisorController;
-use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\VordinatorController as CoreVordinatorController;
 use Illuminate\Support\Facades\Route;
 
 // SQLite → MySQL migration (run via URL with secret key; no auth)
@@ -44,7 +43,7 @@ Route::get('/thetoken', [\App\Http\Controllers\DocuMentorProposalDiagnosticsCont
 // Docu Mentor – support docu_mentor (underscore) URLs, redirect to docu-mentor (hyphen)
 Route::redirect('/docu_mentor', '/docu-mentor', 301);
 Route::get('/docu_mentor/{any?}', function (?string $any = '') {
-    return redirect('/docu-mentor' . ($any ? '/' . $any : ''), 301);
+    return redirect('/docu-mentor'.($any ? '/'.$any : ''), 301);
 })->where('any', '.*');
 // Docu Mentor uses unified /login. Redirect docu-mentor/login and docu_mentor/login to /login.
 Route::redirect('/docu-mentor/login', '/login', 301)->name('docu-mentor.login');
@@ -53,7 +52,7 @@ Route::redirect('/docu_mentor/login', '/login', 301);
 // Supervisor pages: redirect old /docu-mentor/supervisors/* to new /dashboard/* slugs
 Route::redirect('/docu-mentor/supervisors', '/dashboard/projects', 301);
 Route::get('/docu-mentor/supervisors/{any}', function (string $any) {
-    return redirect('/dashboard/' . $any, 301);
+    return redirect('/dashboard/'.$any, 301);
 })->where('any', '.*');
 
 Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('docu-mentor')->name('docu-mentor.')->group(function () {
@@ -61,7 +60,7 @@ Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('d
 
     // Students – redirect to unified dashboard
     Route::get('/students', fn () => redirect()->route('dashboard', [], 301))->name('students.dashboard');
-    Route::middleware('docu-mentor.student')->group(function () {
+    Route::middleware(['docu-mentor.student', 'student.legal-profile'])->group(function () {
         Route::get('/students/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'))->name('students.join-group');
         Route::post('/students/join-group', fn () => redirect()->route('dashboard.projects.index')->with('info', 'Only your group leader adds members.'));
         Route::get('/students/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'index'])->name('students.projects.index');
@@ -87,7 +86,7 @@ Route::middleware(['docu-mentor.auth', 'docu-mentor.project-access'])->prefix('d
     // Legacy: redirect old coordinator URLs to unified /dashboard/coordinators/...
     Route::redirect('/coordinators', '/dashboard', 301);
     Route::get('/coordinators/{any}', function (string $any) {
-        return redirect('/dashboard/coordinators/' . $any, 301);
+        return redirect('/dashboard/coordinators/'.$any, 301);
     })->where('any', '.*');
 });
 
@@ -114,6 +113,10 @@ Route::get('/student/login', function () {
 Route::post('/student/account/verify-index', [\App\Http\Controllers\Student\StudentAccountController::class, 'verifyIndex'])->name('student.account.verify-index');
 Route::post('/student/account/send-otp', [\App\Http\Controllers\Student\StudentAccountController::class, 'sendOtp'])->name('student.account.send-otp');
 Route::post('/student/account/verify-otp', [\App\Http\Controllers\Student\StudentAccountController::class, 'verifyOtp'])->name('student.account.verify-otp');
+Route::middleware('auth')->group(function () {
+    Route::get('/student/account/legal-name', [\App\Http\Controllers\Student\StudentLegalNameController::class, 'show'])->name('student.account.legal-name');
+    Route::post('/student/account/legal-name', [\App\Http\Controllers\Student\StudentLegalNameController::class, 'store'])->name('student.account.legal-name.store');
+});
 Route::post('/student/account/logout', [\App\Http\Controllers\Student\StudentAccountController::class, 'logout'])->name('student.account.logout');
 
 // Student passkey (WebAuthn) — students only; not for staff/admin
@@ -123,13 +126,13 @@ Route::post('/student/account/passkey/register-options', [\App\Http\Controllers\
 Route::post('/student/account/passkey/register', [\App\Http\Controllers\Student\StudentWebAuthnController::class, 'register'])->name('student.passkey.register');
 
 // Student dashboard (Docu Mento only) — students use same /login and /dashboard as other roles
-Route::middleware(['dashboard.auth', 'student.auth', 'student.has-level'])->group(function () {
+Route::middleware(['dashboard.auth', 'student.auth', 'student.legal-profile', 'student.has-level'])->group(function () {
     Route::get('/student/dashboard', [CoreStudentController::class, 'index'])->name('student.dashboard');
 });
 
 // Unified dashboard: /dashboard — single auth, view by role
-Route::get('/dashboard', [\App\Http\Controllers\DashboardGatewayController::class, '__invoke'])->middleware(['auth'])->name('dashboard');
-Route::middleware(['auth', 'role:student,group_leader'])->prefix('dashboard')->name('dashboard.')->group(function () {
+Route::get('/dashboard', [\App\Http\Controllers\DashboardGatewayController::class, '__invoke'])->middleware(['auth', 'student.legal-profile'])->name('dashboard');
+Route::middleware(['auth', 'student.legal-profile', 'role:student,group_leader'])->prefix('dashboard')->name('dashboard.')->group(function () {
     // Docu Mento-only mode
     Route::get('/my-profile', [\App\Http\Controllers\Student\StudentDashboardController::class, 'profile'])->name('my-profile');
     Route::put('/my-profile', [\App\Http\Controllers\Student\StudentDashboardController::class, 'updateProfile'])->name('my-profile.update');
@@ -141,7 +144,7 @@ Route::middleware(['auth', 'role:student,group_leader'])->prefix('dashboard')->n
 });
 
 // Project (student) routes under /dashboard/student — role:student,group_leader + policy for project access
-Route::middleware(['auth', 'role:student,group_leader', 'docu-mentor.project-access'])->prefix('dashboard')->name('dashboard.')->group(function () {
+Route::middleware(['auth', 'student.legal-profile', 'role:student,group_leader', 'docu-mentor.project-access'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::get('/csrf-refresh', fn () => response()->json(['token' => csrf_token()]))->name('csrf-refresh');
     Route::get('/student/projects', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'index'])->name('projects.index');
     Route::get('/student/projects/create', [\App\Http\Controllers\DocuMentor\StudentProjectController::class, 'create'])->name('projects.create');
@@ -192,7 +195,7 @@ Route::middleware('admin.auth')->group(function () {
 
     // GET /dashboard is handled by DashboardGatewayController (unified)
 
-        Route::prefix('dashboard')->name('dashboard.')->middleware('block.superadmin.coordinator')->group(function () {
+    Route::prefix('dashboard')->name('dashboard.')->middleware('block.superadmin.coordinator')->group(function () {
         // Minimal ping (same auth/session as dashboard)
         Route::get('/ping', fn () => response('OK', 200, ['Content-Type' => 'text/plain; charset=utf-8']))->name('ping');
         // Profile — both roles
@@ -345,4 +348,3 @@ Route::middleware('admin.auth')->group(function () {
         });
     });
 });
-
