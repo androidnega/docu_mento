@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Notification & communication tracking. Contact → SMS Log → Status.
@@ -38,17 +39,25 @@ class SmsLog extends Model
         return $this->belongsTo(User::class);
     }
 
-    /** Log an SMS send (legacy: phone + string status). */
+    /** Log an SMS send (legacy: phone + string status; optional status_id when sms_statuses exists). */
     public static function logSend(string $phone, string $message, bool $success, ?string $responseMessage = null, ?int $userId = null): self
     {
-        return self::create([
+        $data = [
             'phone' => $phone,
             'message' => $message,
             'status' => $success ? 'success' : 'failed',
             'response' => $responseMessage,
             'user_id' => $userId,
-            'created_at' => now(),
-        ]);
+        ];
+        if (Schema::hasColumn('sms_logs', 'status_id')) {
+            $name = $success ? 'success' : 'failed';
+            $id = SmsStatus::query()->where('name', $name)->value('id');
+            if ($id !== null) {
+                $data['status_id'] = $id;
+            }
+        }
+
+        return self::create($data);
     }
 
     /** Log with status_id and optional contact_id (track delivery, retry by status). */

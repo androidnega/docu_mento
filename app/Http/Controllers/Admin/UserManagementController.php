@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\SmsLog;
 use App\Models\User;
 use App\Services\ArkeselService;
+use App\Services\SupervisorLoginSmsBody;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -212,12 +213,7 @@ class UserManagementController extends Controller
 
         if ($role === User::ROLE_SUPERVISOR && $newUser->phone && ArkeselService::hasApiKey()) {
             $loginUrl = url('/login');
-            $message = sprintf(
-                'Docu Mento login. URL: %s Username: %s Password: %s',
-                $loginUrl,
-                $newUser->username,
-                $plainPassword
-            );
+            $message = SupervisorLoginSmsBody::build($newUser, $loginUrl, $newUser->username, $plainPassword, true);
             $result = ArkeselService::sendSms($newUser->phone, $message);
             $ok = (bool) ($result['success'] ?? false);
             SmsLog::logSend($newUser->phone, $message, $ok, $result['message'] ?? null, $user->id);

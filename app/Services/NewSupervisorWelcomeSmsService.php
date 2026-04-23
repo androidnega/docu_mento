@@ -34,12 +34,7 @@ final class NewSupervisorWelcomeSmsService
         }
 
         $loginUrl = url('/login');
-        $message = sprintf(
-            'Docu Mento login. URL: %s Username: %s Password: %s',
-            $loginUrl,
-            $newSupervisor->username,
-            $plainPassword
-        );
+        $message = SupervisorLoginSmsBody::build($newSupervisor, $loginUrl, $newSupervisor->username, $plainPassword, true);
 
         $result = ArkeselService::sendSms($phone, $message);
         $ok = (bool) ($result['success'] ?? false);

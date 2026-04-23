@@ -42,12 +42,7 @@ final class SupervisorCredentialSmsService
 
         $plain = Str::password(12);
         $loginUrl = url('/login');
-        $message = sprintf(
-            'Docu Mento login. URL: %s Username: %s Password: %s',
-            $loginUrl,
-            $supervisor->username,
-            $plain
-        );
+        $message = SupervisorLoginSmsBody::build($supervisor, $loginUrl, $supervisor->username, $plain, false);
 
         $result = ArkeselService::sendSms($phone, $message);
         $ok = (bool) ($result['success'] ?? false);
