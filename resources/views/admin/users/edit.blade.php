@@ -42,6 +42,14 @@
                     <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 focus:outline-none @error('name') border-red-500 @enderror">
                     @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
+                @if(\Illuminate\Support\Facades\Schema::hasColumn('users', 'phone') && (auth()->user()->isSuperAdmin() || auth()->id() === $user->id))
+                <div>
+                    <label for="phone" class="block text-xs font-medium text-gray-500 mb-0.5">Phone (optional)</label>
+                    <input type="text" name="phone" id="phone" value="{{ old('phone', $user->phone) }}" maxlength="20" autocomplete="tel" placeholder="Clear to remove" class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 focus:outline-none @error('phone') border-red-500 @enderror">
+                    <p class="mt-1 text-xs text-gray-500">Used for SMS login and alerts where applicable. Leave blank to remove.</p>
+                    @error('phone')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                @endif
                 @if(auth()->user()->isSuperAdmin())
                 <div>
                     <label for="role" class="block text-xs font-medium text-gray-500 mb-0.5">Role</label>
