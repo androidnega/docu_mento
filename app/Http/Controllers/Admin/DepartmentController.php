@@ -99,10 +99,15 @@ class DepartmentController extends Controller
         ]);
     }
 
-    /** Legacy: Departments for a faculty (AJAX when using institutions/faculties). */
+    /** Departments for a faculty (AJAX for supervisor profile and legacy institution/faculty flows). */
     public function byFaculty(Faculty $faculty): JsonResponse
     {
-        $departments = $faculty->departments()->orderBy('name')->get();
+        $departments = $faculty->departments()
+            ->where(function ($q) {
+                $q->where('is_active', true)->orWhereNull('is_active');
+            })
+            ->orderBy('name')
+            ->get();
 
         return response()->json([
             'success' => true,

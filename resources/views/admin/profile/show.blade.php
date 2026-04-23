@@ -23,23 +23,48 @@
                 <div><dt class="text-gray-500">Name</dt><dd class="font-medium text-gray-900 uppercase">{{ $user->name ? Str::upper($user->name) : '—' }}</dd></div>
                 <div><dt class="text-gray-500">Role</dt><dd class="font-medium text-gray-900">{{ $user->role ? ucfirst(str_replace('_', ' ', $user->role)) : '—' }}</dd></div>
                 <div><dt class="text-gray-500">Institution</dt><dd class="font-medium text-gray-900 uppercase">{{ ($user->institution?->display_name ?? $user->institution?->name) ? Str::upper($user->institution?->display_name ?? $user->institution?->name) : '—' }}</dd></div>
-                <div><dt class="text-gray-500">Faculty</dt><dd class="font-medium text-gray-900 uppercase">{{ $user->faculty?->name ? Str::upper($user->faculty->name) : '—' }}</dd></div>
+                <div><dt class="text-gray-500">Faculty</dt><dd class="font-medium text-gray-900 uppercase">{{ $user->faculty?->name ? Str::upper($user->faculty->name) : ($user->department?->faculty?->name ? Str::upper($user->department->faculty->name) : '—') }}</dd></div>
                 <div><dt class="text-gray-500">Department</dt><dd class="font-medium text-gray-900 uppercase">{{ $user->department?->name ? Str::upper($user->department->name) : '—' }}</dd></div>
             </dl>
             @if($user->isDocuMentorSupervisor())
-            <div class="mt-3 flex items-center justify-between gap-2">
-                @if(!$user->faculty_id || !$user->department_id)
-                <div class="flex-1 p-2 rounded-md bg-orange-50 border border-orange-200">
-                    <p class="text-xs text-orange-800">
-                        <a href="{{ route('dashboard.users.edit', $user) }}" class="font-semibold underline hover:text-orange-900">Complete your profile</a> by selecting your faculty and department.
-                    </p>
-                </div>
+                @if(isset($faculties) && $faculties->isNotEmpty())
+                <form action="{{ route('dashboard.profile.faculty-department') }}" method="post" class="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                    @csrf
+                    @method('PUT')
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Faculty &amp; department</p>
+                    @if(!$user->faculty_id || !$user->department_id)
+                    <div class="p-2 rounded-md bg-orange-50 border border-orange-200 mb-1">
+                        <p class="text-xs text-orange-800">Select your faculty and department below to complete your profile.</p>
+                    </div>
+                    @endif
+                    <div>
+                        <label for="profile_faculty_id" class="block text-xs font-medium text-gray-700 mb-0.5">Faculty</label>
+                        <select name="faculty_id" id="profile_faculty_id" class="input text-sm py-1.5 min-h-0 w-full" required>
+                            <option value="">— Select faculty —</option>
+                            @foreach($faculties as $f)
+                                <option value="{{ $f->id }}" @selected((string) old('faculty_id', $selectedFacultyId ?? '') === (string) $f->id)>{{ $f->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('faculty_id')<p class="mt-0.5 text-xs text-danger-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="profile_department_id" class="block text-xs font-medium text-gray-700 mb-0.5">Department</label>
+                        <select name="department_id" id="profile_department_id" class="input text-sm py-1.5 min-h-0 w-full" required>
+                            <option value="">— Select department —</option>
+                            @foreach($facultyDepartments ?? [] as $dept)
+                                <option value="{{ $dept->id }}" @selected((string) old('department_id', $user->department_id ?? '') === (string) $dept->id)>{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('department_id')<p class="mt-0.5 text-xs text-danger-600">{{ $message }}</p>@enderror
+                    </div>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">Save faculty &amp; department</button>
+                    <p class="text-xs text-gray-500">You can also set <span class="whitespace-nowrap">school &amp; department</span> under <a href="{{ route('dashboard.users.edit', $user) }}" class="text-primary-600 hover:text-primary-800 underline font-medium">extended profile</a> if your unit is listed by school instead.</p>
+                </form>
                 @else
-                <a href="{{ route('dashboard.users.edit', $user) }}" class="text-xs text-primary-600 hover:text-primary-800 font-medium underline">
-                    Edit faculty/department →
-                </a>
+                <div class="mt-3 p-2 rounded-md bg-amber-50 border border-amber-200">
+                    <p class="text-xs text-amber-900">No faculties are configured for your institution yet. Ask a super administrator to add faculties, or use <a href="{{ route('dashboard.users.edit', $user) }}" class="font-semibold underline hover:text-amber-950">extended profile</a> to pick school and department.</p>
+                </div>
                 @endif
-            </div>
             @endif
             <form action="{{ route('dashboard.profile.update') }}" method="post" class="mt-3 space-y-2">
                 @csrf
@@ -86,4 +111,51 @@
     </div>
     @endif
 </div>
+@if(isset($user) && $user->isDocuMentorSupervisor() && isset($faculties) && $faculties->isNotEmpty())
+@push('scripts')
+<script>
+(function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const baseUrl = @json(url('/dashboard/faculties'));
+    const facultySelect = document.getElementById('profile_faculty_id');
+    const departmentSelect = document.getElementById('profile_department_id');
+    if (!facultySelect || !departmentSelect) return;
+
+    const currentDepartmentId = @json(old('department_id', $user->department_id));
+
+    function loadDepartmentsByFaculty(facultyId) {
+        departmentSelect.innerHTML = '<option value="">— Select department —</option>';
+        if (!facultyId) return;
+        fetch(baseUrl + '/' + facultyId + '/departments', {
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (r) {
+                if (!r.ok) throw new Error('Failed to load departments');
+                return r.json();
+            })
+            .then(function (data) {
+                if (data.success && data.departments) {
+                    data.departments.forEach(function (d) {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        if (String(d.id) === String(currentDepartmentId)) opt.selected = true;
+                        departmentSelect.appendChild(opt);
+                    });
+                }
+            })
+            .catch(function (e) { console.error('Error loading departments:', e); });
+    }
+
+    facultySelect.addEventListener('change', function () {
+        loadDepartmentsByFaculty(facultySelect.value);
+    });
+})();
+</script>
+@endpush
+@endif
 @endsection

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
+use App\Models\Department;
+use App\Models\Faculty;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +24,33 @@ class StaffProfileController extends Controller
             return redirect()->route('login')->with('error', 'Error');
         }
         // Load relationships for profile display (course removed with legacy courses tables)
-        $user->load(['institution', 'faculty', 'department']);
-        return view('admin.profile.show', compact('user'));
+        $user->load(['institution', 'faculty', 'department', 'department.faculty']);
+
+        $faculties = collect();
+        $facultyDepartments = collect();
+        $selectedFacultyId = null;
+        if ($user->isDocuMentorSupervisor()) {
+            if ($user->institution_id) {
+                $faculties = Faculty::query()
+                    ->where('institution_id', $user->institution_id)
+                    ->orderBy('name')
+                    ->get();
+            } else {
+                $faculties = Faculty::query()->orderBy('name')->get();
+            }
+            $selectedFacultyId = old('faculty_id', $user->faculty_id ?: $user->department?->faculty_id);
+            if ($selectedFacultyId) {
+                $facultyDepartments = Department::query()
+                    ->where('faculty_id', $selectedFacultyId)
+                    ->where(function ($q) {
+                        $q->where('is_active', true)->orWhereNull('is_active');
+                    })
+                    ->orderBy('name')
+                    ->get();
+            }
+        }
+
+        return view('admin.profile.show', compact('user', 'faculties', 'facultyDepartments', 'selectedFacultyId'));
     }
 
     public function update(Request $request): RedirectResponse

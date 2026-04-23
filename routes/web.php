@@ -200,6 +200,7 @@ Route::middleware('admin.auth')->group(function () {
         Route::put('/profile/avatar', [\App\Http\Controllers\Admin\StaffProfileController::class, 'updateAvatar'])->name('profile.avatar');
         Route::get('/profile/password', [\App\Http\Controllers\Admin\StaffProfileController::class, 'password'])->name('profile.password');
         Route::put('/profile/password', [\App\Http\Controllers\Admin\StaffProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::put('/profile/faculty-department', [\App\Http\Controllers\Admin\SupervisorProfileController::class, 'updateFacultyDepartment'])->name('profile.faculty-department');
 
         // Supervisors can edit their own profile (school/department or legacy institution/faculty)
         Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserManagementController::class, 'edit'])->name('users.edit');
@@ -207,6 +208,7 @@ Route::middleware('admin.auth')->group(function () {
 
         // School/Department AJAX (for user management and profile)
         Route::get('/schools/{school}/departments', [\App\Http\Controllers\Admin\DepartmentController::class, 'bySchool'])->name('departments.by-school');
+        Route::get('/faculties/{faculty}/departments', [\App\Http\Controllers\Admin\DepartmentController::class, 'byFaculty'])->name('departments.by-faculty');
 
         // Class groups (coordinator + supervisors)
         Route::get('/class-groups', [\App\Http\Controllers\Admin\ClassGroupController::class, 'index'])->name('class-groups.index');
