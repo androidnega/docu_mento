@@ -195,10 +195,14 @@ class User extends Authenticatable
         return in_array($this->role, [self::DM_ROLE_STUDENT, self::DM_ROLE_LEADER], true);
     }
 
-    /** Docu Mentor supervisor (reviews projects). */
+    /** Docu Mentor supervisor (reviews projects). Uses role column and role_id → roles.name. */
     public function isDocuMentorSupervisor(): bool
     {
-        return $this->role === self::ROLE_SUPERVISOR;
+        if (in_array($this->role, [self::ROLE_SUPERVISOR, self::DM_ROLE_SUPERVISOR], true)) {
+            return true;
+        }
+
+        return $this->roleName() === self::ROLE_NAME_SUPERVISOR;
     }
 
     /** Docu Mentor: Projects this user supervises */

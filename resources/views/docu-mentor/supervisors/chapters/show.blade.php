@@ -3,6 +3,11 @@
 @section('title', $chapter->title . ' – Docu Mentor')
 
 @section('content')
+@php
+    $dm = $user ?? request()->attributes->get('dm_user') ?? auth()->user();
+    $canManageSubmissions = $dm instanceof \App\Models\User
+        && ($dm->isDocuMentorSupervisor() || $dm->isDocuMentorCoordinator());
+@endphp
 <div class="max-w-6xl mx-auto w-full pt-4 sm:pt-6 pb-10">
     {{-- Back + header --}}
     <div class="mb-6">
@@ -57,17 +62,12 @@
                 @method('PUT')
                 <h3 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Edit chapter details</h3>
                 <div class="flex flex-wrap items-end gap-4">
-                    <div class="min-w-0 flex-1 basis-40">
+                    <div class="min-w-0 flex-1 basis-48">
                         <label for="ch_title" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Title</label>
                         <input id="ch_title" type="text" name="title" value="{{ old('title', $chapter->title) }}" required
                             class="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <div class="w-20 shrink-0">
-                        <label for="ch_order" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Order</label>
-                        <input id="ch_order" type="number" name="order" value="{{ old('order', $chapter->order) }}" min="0"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div class="w-24 shrink-0">
+                    <div class="w-28 shrink-0">
                         <label for="ch_max_score" class="block text-xs font-medium text-slate-600 uppercase tracking-wide mb-1.5">Max score</label>
                         <input id="ch_max_score" type="number" name="max_score" value="{{ old('max_score', $chapter->max_score) }}" min="0"
                             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
@@ -103,7 +103,7 @@
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
         <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-4">Submissions</h2>
 
-        @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+        @if($canManageSubmissions)
             <form action="{{ route('dashboard.docu-mentor.submissions.store', [$project, $chapter->order]) }}" method="post" enctype="multipart/form-data" class="space-y-4 p-4 rounded-lg bg-slate-50 border border-slate-200 mb-6">
                 @csrf
                 <p class="text-xs text-slate-600">{{ $chapter->order === 6 ? 'ZIP only (no size limit).' : 'PDF, DOCX or TXT, max 1MB.' }}</p>
@@ -127,15 +127,15 @@
             </form>
         @else
             <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
-                <p class="font-medium">Only the supervising lecturer can add or edit submissions for this chapter.</p>
-                <p class="mt-1 text-xs text-amber-900/80">You can review the list of submissions below. Ask the supervisor if you need a file added or removed.</p>
+                <p class="font-medium">Only a supervising lecturer or coordinator can add submissions for this chapter.</p>
+                <p class="mt-1 text-xs text-amber-900/80">You can review the list below. If the chapter is closed, ask a supervisor to open it for submission.</p>
             </div>
         @endif
 
         @if($chapter->submissions->isEmpty())
         <div class="rounded-lg border border-slate-200 border-dashed bg-slate-50/50 py-10 text-center">
             <p class="text-slate-500 text-sm">No submissions yet.</p>
-            @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+            @if($canManageSubmissions)
                 <p class="text-slate-400 text-xs mt-1">Use the form above to add one.</p>
             @endif
         </div>
@@ -156,7 +156,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2 items-center">
                             @php $aiCount = $sub->aiReviews->count(); @endphp
-                            @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+                            @if($canManageSubmissions)
                                 <form action="{{ route('dashboard.docu-mentor.ai.review-submission', [$project, $chapter->order, $sub]) }}" method="post" class="inline">
                                     @csrf
                                     <button type="submit" class="px-3 py-1.5 rounded-lg border border-slate-300 text-indigo-600 text-sm hover:bg-indigo-50" {{ $aiCount >= 2 ? 'disabled' : '' }}>Review with AI</button>
@@ -172,7 +172,7 @@
                             @endif
                         </div>
                     </div>
-                    @if(auth()->user() && auth()->user()->isDocuMentorSupervisor())
+                    @if($canManageSubmissions)
                         <form action="{{ route('dashboard.docu-mentor.submissions.update', [$project, $chapter->order, $sub]) }}" method="post" class="flex flex-wrap gap-3 items-end pt-3 border-t border-slate-100">
                             @csrf
                             @method('PUT')

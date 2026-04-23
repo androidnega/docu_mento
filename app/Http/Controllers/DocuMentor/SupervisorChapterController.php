@@ -41,15 +41,14 @@ class SupervisorChapterController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'order' => 'required|integer|min:0',
             'max_score' => 'required|integer|min:0',
             'is_open' => 'boolean',
             'completed' => 'boolean',
         ]);
 
+        // Chapter order is fixed by URL (1–6); not editable from this form.
         $data = [
             'title' => $request->title,
-            'order' => $request->order,
             'max_score' => $request->max_score,
             'completed' => $request->boolean('completed'),
         ];

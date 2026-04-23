@@ -57,15 +57,20 @@
     </dl>
 </section>
 
-{{-- MEMBERS --}}
+{{-- MEMBERS: name, index/username, phone --}}
 @if($project->group && $project->group->members->isNotEmpty())
 <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
     <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-3">Members</h2>
-    <ul class="space-y-1.5">
+    <ul class="divide-y divide-slate-100 rounded-lg border border-slate-100 overflow-hidden">
         @foreach($project->group->members as $member)
-            <li class="text-sm text-slate-700">
-                {{ $member->name ?? $member->username }}
-                @if($project->group->leader_id === $member->id)<span class="text-slate-500 font-medium">(Leader)</span>@endif
+            @php
+                $indexLabel = $member->index_number ?: $member->username;
+            @endphp
+            <li class="px-3 py-2.5 text-sm bg-white flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span class="font-medium text-slate-900 min-w-[8rem]">{{ $member->name ?: '—' }}</span>
+                <span class="text-slate-600 font-mono text-xs">{{ $indexLabel }}</span>
+                <span class="text-slate-600 text-xs sm:ml-auto">{{ $member->phone ? $member->phone : 'No phone' }}</span>
+                @if($project->group->leader_id === $member->id)<span class="text-indigo-600 font-medium text-xs">(Leader)</span>@endif
             </li>
         @endforeach
     </ul>
@@ -112,6 +117,8 @@
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Student</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Index</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Phone</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Document score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">System score</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-slate-600">Final (avg)</th>
@@ -125,10 +132,16 @@
                             $scoreRec = $project->studentScores->firstWhere(fn($x) => $x->student_id === $member->id && $x->supervisor_id === $user->id);
                             $isLeader = $project->group->leader_id === $member->id;
                             $finalScore = $finalScoresByStudent->get($member->id);
+                            $memberIndex = $member->index_number ?: $member->username;
                         @endphp
                         <tr>
-                            <td class="px-4 py-2 text-sm">{{ $member->name ?? $member->username }}@if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif</td>
-                            <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->name ?? $member->username }}"></td>
+                            <td class="px-4 py-2 text-sm">
+                                <span class="font-medium text-slate-900">{{ $member->name ?: '—' }}</span>
+                                @if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif
+                            </td>
+                            <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
+                            <td class="px-4 py-2 text-xs text-slate-600">{{ $member->phone ?: '—' }}</td>
+                            <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->name ?: $memberIndex }}"></td>
                             <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->name ?? $member->username }}"></td>
                             <td class="px-4 py-2 text-sm text-slate-600">{{ $finalScore !== null ? $finalScore . '/100' : '—' }}</td>
                             <td class="px-4 py-2"><input type="text" name="remarks_{{ $member->id }}" value="{{ $scoreRec?->remarks ?? '' }}" placeholder="Remarks" class="rounded border-slate-300 text-sm w-48 max-w-full"></td>
