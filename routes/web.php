@@ -165,7 +165,8 @@ Route::middleware(['auth', 'role:student,group_leader', 'docu-mentor.project-acc
     Route::post('/student/group/add-member', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'addMember'])->name('group.add-member');
     Route::get('/student/group/{group}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'showGroup'])->name('group.show');
     Route::post('/student/group/{group}/remove/{member}', [\App\Http\Controllers\DocuMentor\GroupLeaderController::class, 'removeMember'])->name('group.remove-member');
-    Route::post('/projects/{project}/chapters/{chapter}/submissions', [\App\Http\Controllers\DocuMentor\StudentSubmissionController::class, 'store'])->name('projects.submissions.store');
+    // Must NOT share URI with supervisor POST …/dashboard/projects/…/submissions (same path would match student route first).
+    Route::post('/student/projects/{project}/chapters/{chapter}/submissions', [\App\Http\Controllers\DocuMentor\StudentSubmissionController::class, 'store'])->name('projects.submissions.store');
 });
 
 // Staff login (rate-limited to 5 attempts per minute per IP+username)
@@ -286,6 +287,9 @@ Route::middleware('admin.auth')->group(function () {
         Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
             Route::get('projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
             Route::get('projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
+            Route::get('projects/{project}/chapters/{chapterRef}/submissions', function (\App\Models\DocuMentor\Project $project, int $chapterRef) {
+                return redirect()->route('dashboard.docu-mentor.chapters.show', [$project, $chapterRef]);
+            })->whereNumber('chapterRef');
             Route::get('projects/{project}/chapters/{chapterOrder}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->name('chapters.show')->whereNumber('chapterOrder');
             Route::put('projects/{project}/chapters/{chapterRef}', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'update'])->name('chapters.update')->whereNumber('chapterRef');
             Route::post('projects/{project}/chapters/{chapterRef}/toggle-open', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'toggleOpen'])->name('chapters.toggle-open')->whereNumber('chapterRef');

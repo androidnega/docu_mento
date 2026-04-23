@@ -20,7 +20,10 @@ class SupervisorSubmissionController extends Controller
     public function store(Request $request, Project $project, int $chapterRef): RedirectResponse
     {
         $chapter = $project->resolveChapterByRef($chapterRef) ?? abort(404);
-        $user = request()->attributes->get('dm_user');
+        $user = request()->attributes->get('dm_user') ?? auth()->user();
+        if (! $user) {
+            abort(403, 'You must be signed in to upload a submission.');
+        }
         $this->authorize('createSubmission', [$project, $chapter]);
 
         $isChapter6 = $chapter->order === 6;

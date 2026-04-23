@@ -51,7 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             $isStudentUser = $user instanceof \App\Models\User
                 && ($user->isDocuMentorStudent() || $user->isStudentRole());
             $isLikelyStudentPath = str_starts_with($path, 'student')
-                || str_starts_with($path, 'dashboard/projects')
+                || str_starts_with($path, 'dashboard/student/')
                 || str_starts_with($path, 'dashboard/documents')
                 || str_starts_with($path, 'dashboard/my-profile')
                 || str_starts_with($path, 'dashboard/calendar')
@@ -72,7 +72,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
             $path = $request->path();
-            $isStudentProjectPath = str_starts_with($path, 'dashboard/projects')
+            // Only paths that are student-only (not /dashboard/projects/… used by supervisors too).
+            $isStudentProjectPath = str_starts_with($path, 'dashboard/student/projects')
                 || str_starts_with($path, 'docu-mentor/students');
             if (!$isStudentProjectPath) {
                 return null;

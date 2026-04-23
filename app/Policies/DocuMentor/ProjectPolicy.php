@@ -73,7 +73,11 @@ class ProjectPolicy
     /** Authorization for creating a submission on this project's chapter. */
     public function createSubmission(User $user, Project $project, \App\Models\DocuMentor\Chapter $chapter): bool
     {
-        if (!$chapter->is_open || $chapter->project_id !== $project->id) {
+        if ($chapter->project_id !== $project->id) {
+            return false;
+        }
+        $staffMaySubmitWhenClosed = $user->isDocuMentorSupervisor() || $user->isDocuMentorCoordinator();
+        if (! $chapter->is_open && ! $staffMaySubmitWhenClosed) {
             return false;
         }
         if ($user->isDocuMentorCoordinator()) {
