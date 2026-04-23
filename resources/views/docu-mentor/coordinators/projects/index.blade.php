@@ -27,7 +27,7 @@
                     name="search"
                     id="projects-search"
                     value="{{ $search ?? request('search') }}"
-                    placeholder="Search title, group, supervisor…"
+                    placeholder="Title, group, supervisor, or student index (e.g. BC/ITS/24/047)"
                     class="w-48 sm:w-64 max-w-full rounded border border-gray-300 bg-white pl-7 pr-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400"
                     autocomplete="off"
                 >

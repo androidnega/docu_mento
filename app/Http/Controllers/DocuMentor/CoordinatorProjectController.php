@@ -40,10 +40,41 @@ class CoordinatorProjectController extends Controller
         $search = trim((string) $request->query('search', ''));
         if ($search !== '') {
             $like = '%'.$search.'%';
-            $query->where(function ($q) use ($like) {
+            $indexNorm = strtoupper(trim($search));
+            // Letters+digits only (same idea as User::docuMentorMemberIdentitySignature) so "BCITS24047" finds "BC/ITS/24/047"
+            $indexComparable = User::docuMentorMemberIdentitySignature($search);
+            $query->where(function ($q) use ($like, $indexNorm, $indexComparable) {
                 $q->where('title', 'like', $like)
                     ->orWhereHas('group', function ($g) use ($like) {
                         $g->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('group.members', function ($u) use ($like, $indexNorm, $indexComparable) {
+                        $u->where(function ($inner) use ($like, $indexNorm, $indexComparable) {
+                            $inner->where('users.index_number', 'like', $like);
+                            if ($indexNorm !== '') {
+                                $inner->orWhereRaw("UPPER(TRIM(COALESCE(users.index_number, ''))) = ?", [$indexNorm]);
+                            }
+                            if (strlen($indexComparable) >= 2) {
+                                $inner->orWhereRaw(
+                                    "REPLACE(REPLACE(REPLACE(REPLACE(UPPER(TRIM(COALESCE(users.index_number, ''))), '/', ''), ' ', ''), '-', ''), '_', '') = ?",
+                                    [$indexComparable]
+                                );
+                            }
+                        });
+                    })
+                    ->orWhereHas('group.leader', function ($u) use ($like, $indexNorm, $indexComparable) {
+                        $u->where(function ($inner) use ($like, $indexNorm, $indexComparable) {
+                            $inner->where('users.index_number', 'like', $like);
+                            if ($indexNorm !== '') {
+                                $inner->orWhereRaw("UPPER(TRIM(COALESCE(users.index_number, ''))) = ?", [$indexNorm]);
+                            }
+                            if (strlen($indexComparable) >= 2) {
+                                $inner->orWhereRaw(
+                                    "REPLACE(REPLACE(REPLACE(REPLACE(UPPER(TRIM(COALESCE(users.index_number, ''))), '/', ''), ' ', ''), '-', ''), '_', '') = ?",
+                                    [$indexComparable]
+                                );
+                            }
+                        });
                     })
                     ->orWhereHas('supervisors', function ($u) use ($like) {
                         $u->where(function ($inner) use ($like) {
