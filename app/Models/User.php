@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +19,7 @@ class User extends Authenticatable
      * Valid roles: student, group_leader, supervisor, coordinator, admin.
      */
     public const ROLE_SUPER_ADMIN = 'super_admin';
+
     public const ROLE_SUPERVISOR = 'supervisor';
 
     protected $fillable = [
@@ -47,16 +48,24 @@ class User extends Authenticatable
      * Student-side roles: student, leader (group_leader capability is users.group_leader boolean).
      */
     public const DM_ROLE_STUDENT = 'student';
+
     public const DM_ROLE_LEADER = 'leader';
+
     public const DM_ROLE_SUPERVISOR = 'supervisor';
+
     public const DM_ROLE_HOD = 'hod';
+
     public const DM_ROLE_COORDINATOR = 'coordinator';
 
     /** Canonical role names for middleware and dashboard (aligned with roles.name). */
     public const ROLE_NAME_STUDENT = 'student';
+
     public const ROLE_NAME_GROUP_LEADER = 'group_leader';
+
     public const ROLE_NAME_SUPERVISOR = 'supervisor';
+
     public const ROLE_NAME_COORDINATOR = 'coordinator';
+
     public const ROLE_NAME_ADMIN = 'admin';
 
     protected $hidden = ['password', 'remember_token'];
@@ -127,6 +136,7 @@ class User extends Authenticatable
             self::DM_ROLE_LEADER => self::ROLE_NAME_GROUP_LEADER,
             self::DM_ROLE_SUPERVISOR => self::ROLE_NAME_SUPERVISOR,
         ];
+
         return $map[$legacy] ?? self::ROLE_NAME_STUDENT;
     }
 
@@ -146,6 +156,7 @@ class User extends Authenticatable
         if ($id !== null) {
             return (int) $id;
         }
+
         return $this->department_id !== null ? (int) $this->department_id : null;
     }
 
@@ -164,6 +175,7 @@ class User extends Authenticatable
     {
         $alloc = (int) ($this->attributes['sms_allocation'] ?? 0);
         $used = (int) ($this->attributes['sms_used'] ?? 0);
+
         return max(0, $alloc - $used);
     }
 
@@ -182,6 +194,42 @@ class User extends Authenticatable
             'user_id',
             'group_id'
         );
+    }
+
+    /**
+     * Global students row (OTP / roster) matched by index number when present.
+     */
+    public function rosterStudent(): HasOne
+    {
+        return $this->hasOne(Student::class, 'index_number', 'index_number');
+    }
+
+    /**
+     * Human-readable name for Docu Mentor member lists (supervisor/coordinator).
+     * Prefers students.student_name; avoids repeating the index when users.name is only a copy of the index.
+     */
+    public function docuMentorMemberDisplayName(): string
+    {
+        $roster = $this->rosterStudent;
+        if ($roster) {
+            $sn = trim((string) ($roster->student_name ?? ''));
+            if ($sn !== '') {
+                return $sn;
+            }
+        }
+
+        $idx = trim((string) ($this->index_number ?? ''));
+        $uname = trim((string) ($this->username ?? ''));
+        $nm = trim((string) ($this->name ?? ''));
+
+        $nameIsOnlyIndex = $idx !== '' && strcasecmp($nm, $idx) === 0;
+        $nameIsOnlyUsername = $uname !== '' && strcasecmp($nm, $uname) === 0;
+
+        if ($nm !== '' && ! $nameIsOnlyIndex && ! $nameIsOnlyUsername) {
+            return $nm;
+        }
+
+        return '—';
     }
 
     /** Docu Mentor: Groups where this user is leader */
@@ -247,9 +295,10 @@ class User extends Authenticatable
      */
     public function canAccessDocuMentorProjects(): bool
     {
-        if (!$this->isDocuMentorStudent()) {
+        if (! $this->isDocuMentorStudent()) {
             return false;
         }
+
         return $this->canLeadDocuMentorProjects()
             || $this->docuMentorGroups()->exists()
             || $this->ledDocuMentorGroups()->exists();
@@ -303,7 +352,7 @@ class User extends Authenticatable
     /** IDs of class groups in scope. System uses users-only (no class_groups table); always returns empty. */
     public function classGroupIds(): array
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('class_groups')) {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('class_groups')) {
             return [];
         }
         if ($this->isSuperAdmin()) {
@@ -314,8 +363,10 @@ class User extends Authenticatable
             if ($this->department_id) {
                 $q->whereHas('supervisor', fn ($s) => $s->where('department_id', $this->department_id));
             }
+
             return $q->pluck('id')->all();
         }
+
         return $this->classGroups()->pluck('id')->all();
     }
 
@@ -327,6 +378,7 @@ class User extends Authenticatable
         if ($deptId !== null) {
             $q->where('department_id', $deptId);
         }
+
         return $q;
     }
 
@@ -341,6 +393,7 @@ class User extends Authenticatable
         if ($deptId === null) {
             return $q;
         }
+
         return $q->where('department_id', $deptId);
     }
 
@@ -353,7 +406,8 @@ class User extends Authenticatable
         if (str_starts_with($this->avatar, 'http://') || str_starts_with($this->avatar, 'https://')) {
             return $this->avatar;
         }
-        return asset('storage/' . $this->avatar);
+
+        return asset('storage/'.$this->avatar);
     }
 
     /**
@@ -368,11 +422,11 @@ class User extends Authenticatable
         $user = null;
         if ($phone && $phone !== '') {
             $user = self::where('phone', $phone)
-                ->orWhere('phone', 'like', $phone . '%')
+                ->orWhere('phone', 'like', $phone.'%')
                 ->whereIn('role', [self::DM_ROLE_STUDENT, self::DM_ROLE_LEADER])
                 ->first();
         }
-        if (!$user && $indexNormalized !== '') {
+        if (! $user && $indexNormalized !== '') {
             $user = self::where('index_number', $indexNormalized)
                 ->whereIn('role', [self::DM_ROLE_STUDENT, self::DM_ROLE_LEADER])
                 ->first();
@@ -382,13 +436,13 @@ class User extends Authenticatable
             return $user;
         }
 
-        if (!$phone || $phone === '') {
+        if (! $phone || $phone === '') {
             return null;
         }
 
-        $username = 'idx_' . (preg_replace('/[^a-zA-Z0-9]/', '', $indexNormalized) ?: $phone);
+        $username = 'idx_'.(preg_replace('/[^a-zA-Z0-9]/', '', $indexNormalized) ?: $phone);
         if (self::where('username', $username)->exists()) {
-            $username = $username . '_' . substr(md5($indexNormalized . $phone), 0, 6);
+            $username = $username.'_'.substr(md5($indexNormalized.$phone), 0, 6);
         }
 
         return self::create([
@@ -410,14 +464,15 @@ class User extends Authenticatable
         $indexNormalized = trim((string) ($student->index_number ?? ''));
         $phone = $student->phone_contact ? preg_replace('/\D/', '', (string) $student->phone_contact) : null;
         $base = preg_replace('/[^a-zA-Z0-9]/', '', $indexNormalized) ?: 'idx';
-        $username = 'idx_' . $base;
+        $username = 'idx_'.$base;
         if (self::where('username', $username)->exists()) {
-            $username = $username . '_' . substr(md5($indexNormalized . ($phone ?? '') . $student->id), 0, 6);
+            $username = $username.'_'.substr(md5($indexNormalized.($phone ?? '').$student->id), 0, 6);
         }
+
         return self::create([
             'username' => $username,
             'index_number' => $indexNormalized ?: null,
-            'phone' => $phone ?? ('pending_' . $student->id),
+            'phone' => $phone ?? ('pending_'.$student->id),
             'name' => $student->student_name ?? $student->index_number ?? $username,
             'role' => self::DM_ROLE_STUDENT,
             'password' => Hash::make(bin2hex(random_bytes(16))),

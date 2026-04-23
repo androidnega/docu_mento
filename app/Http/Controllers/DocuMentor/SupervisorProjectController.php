@@ -50,7 +50,10 @@ class SupervisorProjectController extends Controller
         $this->authorize('view', $project);
 
         $with = [
-            'group.members',
+            'group' => fn ($q) => $q->with([
+                'leader',
+                'members' => fn ($m) => $m->with('rosterStudent'),
+            ]),
             'category',
             'chapters.submissions.comments',
             'features',

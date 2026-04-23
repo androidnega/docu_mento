@@ -67,7 +67,13 @@ class CoordinatorProjectController extends Controller
     public function show(Project $project): View
     {
         $this->authorize('view', $project);
-        $project->load(['group.members', 'category', 'chapters', 'supervisors', 'features', 'proposals', 'academicYear']);
+        $project->load([
+            'group' => fn ($q) => $q->with([
+                'leader',
+                'members' => fn ($m) => $m->with('rosterStudent'),
+            ]),
+            'category', 'chapters', 'supervisors', 'features', 'proposals', 'academicYear',
+        ]);
         $supervisors = User::where('role', User::ROLE_SUPERVISOR)
             ->orderBy('name')->get();
 
@@ -242,7 +248,13 @@ class CoordinatorProjectController extends Controller
     public function alertProject(Project $project): RedirectResponse
     {
         $this->authorize('view', $project);
-        $project->load(['group.members', 'supervisors']);
+        $project->load([
+            'group' => fn ($q) => $q->with([
+                'leader',
+                'members' => fn ($m) => $m->with('rosterStudent'),
+            ]),
+            'supervisors',
+        ]);
         $message = "Docu Mentor: Project \"{$project->title}\" alert. Please check your dashboard.";
         $sent = 0;
         $userId = request()->attributes->get('dm_user')?->id;

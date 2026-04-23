@@ -67,7 +67,7 @@
                 $indexLabel = $member->index_number ?: $member->username;
             @endphp
             <li class="px-3 py-2.5 text-sm bg-white flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span class="font-medium text-slate-900 min-w-[8rem]">{{ $member->name ?: '—' }}</span>
+                <span class="font-medium text-slate-900 min-w-[8rem]">{{ $member->docuMentorMemberDisplayName() }}</span>
                 <span class="text-slate-600 font-mono text-xs">{{ $indexLabel }}</span>
                 <span class="text-slate-600 text-xs sm:ml-auto">{{ $member->phone ? $member->phone : 'No phone' }}</span>
                 @if($project->group->leader_id === $member->id)<span class="text-indigo-600 font-medium text-xs">(Leader)</span>@endif
@@ -136,13 +136,13 @@
                         @endphp
                         <tr>
                             <td class="px-4 py-2 text-sm">
-                                <span class="font-medium text-slate-900">{{ $member->name ?: '—' }}</span>
+                                <span class="font-medium text-slate-900">{{ $member->docuMentorMemberDisplayName() }}</span>
                                 @if($isLeader)<span class="ml-1 text-xs text-slate-500">(leader)</span>@endif
                             </td>
                             <td class="px-4 py-2 text-xs font-mono text-slate-600">{{ $memberIndex }}</td>
                             <td class="px-4 py-2 text-xs text-slate-600">{{ $member->phone ?: '—' }}</td>
-                            <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->name ?: $memberIndex }}"></td>
-                            <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->name ?? $member->username }}"></td>
+                            <td class="px-4 py-2"><input type="number" name="doc_{{ $member->id }}" value="{{ $scoreRec?->document_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="Document score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
+                            <td class="px-4 py-2"><input type="number" name="sys_{{ $member->id }}" value="{{ $scoreRec?->system_score ?? '' }}" min="0" max="100" placeholder="0–100" class="w-20 rounded border-slate-300 text-sm" aria-label="System score for {{ $member->docuMentorMemberDisplayName() }} ({{ $memberIndex }})"></td>
                             <td class="px-4 py-2 text-sm text-slate-600">{{ $finalScore !== null ? $finalScore . '/100' : '—' }}</td>
                             <td class="px-4 py-2"><input type="text" name="remarks_{{ $member->id }}" value="{{ $scoreRec?->remarks ?? '' }}" placeholder="Remarks" class="rounded border-slate-300 text-sm w-48 max-w-full"></td>
                         </tr>

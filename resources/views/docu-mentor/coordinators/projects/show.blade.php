@@ -257,18 +257,19 @@
                         @endphp
                         <li class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 {{ $style['border'] }} {{ $style['bg'] }} hover:opacity-95 transition-opacity">
                             <div class="min-w-0 flex-1">
+                                @php
+                                    $memberIndexLabel = $m->index_number ?: $m->username;
+                                    $memberDisplay = $m->docuMentorMemberDisplayName();
+                                @endphp
                                 <p class="text-sm font-semibold text-gray-900 truncate">
-                                    {{ $m->index_number ?? $m->username ?? $m->name ?? '—' }}
+                                    {{ $memberDisplay !== '—' ? $memberDisplay : ($memberIndexLabel ?: '—') }}
                                 </p>
-                                <p class="mt-0.5 text-xs text-gray-700 truncate">
-                                    @php
-                                        $displayName = $m->name ?: ($m->username ?? null);
-                                    @endphp
-                                    @if($displayName)
-                                        <span>{{ $displayName }}</span>
+                                <p class="mt-0.5 text-xs text-gray-700 truncate font-mono">
+                                    @if($memberDisplay !== '—' && $memberIndexLabel)
+                                        <span>{{ $memberIndexLabel }}</span>
                                     @endif
                                     @if($m->phone)
-                                        @if($displayName)
+                                        @if($memberDisplay !== '—' || $memberIndexLabel)
                                             <span class="text-gray-400 mx-1">•</span>
                                         @endif
                                         <span class="font-mono">{{ $m->phone }}</span>
