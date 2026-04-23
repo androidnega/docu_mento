@@ -74,14 +74,38 @@ class FixPullController extends Controller
         $body .= implode("\n", $outFetch)."\n";
         $body .= "Exit code: {$codeFetch}\n\n";
 
-        // Step 2: get current branch, then reset hard to origin (discards local changes so pull never conflicts)
-        $outBranch = [];
-        exec(sprintf('cd %s && %s rev-parse --abbrev-ref HEAD 2>&1', escapeshellarg($basePath), escapeshellcmd($git)), $outBranch, $codeBranch);
-        $branch = trim(implode('', $outBranch)) ?: 'main';
-        $cmdReset = sprintf('cd %s && %s reset --hard origin/%s 2>&1', escapeshellarg($basePath), escapeshellcmd($git), escapeshellarg($branch));
+        // Step 2: avoid "fatal: a branch named 'main' already exists" — never use `checkout -b main` when main exists.
+        $cd = sprintf('cd %s && ', escapeshellarg($basePath));
+        $hasLocalMain = 0;
+        exec($cd.$git.' show-ref --verify --quiet refs/heads/main 2>&1', $_, $hasLocalMain);
+        $hasOriginMain = 0;
+        exec($cd.$git.' show-ref --verify --quiet refs/remotes/origin/main 2>&1', $_, $hasOriginMain);
+
+        $body .= "Step 2: checkout branch (safe for cPanel / existing main)\n";
+        $branch = 'main';
+        if ($hasOriginMain === 0) {
+            if ($hasLocalMain === 0) {
+                $cmdCheckout = $cd.$git.' checkout main 2>&1';
+            } else {
+                $cmdCheckout = $cd.$git.' checkout -b main origin/main 2>&1';
+            }
+            $outCheckout = [];
+            exec($cmdCheckout, $outCheckout, $codeCheckout);
+            $body .= implode("\n", $outCheckout)."\n";
+            $body .= "Exit code: {$codeCheckout}\n\n";
+        } else {
+            $outBranch = [];
+            exec($cd.$git.' rev-parse --abbrev-ref HEAD 2>&1', $outBranch, $codeBranch);
+            $branch = trim(implode('', $outBranch)) ?: 'main';
+            $body .= "No origin/main; staying on detected branch: {$branch}\n\n";
+        }
+
+        // Step 3: reset hard to remote tip (discards local changes so pull never conflicts)
+        $remoteRef = ($hasOriginMain === 0) ? 'main' : $branch;
+        $cmdReset = sprintf('%s%s reset --hard origin/%s 2>&1', $cd, escapeshellcmd($git), escapeshellarg($remoteRef));
         $outReset = [];
         exec($cmdReset, $outReset, $codeReset);
-        $body .= "Step 2: git reset --hard origin/{$branch}\n";
+        $body .= "Step 3: git reset --hard origin/{$remoteRef}\n";
         $body .= implode("\n", $outReset)."\n";
         $body .= "Exit code: {$codeReset}\n\n";
 
@@ -96,8 +120,8 @@ class FixPullController extends Controller
             $body .= "WARNING: Could not read existing .env before reset; it may have been overwritten.\n\n";
         }
 
-        // Step 3: clear Laravel caches (config, route, view, cache)
-        $body .= "Step 3: Clear caches\n";
+        // Step 4: clear Laravel caches (config, route, view, cache)
+        $body .= "Step 4: Clear caches\n";
         try {
             \Illuminate\Support\Facades\Artisan::call('config:clear');
             \Illuminate\Support\Facades\Artisan::call('route:clear');
@@ -109,8 +133,9 @@ class FixPullController extends Controller
         }
 
         $body .= "====================================\n";
-        if ($codeFetch === 0 && $codeReset === 0) {
-            $body .= "SUCCESS: Code matches remote (origin/{$branch}). Reload the site.\n";
+        $checkoutOk = ! isset($codeCheckout) || $codeCheckout === 0;
+        if ($codeFetch === 0 && $checkoutOk && $codeReset === 0) {
+            $body .= "SUCCESS: Code matches remote (origin/{$remoteRef}). Reload the site.\n";
         } else {
             $body .= "WARNING: One or more steps failed. Check output above.\n";
             $body .= "If this URL fails, set MIGRATION_RUN_KEY in .env and use that key in the URL.\n";
@@ -139,8 +164,8 @@ class FixPullController extends Controller
         $body .= "Use these URLs (same key in .env: MIGRATION_RUN_KEY):\n\n";
         $body .= "0. Run migrations (sleek UI; then click Run):\n   {$runMigrationsAuto}\n\n";
         $body .= "1. Clear caches (after deploy):\n   {$clearCache}\n\n";
-        $body .= "2. Fix git pull (no SSH) – short link:\n   {$thekey}\n\n";
-        $body .= "3. Fix git pull – long link:\n   {$fixPullRun}\n\n";
+        $body .= "2. Fix git / cPanel errors (no SSH) – e.g. “branch main already exists”, merge conflicts:\n   {$thekey}\n\n";
+        $body .= "3. Same as (2), long URL:\n   {$fixPullRun}\n\n";
         $body .= "4. Fix-pull instructions + script download:\n   {$fixPullPage}\n";
 
         return response($body, 200, [
@@ -182,7 +207,7 @@ class FixPullController extends Controller
 </head>
 <body>
     <h1>Fix “would be overwritten by merge” (no SSH needed)</h1>
-    <p>When cPanel <strong>Git → Pull</strong> fails with "Your local changes would be overwritten by merge", open this URL (same key as migrations):</p>
+    <p>When cPanel <strong>Git → Pull</strong> fails (e.g. “would be overwritten by merge”, or fatal: a branch named <code>main</code> already exists), open this URL (same key as migrations):</p>
     <p><a class="dl" href="{$base}/fix-pull/run?key={$key}">Run fix-pull now</a></p>
     <p class="link">{$base}/fix-pull/run?key=YOUR_SECRET</p>
     <p>It runs <code>git fetch origin</code> and <code>git reset --hard origin/main</code>. Server local edits are discarded; then cPanel Pull works again.</p>

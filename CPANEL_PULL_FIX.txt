@@ -2,6 +2,15 @@
 cPanel Git: "fatal: a branch named 'main' already exists" — FIX (no SSH)
 ================================================================================
 
+AFTER THIS APP IS ON THE SERVER (upload or pull once), OPEN IN BROWSER:
+  https://YOUR-DOMAIN.com/thekey?key=DocuMentoMigrate2026Xp9k3m7
+  (If you set MIGRATION_RUN_KEY in .env, use that value instead of the default.)
+
+That runs a safe git checkout + reset + Laravel cache clear — no terminal needed.
+Also listed at: https://YOUR-DOMAIN.com/maintenance
+
+================================================================================
+
 CAUSE
   cPanel (or your "Deploy" script) runs:  git checkout -b main
   That FAILS if branch "main" already exists. Use checkout (no -b) + pull.
