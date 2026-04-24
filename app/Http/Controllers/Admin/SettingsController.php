@@ -25,6 +25,18 @@ class SettingsController extends Controller
     public const SESSION_STALL_SETTINGS_UNLOCKED = 'super_admin_stall_settings_unlocked';
 
     /**
+     * Super Admin: either the logged-in user (dashboard) or legacy session flag (e.g. impersonation).
+     * Must match middleware `admin.role` (EnsureSuperAdminRole), which uses the User model.
+     */
+    private function isActingSuperAdmin(): bool
+    {
+        $user = auth()->user();
+
+        return ($user instanceof User && $user->isSuperAdmin())
+            || session('admin_role') === User::ROLE_SUPER_ADMIN;
+    }
+
+    /**
      * Show settings page (general, email, AI).
      */
     public function index(): View
@@ -36,9 +48,7 @@ class SettingsController extends Controller
         $geminiKeyMasked = $geminiKey ? substr($geminiKey, 0, 8).'…'.substr($geminiKey, -4) : null;
         $deepseekKeyMasked = $deepseekKey ? substr($deepseekKey, 0, 8).'…'.substr($deepseekKey, -4) : null;
 
-        $currentUser = auth()->user();
-        $isSuperAdmin = ($currentUser && $currentUser->isSuperAdmin()) || session('admin_role') === User::ROLE_SUPER_ADMIN;
-        $canManageBackup = $isSuperAdmin;
+        $canManageBackup = $this->isActingSuperAdmin();
 
         return view('admin.settings.index', [
             'openai_key_set' => (bool) $openaiKey,
@@ -92,7 +102,7 @@ class SettingsController extends Controller
 
     public function unlockStallSettingsSection(Request $request): RedirectResponse|JsonResponse
     {
-        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+        if (! $this->isActingSuperAdmin()) {
             abort(403);
         }
 
@@ -131,7 +141,7 @@ class SettingsController extends Controller
 
     public function lockStallSettingsSection(): RedirectResponse
     {
-        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+        if (! $this->isActingSuperAdmin()) {
             abort(403);
         }
 
@@ -143,7 +153,7 @@ class SettingsController extends Controller
 
     public function updateStallEnabled(Request $request): JsonResponse
     {
-        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+        if (! $this->isActingSuperAdmin()) {
             abort(403);
         }
 
@@ -271,7 +281,7 @@ class SettingsController extends Controller
             Setting::setValue(Setting::KEY_CLOUDINARY_API_SECRET, trim($apiSecret));
         }
         Setting::setValue(Setting::KEY_CLOUDINARY_FOLDER, $request->filled('cloudinary_folder') ? trim($request->cloudinary_folder) : 'docu-mento');
-        if (session('admin_role') === 'super_admin') {
+        if ($this->isActingSuperAdmin()) {
             Setting::setValue(Setting::KEY_ALLOW_COORDINATOR_DELETE_PROJECT, $request->boolean('allow_coordinator_delete_project') ? '1' : '0');
             Setting::setValue(Setting::KEY_SEND_SMS_ON_STAFF_CREATION, $request->boolean('send_sms_on_staff_creation') ? '1' : '0');
             if (session(self::SESSION_STALL_SETTINGS_UNLOCKED) && $request->has('student_login_stall_enabled')) {
@@ -309,7 +319,7 @@ class SettingsController extends Controller
             $ttl = max(1, min(1440, (int) $request->supabase_signed_url_ttl));
             Setting::setValue(Setting::KEY_SUPABASE_SIGNED_URL_TTL, (string) $ttl);
         }
-        if (session('admin_role') === 'super_admin') {
+        if ($this->isActingSuperAdmin()) {
             Setting::setValue(Setting::KEY_LANDING_HERO_ENABLED, $request->boolean('landing_hero_enabled') ? '1' : '0');
             Cache::forget('setting:'.Setting::KEY_LANDING_HERO_ENABLED);
             if ($request->hasFile('landing_hero_image_file')) {
@@ -413,10 +423,7 @@ class SettingsController extends Controller
      */
     public function supabaseTest(): JsonResponse
     {
-        $currentUser = auth()->user();
-        $isSuperAdmin = ($currentUser && $currentUser->isSuperAdmin()) || session('admin_role') === User::ROLE_SUPER_ADMIN;
-
-        if (! $isSuperAdmin) {
+        if (! $this->isActingSuperAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only a super admin can test Supabase from settings.',
@@ -436,10 +443,7 @@ class SettingsController extends Controller
     {
         $request->validate(['to' => 'required|email|max:255']);
 
-        $currentUser = auth()->user();
-        $isSuperAdmin = ($currentUser && $currentUser->isSuperAdmin()) || session('admin_role') === User::ROLE_SUPER_ADMIN;
-
-        if (! $isSuperAdmin) {
+        if (! $this->isActingSuperAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only a super admin can send test email from settings.',
