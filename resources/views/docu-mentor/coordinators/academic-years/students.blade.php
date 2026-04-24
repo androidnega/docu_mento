@@ -138,6 +138,7 @@
                                             <form action="{{ route('dashboard.coordinators.students.toggle-leader', ['encodedIndex' => $encodedIndex]) }}" method="post" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="user_id" value="{{ $u->id }}">
+                                                <input type="hidden" name="academic_year_id" value="{{ $academicYear->id }}">
                                                 <input type="hidden" name="return_url" value="{{ route('dashboard.coordinators.academic-years.students', ['academicYear' => $academicYear], false) }}">
                                                 <button type="submit" class="inline-flex items-center gap-1 rounded border {{ !empty($u->group_leader) ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-primary-200 bg-primary-50 text-primary-800 hover:bg-primary-100' }} px-2.5 py-1.5 text-xs font-medium" title="{{ !empty($u->group_leader) ? 'Remove group leader flag' : 'Set as group leader' }}">
                                                     <i class="fas {{ !empty($u->group_leader) ? 'fa-user-minus' : 'fa-crown' }}"></i> {{ !empty($u->group_leader) ? 'Remove leader' : 'Set as leader' }}

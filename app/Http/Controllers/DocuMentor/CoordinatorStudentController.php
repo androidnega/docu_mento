@@ -281,8 +281,14 @@ class CoordinatorStudentController extends Controller
                     $query->where('department_id', $deptId);
                 }
             }
-            $students = $query->orderBy('name')->orderBy('index_number')
-                ->get(['id', 'index_number', 'name', 'email', 'is_active']);
+            $columns = ['id', 'index_number', 'name', 'email', 'is_active'];
+            if (Schema::hasColumn('users', 'phone')) {
+                $columns[] = 'phone';
+            }
+            if (Schema::hasColumn('users', 'group_leader')) {
+                $columns[] = 'group_leader';
+            }
+            $students = $query->orderBy('name')->orderBy('index_number')->get($columns);
         }
 
         return view('docu-mentor.coordinators.students.list', compact('academicYears', 'academicYear', 'students'));
@@ -985,11 +991,29 @@ class CoordinatorStudentController extends Controller
         $classGroupIds = [];
         $indexNumber = null;
         $explicitUser = null;
+        $decodedFromRoute = self::decodeIndex($encodedIndex);
 
         if ($request->filled('user_id')) {
             $explicitUser = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
                 ->find((int) $request->input('user_id'));
             if ($explicitUser) {
+                $routeNorm = $decodedFromRoute ? strtoupper(trim($decodedFromRoute)) : '';
+                $explicitNorm = strtoupper(trim((string) ($explicitUser->index_number ?? '')));
+                if ($routeNorm === '' || $explicitNorm === '' || $routeNorm !== $explicitNorm) {
+                    abort(403, 'Invalid request.');
+                }
+                $inDeptScope = $user->docuMentorStudentsInScope()->whereKey($explicitUser->id)->exists();
+                $inYearScope = false;
+                if (Schema::hasColumn('users', 'academic_year_id')) {
+                    $yearId = (int) $request->input('academic_year_id');
+                    if ($yearId > 0) {
+                        $this->ensureAcademicYearInScope($user, $yearId);
+                        $inYearScope = (int) ($explicitUser->academic_year_id ?? 0) === $yearId;
+                    }
+                }
+                if (! $inDeptScope && ! $inYearScope) {
+                    abort(403, 'Access denied.');
+                }
                 $indexNumber = $explicitUser->index_number;
             }
         }
