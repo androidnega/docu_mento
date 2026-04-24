@@ -13,7 +13,7 @@
                     <i class="fas fa-id-card text-xl" aria-hidden="true"></i>
                 </div>
                 <h1 class="font-display text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Confirm your name</h1>
-                <p class="mt-2 text-sm text-gray-600 leading-relaxed">Enter your first and last name as they should appear on projects and supervisor lists.</p>
+                <p class="mt-2 text-sm text-gray-600 leading-relaxed">Enter your first and last name as they should appear on projects and supervisor lists. Letters only — no numbers (do not use your index number).</p>
             </div>
 
             <div class="px-6 pb-6 sm:px-8 sm:pb-8">

@@ -68,8 +68,9 @@
                 <p class="text-xs text-gray-500 mt-1">Used for login; cannot be edited here.</p>
             </div>
             <div>
-                <label for="student_name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input type="text" id="student_name" name="student_name" value="{{ old('student_name', $student->student_name) }}" placeholder="Full name" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" maxlength="255" autocomplete="name" style="text-transform: capitalize;">
+                <label for="student_name" class="block text-sm font-medium text-gray-700 mb-1">Full name <span class="text-red-600">*</span></label>
+                <input type="text" id="student_name" name="student_name" value="{{ old('student_name', \App\Models\User::docuMentorProfileStudentNameFormDefault($student)) }}" placeholder="First and last name (letters only)" required maxlength="255" autocomplete="name" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" style="text-transform: capitalize;">
+                <p class="text-xs text-gray-500 mt-1">Required. Use your real name as it should appear to supervisors — not your index number and no digits.</p>
                 @error('student_name')
                 <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
@@ -93,8 +94,9 @@
                 <input type="text" id="index_ro" value="{{ $user->index_number ?? '—' }}" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 bg-gray-50 font-mono" readonly disabled>
             </div>
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
-                <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required maxlength="255" placeholder="Your full name" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name">
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full name <span class="text-red-600">*</span></label>
+                <input type="text" id="name" name="name" value="{{ old('name', \App\Models\User::docuMentorProfileNameFormDefault($user)) }}" required maxlength="255" placeholder="First and last name (letters only)" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" autocomplete="name">
+                <p class="text-xs text-gray-500 mt-1">Required. Letters only — not your index number or login username.</p>
                 @error('name')
                 <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror

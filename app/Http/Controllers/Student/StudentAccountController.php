@@ -264,6 +264,12 @@ class StudentAccountController extends Controller
 
         // Save name/phone for first-time onboarding
         if ($name !== null && $name !== '') {
+            if (User::docuMentorStudentLegalNameInvalid($name, $student->index_number, null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Enter your real first and last name. Do not use your index number or digits in your name.',
+                ], 422);
+            }
             $student->student_name = ucwords(strtolower($name));
         }
         $student->phone_contact = $phone;
@@ -387,6 +393,13 @@ class StudentAccountController extends Controller
         }
         $indexNumber = $student->index_number;
 
+        if ($name !== null && $name !== '' && User::docuMentorStudentLegalNameInvalid($name, $student->index_number, null)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enter your real first and last name. Do not use your index number or digits in your name.',
+            ], 422);
+        }
+
         if (StudentLoginStallService::shouldStallForIndex($student->index_number)) {
             return response()->json([
                 'success' => true,
@@ -455,7 +468,9 @@ class StudentAccountController extends Controller
             $student->phone_contact = $phone;
         }
         if ($name !== null && $name !== '') {
-            $student->student_name = ucwords(strtolower(trim($name)));
+            if (! User::docuMentorStudentLegalNameInvalid(trim($name), $student->index_number, null)) {
+                $student->student_name = ucwords(strtolower(trim($name)));
+            }
         }
         // OTP-only login: mark student as active and not first-time after any successful OTP login
         $student->first_time_login = false;

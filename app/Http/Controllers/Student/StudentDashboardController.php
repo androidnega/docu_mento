@@ -144,10 +144,18 @@ class StudentDashboardController extends Controller
     {
         $nameSource = null;
         if ($student && $student->student_name) {
-            $nameSource = $student->student_name;
-        } elseif ($user && $user->name) {
-            $nameSource = $user->name;
-        } elseif ($user && $user->username) {
+            $sn = trim((string) $student->student_name);
+            if ($sn !== '' && ! User::docuMentorStudentLegalNameInvalid($sn, (string) ($student->index_number ?? ''), null)) {
+                $nameSource = $sn;
+            }
+        }
+        if ($nameSource === null && $user && $user->name) {
+            $nm = trim((string) $user->name);
+            if ($nm !== '' && ! User::docuMentorStudentLegalNameInvalid($nm, (string) ($user->index_number ?? ''), (string) ($user->username ?? ''))) {
+                $nameSource = $nm;
+            }
+        }
+        if ($nameSource === null && $user && $user->username) {
             $nameSource = $user->username;
         }
 
@@ -239,8 +247,20 @@ class StudentDashboardController extends Controller
             abort(403, 'Not logged in.');
         }
         if ($student) {
-            $request->validate(['student_name' => 'nullable|string|max:255']);
-            $student->student_name = $request->filled('student_name') ? ucwords(strtolower(trim($request->student_name))) : $student->student_name;
+            $request->validate([
+                'student_name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    function (string $attribute, mixed $value, \Closure $fail) use ($student): void {
+                        $v = trim((string) $value);
+                        if (User::docuMentorStudentLegalNameInvalid($v, (string) ($student->index_number ?? ''), null)) {
+                            $fail('Enter your real first and last name. Do not use your index number or any digits in your name.');
+                        }
+                    },
+                ],
+            ]);
+            $student->student_name = ucwords(strtolower(trim($request->student_name)));
             $student->save();
             User::propagateDocuMentorDisplayNameFromStudent($student);
 
@@ -251,7 +271,19 @@ class StudentDashboardController extends Controller
             return redirect()->route('dashboard')->with('info', 'Profile cannot be edited here.');
         }
 
-        $request->validate(['name' => 'required|string|max:255']);
+        $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function (string $attribute, mixed $value, \Closure $fail) use ($user): void {
+                    $v = trim((string) $value);
+                    if (User::docuMentorStudentLegalNameInvalid($v, (string) ($user->index_number ?? ''), (string) ($user->username ?? ''))) {
+                        $fail('Enter your real first and last name. Do not use your index number, digits, or your login username as your name.');
+                    }
+                },
+            ],
+        ]);
         $name = ucwords(strtolower(trim($request->input('name'))));
         $user->name = $name;
         $user->save();

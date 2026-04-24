@@ -217,7 +217,7 @@ class User extends Authenticatable
         $pc = $student->phone_contact ? Student::normalizePhoneForStorage($student->phone_contact) : null;
 
         foreach ($users as $u) {
-            if ($sn !== '' && ! self::docuMentorNameIsIndexNumber($sn, (string) $u->index_number, (string) $u->username)) {
+            if ($sn !== '' && ! self::docuMentorStudentLegalNameInvalid($sn, (string) $u->index_number, (string) $u->username)) {
                 $u->name = $sn;
             }
             if ($pc !== null && $pc !== '') {
@@ -240,7 +240,7 @@ class User extends Authenticatable
 
         $sn = trim((string) ($student->student_name ?? ''));
         $idx = trim((string) ($student->index_number ?? ''));
-        if ($sn === '' || self::docuMentorNameIsIndexNumber($sn, $idx, null)) {
+        if ($sn === '' || self::docuMentorStudentLegalNameInvalid($sn, $idx, null)) {
             return;
         }
 
@@ -266,7 +266,7 @@ class User extends Authenticatable
         }
 
         $nm = trim((string) ($actor->name ?? ''));
-        if ($nm === '' || self::docuMentorNameIsIndexNumber($nm, $idx, (string) $actor->username)) {
+        if ($nm === '' || self::docuMentorStudentLegalNameInvalid($nm, $idx, (string) $actor->username)) {
             return;
         }
 
@@ -389,6 +389,75 @@ class User extends Authenticatable
         }
 
         return false;
+    }
+
+    /**
+     * True if the string contains any Unicode digit (real names on this product must not use numerals).
+     */
+    public static function docuMentorStudentNameContainsDigits(?string $name): bool
+    {
+        return is_string($name) && preg_match('/\p{N}/u', $name) === 1;
+    }
+
+    /**
+     * True when $fullName must not be accepted as a student's legal/display name (empty, digits, or index-like).
+     */
+    public static function docuMentorStudentLegalNameInvalid(?string $fullName, ?string $indexNumber = null, ?string $username = null): bool
+    {
+        $fullName = trim((string) $fullName);
+        if ($fullName === '') {
+            return true;
+        }
+        if (self::docuMentorStudentNameContainsDigits($fullName)) {
+            return true;
+        }
+        if (self::docuMentorNameIsIndexNumber($fullName, (string) $indexNumber, (string) $username)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * True when a student/leader username is only digits (must use a letter-based username).
+     */
+    public static function docuMentorStudentUsernameIsNumericOnly(?string $username): bool
+    {
+        $u = trim((string) $username);
+
+        return $u !== '' && ctype_digit($u);
+    }
+
+    /**
+     * Default value for the profile "name" field: blank when stored value is index-like or invalid.
+     */
+    public static function docuMentorProfileNameFormDefault(self $user): string
+    {
+        $nm = trim((string) ($user->name ?? ''));
+        if ($nm === '') {
+            return '';
+        }
+        if (self::docuMentorStudentLegalNameInvalid($nm, (string) ($user->index_number ?? ''), (string) ($user->username ?? ''))) {
+            return '';
+        }
+
+        return $nm;
+    }
+
+    /**
+     * Default value for OTP student profile "student_name" field: blank when invalid or index-like.
+     */
+    public static function docuMentorProfileStudentNameFormDefault(Student $student): string
+    {
+        $sn = trim((string) ($student->student_name ?? ''));
+        if ($sn === '') {
+            return '';
+        }
+        if (self::docuMentorStudentLegalNameInvalid($sn, (string) ($student->index_number ?? ''), null)) {
+            return '';
+        }
+
+        return $sn;
     }
 
     /**
@@ -707,11 +776,16 @@ class User extends Authenticatable
             $username = $username.'_'.substr(md5($indexNormalized.$phone), 0, 6);
         }
 
+        $resolvedName = trim((string) ($student->student_name ?? ''));
+        if ($resolvedName === '' || self::docuMentorStudentLegalNameInvalid($resolvedName, $indexNormalized, null)) {
+            $resolvedName = null;
+        }
+
         return self::create([
             'username' => $username,
             'index_number' => $indexNormalized ?: null,
             'phone' => $phone,
-            'name' => $student->student_name ?? $student->index_number ?? $username,
+            'name' => $resolvedName,
             'role' => self::DM_ROLE_STUDENT,
             'password' => Hash::make(bin2hex(random_bytes(16))),
         ]);
@@ -731,11 +805,16 @@ class User extends Authenticatable
             $username = $username.'_'.substr(md5($indexNormalized.($phone ?? '').$student->id), 0, 6);
         }
 
+        $resolvedName = trim((string) ($student->student_name ?? ''));
+        if ($resolvedName === '' || self::docuMentorStudentLegalNameInvalid($resolvedName, $indexNormalized, null)) {
+            $resolvedName = null;
+        }
+
         return self::create([
             'username' => $username,
             'index_number' => $indexNormalized ?: null,
             'phone' => $phone ?? ('pending_'.$student->id),
-            'name' => $student->student_name ?? $student->index_number ?? $username,
+            'name' => $resolvedName,
             'role' => self::DM_ROLE_STUDENT,
             'password' => Hash::make(bin2hex(random_bytes(16))),
         ]);

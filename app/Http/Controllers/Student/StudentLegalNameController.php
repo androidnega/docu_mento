@@ -29,7 +29,26 @@ class StudentLegalNameController extends Controller
             return redirect()->route('dashboard');
         }
 
+        $nameRaw = trim((string) ($student->student_name ?? ''));
+        if ($nameRaw === '' || User::docuMentorStudentLegalNameInvalid($nameRaw, $student->index_number, null)) {
+            return view('student.legal-name', [
+                'firstName' => old('first_name', ''),
+                'lastName' => old('last_name', ''),
+            ]);
+        }
+
         [$first, $last] = self::splitNameParts($student->student_name);
+        $idx = trim((string) ($student->index_number ?? ''));
+        if ($first !== '' && User::docuMentorNameIsIndexNumber($first, $idx, null)) {
+            $first = '';
+        }
+        if ($last !== '' && User::docuMentorNameIsIndexNumber($last, $idx, null)) {
+            $last = '';
+        }
+        if (User::docuMentorStudentNameContainsDigits($first) || User::docuMentorStudentNameContainsDigits($last)) {
+            $first = '';
+            $last = '';
+        }
 
         return view('student.legal-name', [
             'firstName' => old('first_name', $first),
@@ -67,8 +86,19 @@ class StudentLegalNameController extends Controller
         }
 
         $idx = trim((string) ($student->index_number ?? ''));
-        if (User::docuMentorNameIsIndexNumber($full, $idx, null)) {
-            return back()->withErrors(['first_name' => 'Please use your real name, not your index number.'])->withInput();
+        foreach (['first_name' => $first, 'last_name' => $last] as $field => $part) {
+            if ($part === '') {
+                continue;
+            }
+            if (User::docuMentorStudentNameContainsDigits($part)) {
+                return back()->withErrors([$field => 'Do not use numbers in your name. Use letters only for your real first and last name.'])->withInput();
+            }
+            if (User::docuMentorNameIsIndexNumber($part, $idx, null)) {
+                return back()->withErrors([$field => 'That looks like your index number. Enter your real name.'])->withInput();
+            }
+        }
+        if (User::docuMentorStudentLegalNameInvalid($full, $idx, null)) {
+            return back()->withErrors(['first_name' => 'Please use your real first and last name, not your index number.'])->withInput();
         }
 
         $student->student_name = $full;

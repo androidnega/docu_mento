@@ -396,17 +396,30 @@ class CoordinatorStudentController extends Controller
             ['index_number_hash' => $hash],
             ['index_number' => $indexNumber, 'index_number_hash' => $hash]
         );
-        $name = $request->filled('name') ? trim($request->name) : ($student->student_name ?? $indexNumber);
-        $phone = $request->filled('phone') ? Student::normalizePhoneForStorage(trim($request->phone)) : $student->phone_contact;
-        if ($name !== null) {
-            $student->student_name = $name;
+
+        $isSupervisor = $request->role === 'supervisor';
+        $nameFromRequest = $request->filled('name') ? trim((string) $request->name) : null;
+        $fallbackName = trim((string) ($student->student_name ?? ''));
+
+        if ($isSupervisor) {
+            $name = $nameFromRequest ?? ($fallbackName !== '' ? $fallbackName : $indexNumber);
+        } else {
+            $name = $nameFromRequest ?? ($fallbackName !== '' ? $fallbackName : null);
+            if ($nameFromRequest !== null && User::docuMentorStudentLegalNameInvalid($nameFromRequest, $indexNumber, null)) {
+                return redirect()->back()->withInput()->with('error', 'Name cannot be the index number, contain digits, or look like a student ID. Enter a real name or leave the name blank.');
+            }
+            if ($name !== null && User::docuMentorStudentLegalNameInvalid($name, $indexNumber, null)) {
+                $name = null;
+            }
         }
+
+        $phone = $request->filled('phone') ? Student::normalizePhoneForStorage(trim($request->phone)) : $student->phone_contact;
+        $student->student_name = $name;
         if ($phone !== null) {
             $student->phone_contact = $phone;
         }
         $student->save();
 
-        $isSupervisor = $request->role === 'supervisor';
         $dmRole = $isSupervisor ? User::DM_ROLE_SUPERVISOR : User::DM_ROLE_STUDENT;
         $roleName = $isSupervisor ? 'supervisor' : 'student';
         $roleModel = $this->getRoleForCoordinatorDepartment($admin, $roleName);
@@ -419,7 +432,7 @@ class CoordinatorStudentController extends Controller
         if ($existingUser) {
             $update = [
                 'role' => $dmRole,
-                'name' => $name ?? $existingUser->name,
+                'name' => $isSupervisor ? ($name ?? $existingUser->name) : $student->student_name,
             ];
             if (Schema::hasColumn('users', 'academic_year_id')) {
                 $update['academic_year_id'] = $academicYearId;
@@ -454,7 +467,7 @@ class CoordinatorStudentController extends Controller
         $userData = [
             'username' => $username,
             'index_number' => $indexNumber,
-            'name' => $name,
+            'name' => $isSupervisor ? $name : $student->student_name,
             'phone' => $phone,
             'role' => $dmRole,
             'department_id' => $roleModel ? $roleModel->department_id : $deptId,

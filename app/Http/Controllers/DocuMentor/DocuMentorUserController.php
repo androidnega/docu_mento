@@ -4,10 +4,10 @@ namespace App\Http\Controllers\DocuMentor;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class DocuMentorUserController extends Controller
 {
@@ -33,10 +33,27 @@ class DocuMentorUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $studentish = in_array($request->role, ['student', 'leader'], true);
+        $nameRules = ['required', 'string', 'max:255'];
+        $usernameRules = ['required', 'string', 'max:255', 'unique:users,username'];
+        if ($studentish) {
+            $nameRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                $v = trim((string) $value);
+                if (User::docuMentorStudentLegalNameInvalid($v, null, trim((string) $request->username))) {
+                    $fail('Use a real first and last name: no digits, and not the same as the username.');
+                }
+            };
+            $usernameRules[] = function (string $attribute, mixed $value, \Closure $fail): void {
+                if (User::docuMentorStudentUsernameIsNumericOnly((string) $value)) {
+                    $fail('Username cannot be numbers only. Use letters, for example firstname.lastname.');
+                }
+            };
+        }
+
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => $nameRules,
             'phone' => 'nullable|string|max:20',
-            'username' => 'required|string|max:255|unique:users,username',
+            'username' => $usernameRules,
             'email' => 'nullable|email|max:255',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:student,leader,supervisor,coordinator',
@@ -62,10 +79,27 @@ class DocuMentorUserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $studentish = in_array($request->role, ['student', 'leader'], true);
+        $nameRules = ['required', 'string', 'max:255'];
+        $usernameRules = ['required', 'string', 'max:255', 'unique:users,username,'.$user->id];
+        if ($studentish) {
+            $nameRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                $v = trim((string) $value);
+                if (User::docuMentorStudentLegalNameInvalid($v, (string) ($user->index_number ?? ''), trim((string) $request->username))) {
+                    $fail('Use a real first and last name: no digits, index-style values, or the same as the username.');
+                }
+            };
+            $usernameRules[] = function (string $attribute, mixed $value, \Closure $fail): void {
+                if (User::docuMentorStudentUsernameIsNumericOnly((string) $value)) {
+                    $fail('Username cannot be numbers only. Use letters, for example firstname.lastname.');
+                }
+            };
+        }
+
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => $nameRules,
             'phone' => 'nullable|string|max:20',
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'username' => $usernameRules,
             'email' => 'nullable|email|max:255',
             'role' => 'required|in:student,leader,supervisor,coordinator,super_admin',
         ]);
@@ -87,6 +121,7 @@ class DocuMentorUserController extends Controller
             return back()->with('error', 'Cannot delete yourself.');
         }
         $user->delete();
+
         return redirect()->route('docu-mentor.coordinators.users.index')
             ->with('success', 'User deleted.');
     }

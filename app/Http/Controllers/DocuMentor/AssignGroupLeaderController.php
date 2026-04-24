@@ -7,8 +7,8 @@ use App\Models\ClassGroupStudent;
 use App\Models\DocuMentor\AcademicYear;
 use App\Models\Student;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -35,6 +35,7 @@ class AssignGroupLeaderController extends Controller
             ->orderBy('name')
             ->get($columns);
         $academicYears = AcademicYear::orderBy('year', 'desc')->get(['id', 'year']);
+
         return view('docu-mentor.coordinators.assign-group-leaders.index', compact('users', 'academicYears'));
     }
 
@@ -43,7 +44,7 @@ class AssignGroupLeaderController extends Controller
      */
     public function add(Request $request): RedirectResponse
     {
-        if (!Schema::hasColumn('users', 'group_leader')) {
+        if (! Schema::hasColumn('users', 'group_leader')) {
             return back()->with('error', 'Database migration required. Run: php artisan migrate');
         }
         $request->validate([
@@ -69,17 +70,20 @@ class AssignGroupLeaderController extends Controller
                 $updates['academic_year_id'] = $academicYearId;
             }
             $user->update($updates);
-            return back()->with('success', ($user->name ?: $user->index_number) . ' set as group leader.');
+
+            return back()->with('success', ($user->name ?: $user->index_number).' set as group leader.');
         }
 
         $cgStudent = ClassGroupStudent::whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper($indexNumber)])->first();
-        $name = $cgStudent?->student_name ?? null;
         $studentRecord = Student::where('index_number_hash', Student::hashIndexNumber($indexNumber))->first();
-        $name = $name ?? $studentRecord?->student_name ?? $indexNumber;
+        $name = trim((string) ($cgStudent?->student_name ?? $studentRecord?->student_name ?? ''));
+        if ($name === '' || User::docuMentorStudentLegalNameInvalid($name, $indexNumber, null)) {
+            $name = null;
+        }
 
-        $username = 'idx_' . preg_replace('/[^a-zA-Z0-9]/', '_', $indexNumber);
+        $username = 'idx_'.preg_replace('/[^a-zA-Z0-9]/', '_', $indexNumber);
         if (User::where('username', $username)->exists()) {
-            $username = $username . '_' . substr(uniqid(), -4);
+            $username = $username.'_'.substr(uniqid(), -4);
         }
 
         $attrs = [
@@ -94,7 +98,8 @@ class AssignGroupLeaderController extends Controller
             $attrs['academic_year_id'] = $academicYearId;
         }
         User::create($attrs);
-        return back()->with('success', 'Student added and set as group leader. Username: ' . $username);
+
+        return back()->with('success', 'Student added and set as group leader. Username: '.$username);
     }
 
     /**
@@ -102,17 +107,18 @@ class AssignGroupLeaderController extends Controller
      */
     public function toggle(Request $request, User $user): RedirectResponse
     {
-        if (!Schema::hasColumn('users', 'group_leader')) {
+        if (! Schema::hasColumn('users', 'group_leader')) {
             return back()->with('error', 'Database migration required. Run: php artisan migrate');
         }
-        if (!in_array($user->role, [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER], true)) {
+        if (! in_array($user->role, [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER], true)) {
             return back()->with('error', 'Only students can be assigned as group leaders.');
         }
         if ($user->isDocuMentorCoordinator()) {
             return back()->with('error', 'A coordinator cannot be a group leader. Unassign coordinator role first.');
         }
-        $user->update(['group_leader' => !($user->group_leader ?? false)]);
+        $user->update(['group_leader' => ! ($user->group_leader ?? false)]);
         $label = ($user->group_leader ?? false) ? 'Group leader assigned.' : 'Group leader removed.';
+
         return back()->with('success', $label);
     }
 
@@ -121,7 +127,7 @@ class AssignGroupLeaderController extends Controller
      */
     public function upload(Request $request): RedirectResponse
     {
-        if (!Schema::hasColumn('users', 'group_leader')) {
+        if (! Schema::hasColumn('users', 'group_leader')) {
             return back()->with('error', 'Database migration required. Run: php artisan migrate');
         }
         $request->validate([
@@ -188,19 +194,19 @@ class AssignGroupLeaderController extends Controller
                     $user = User::whereIn('role', [User::DM_ROLE_STUDENT, User::DM_ROLE_LEADER])
                         ->where(function ($q) use ($value, $normalized) {
                             $q->where('phone', $value)
-                                ->orWhere('phone', 'like', '%' . $normalized)
+                                ->orWhere('phone', 'like', '%'.$normalized)
                                 ->orWhereRaw("REPLACE(REPLACE(phone, ' ', ''), '-', '') = ?", [preg_replace('/\D/', '', $value)]);
                         })
                         ->first();
                 }
                 if ($user) {
-                    if (!$user->isDocuMentorCoordinator()) {
+                    if (! $user->isDocuMentorCoordinator()) {
                         $updates = ['group_leader' => true];
                         if (Schema::hasColumn('users', 'academic_year_id')) {
                             $updates['academic_year_id'] = $academicYearId;
                         }
                         $user->update($updates);
-                        $updated[] = $user->name . ' (' . ($user->index_number ?? $user->phone ?? $user->id) . ')';
+                        $updated[] = $user->name.' ('.($user->index_number ?? $user->phone ?? $user->id).')';
                     }
                 } else {
                     $notFound[] = $value;
@@ -208,13 +214,14 @@ class AssignGroupLeaderController extends Controller
             }
         });
 
-        $msg = count($updated) . ' set as group leader.';
+        $msg = count($updated).' set as group leader.';
         if (count($notFound) > 0) {
-            $msg .= ' Not found: ' . implode(', ', array_slice($notFound, 0, 10));
+            $msg .= ' Not found: '.implode(', ', array_slice($notFound, 0, 10));
             if (count($notFound) > 10) {
-                $msg .= ' (+' . (count($notFound) - 10) . ' more)';
+                $msg .= ' (+'.(count($notFound) - 10).' more)';
             }
         }
+
         return back()->with('success', $msg)->with('upload_updated', $updated)->with('upload_not_found', $notFound);
     }
 }
