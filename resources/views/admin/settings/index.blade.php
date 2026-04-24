@@ -103,13 +103,11 @@
                         <div class="rounded-lg border border-amber-200 bg-amber-50/40 p-5 space-y-4">
                             <h3 class="text-sm font-semibold text-gray-900">Student login — simulated stall (testing)</h3>
                             @if(!($stall_settings_unlocked ?? false))
-                                <p class="text-xs text-gray-600">This subsection is password-protected. Enter the stall-section password to view or change the toggle and index list.</p>
-                                <div class="flex flex-wrap items-end gap-3 pt-1">
-                                    <div class="min-w-[14rem] flex-1 max-w-md">
-                                        <label for="stall_section_password" class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
-                                        <input type="password" name="stall_section_password" id="stall_section_password" form="stall-unlock-form" autocomplete="current-password" required class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
-                                    </div>
-                                    <button type="submit" form="stall-unlock-form" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Unlock section</button>
+                                <p class="text-xs text-gray-600">Enter the stall-section password below. The subsection unlocks automatically when it is correct (no separate button).</p>
+                                <div class="pt-1 max-w-md">
+                                    <label for="stall-section-password-auto" class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
+                                    <input type="password" id="stall-section-password-auto" name="stall_section_password_auto" autocomplete="off" class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="Type password…">
+                                    <p id="stall-unlock-auto-error" class="hidden mt-1.5 text-xs text-red-700" role="alert"></p>
                                 </div>
                             @else
                                 <div class="flex flex-wrap items-center justify-between gap-2">
@@ -512,7 +510,6 @@
 
         @if($can_manage_backup ?? false)
             {{-- Detached forms (HTML5 form=) so stall actions are not nested inside #settings-form — nested forms break Save and the stall toggle. --}}
-            <form id="stall-unlock-form" method="post" action="{{ route('dashboard.settings.student-login-stall-unlock') }}" class="hidden">@csrf</form>
             <form id="stall-lock-form" method="post" action="{{ route('dashboard.settings.student-login-stall-lock') }}" class="hidden">@csrf</form>
             <form id="stall-add-index-form" method="post" action="{{ route('dashboard.settings.student-login-stall-indices.store') }}" class="hidden">@csrf</form>
             @foreach(($student_login_stall_indices ?? collect()) as $row)
@@ -566,6 +563,82 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function() {
             var tabInput = document.getElementById('settings_tab');
             if (tabInput) tabInput.value = (location.hash || '#general').replace(/^#/, '') || 'general';
+        });
+    }
+
+    var stallPwAuto = document.getElementById('stall-section-password-auto');
+    if (stallPwAuto) {
+        var stallUnlockTimer = null;
+        var stallUnlocking = false;
+        var stallUnlockErrEl = document.getElementById('stall-unlock-auto-error');
+        function stallClearErr() {
+            if (stallUnlockErrEl) {
+                stallUnlockErrEl.textContent = '';
+                stallUnlockErrEl.classList.add('hidden');
+            }
+        }
+        function stallShowErr(msg) {
+            if (stallUnlockErrEl) {
+                stallUnlockErrEl.textContent = msg || '';
+                stallUnlockErrEl.classList.toggle('hidden', !msg);
+            }
+        }
+        stallPwAuto.addEventListener('input', function() {
+            stallClearErr();
+            if (stallUnlockTimer) {
+                clearTimeout(stallUnlockTimer);
+            }
+            stallUnlockTimer = setTimeout(function() {
+                var raw = stallPwAuto.value || '';
+                var v = raw.trim();
+                if (v === '' || stallUnlocking) {
+                    return;
+                }
+                stallUnlocking = true;
+                stallPwAuto.disabled = true;
+                var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                var token = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                var fd = new FormData();
+                fd.append('_token', token);
+                fd.append('stall_section_password', raw);
+                fetch('{{ route('dashboard.settings.student-login-stall-unlock') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                    credentials: 'same-origin'
+                })
+                    .then(function(r) {
+                        return r.json().then(function(j) {
+                            return { ok: r.ok, status: r.status, j: j };
+                        }).catch(function() {
+                            return { ok: r.ok, status: r.status, j: null };
+                        });
+                    })
+                    .then(function(res) {
+                        stallUnlocking = false;
+                        stallPwAuto.disabled = false;
+                        if (res.ok && res.j && res.j.success) {
+                            if (!location.hash || location.hash === '#') {
+                                location.hash = 'general';
+                            }
+                            location.reload();
+                            return;
+                        }
+                        var msg = (res.j && res.j.message) ? res.j.message : '';
+                        if (!msg && res.j && res.j.errors && res.j.errors.stall_section_password) {
+                            msg = res.j.errors.stall_section_password[0] || '';
+                        }
+                        if (!msg) {
+                            msg = res.status === 422 ? 'Incorrect password.' : 'Could not unlock. Try again.';
+                        }
+                        stallShowErr(msg);
+                    })
+                    .catch(function() {
+                        stallUnlocking = false;
+                        stallPwAuto.disabled = false;
+                        stallShowErr('Network error. Try again.');
+                    });
+            }, 450);
         });
     }
 

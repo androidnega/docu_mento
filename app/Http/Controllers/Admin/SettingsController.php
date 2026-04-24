@@ -90,25 +90,39 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function unlockStallSettingsSection(Request $request): RedirectResponse
+    public function unlockStallSettingsSection(Request $request): RedirectResponse|JsonResponse
     {
         if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
             abort(403);
         }
+
+        $wantsJson = $request->ajax()
+            || str_contains((string) $request->header('Accept', ''), 'application/json');
 
         $request->validate([
             'stall_section_password' => 'required|string|max:500',
         ]);
 
         $expected = (string) config('docu_mento.stall_settings_section_password', '');
-        $given = (string) $request->input('stall_section_password', '');
+        $given = trim((string) $request->input('stall_section_password', ''));
 
         if ($expected === '' || ! hash_equals($expected, $given)) {
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incorrect password.',
+                ], 422);
+            }
+
             return redirect()->route('dashboard.settings.index')
                 ->with('error', 'Incorrect password. The student login stall section was not unlocked.');
         }
 
         session([self::SESSION_STALL_SETTINGS_UNLOCKED => true]);
+
+        if ($wantsJson) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('dashboard.settings.index')
             ->with('success', 'Student login stall section unlocked for this browser session.');
