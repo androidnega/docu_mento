@@ -33,8 +33,8 @@
                     <span class="px-2 py-0.5 rounded text-xs {{ $project->approved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                         {{ $project->approved ? 'Approved' : 'Pending' }}
                     </span>
-                    @php $memberCount = $project->group?->members?->count() ?? 0; @endphp
-                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-900" title="Students in project group">{{ $memberCount }} student{{ $memberCount === 1 ? '' : 's' }}</span>
+                    @php $memberCount = $project->group ? $project->groupMembersVisibleToStaff()->count() : 0; @endphp
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-900" title="Students listed for supervisors (profile complete)">{{ $memberCount }} student{{ $memberCount === 1 ? '' : 's' }}</span>
                     @if($project->parent_project_id)
                         <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700" title="Tagged to previous project">Tagged</span>
                     @endif

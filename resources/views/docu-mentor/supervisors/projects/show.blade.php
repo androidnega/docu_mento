@@ -7,6 +7,8 @@
     $canGrade = $project->canSupervisorsGrade();
     $currentUserApproval = $project->supervisorApprovals->firstWhere('user_id', $user->id);
     $currentUserHasApproved = $currentUserApproval && ($currentUserApproval->approved_at || $currentUserApproval->approved);
+    $staffVisibleMembers = $project->group ? $project->groupMembersVisibleToStaff() : collect();
+    $groupMemberTotal = $project->group?->members?->count() ?? 0;
 @endphp
 <div class="max-w-6xl mx-auto w-full pt-4 sm:pt-6">
 <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -23,7 +25,7 @@
             @endif
         </p>
     </div>
-    @if($canGrade && $project->group && $project->group->members->isNotEmpty())
+    @if($canGrade && $staffVisibleMembers->isNotEmpty())
         <a href="#grade-students" class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 shrink-0 mt-2 sm:mt-3">
             Grade students
         </a>
@@ -57,10 +59,16 @@
     </dl>
 </section>
 
-{{-- MEMBERS: Index | Name | Phone (index is never shown as name) --}}
-@if($project->group && $project->group->members->isNotEmpty())
+{{-- MEMBERS: Index | Name | Phone — index-only placeholders omitted (same as coordinator) --}}
+@if($project->group && $groupMemberTotal > 0)
 <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
     <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide mb-3">Members</h2>
+    @if($staffVisibleMembers->isEmpty())
+        <p class="text-sm text-slate-600 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5">No members are listed here until they have a published name on record. Students added by index only stay private from supervisors.</p>
+    @else
+        @if($groupMemberTotal > $staffVisibleMembers->count())
+            <p class="text-xs text-slate-500 mb-2">{{ $groupMemberTotal - $staffVisibleMembers->count() }} member(s) in this group are not shown until they complete their profile.</p>
+        @endif
     <div class="overflow-x-auto rounded-lg border border-slate-100">
         <table class="min-w-full text-sm">
             <thead>
@@ -72,7 +80,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-white">
-                @foreach($project->group->members as $member)
+                @foreach($staffVisibleMembers as $member)
                     @php
                         $indexLabel = $member->index_number ?: $member->username;
                         $displayName = $member->docuMentorMemberDisplayName();
@@ -97,6 +105,7 @@
             </tbody>
         </table>
     </div>
+    @endif
 </section>
 @endif
 
@@ -125,7 +134,7 @@
 @endif
 
 {{-- Step 2: Supervisor Dashboard → "Grade Students" – click opens list of all group members including leader. --}}
-@if($canGrade && $project->group && $project->group->members->isNotEmpty())
+@if($canGrade && $staffVisibleMembers->isNotEmpty())
     <div id="grade-students" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 scroll-mt-4">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div>
@@ -150,7 +159,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-200">
                     @php $finalScoresByStudent = $project->getFinalScoresByStudent(); @endphp
-                    @foreach($project->group->members as $member)
+                    @foreach($staffVisibleMembers as $member)
                         @php
                             $scoreRec = $project->studentScores->firstWhere(fn($x) => $x->student_id === $member->id && $x->supervisor_id === $user->id);
                             $isLeader = $project->group->leader_id === $member->id;
@@ -181,7 +190,7 @@
             <button type="submit" class="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">Save scores</button>
         </form>
     </div>
-@elseif($project->group && $project->group->members->isNotEmpty() && $project->isFullyCompleted())
+@elseif($project->group && $groupMemberTotal > 0 && $project->isFullyCompleted())
     {{-- When not yet gradable: show "Grade Students" button that scrolls to approval section or explains next step --}}
     <p class="text-sm text-slate-600 mb-4">Grade Students will be available after all supervisors have approved the project.</p>
 @endif

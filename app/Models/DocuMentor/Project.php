@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -176,6 +177,16 @@ class Project extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(ProjectGroup::class, 'group_id');
+    }
+
+    /**
+     * Members safe to show coordinators/supervisors (excludes index-only roster placeholders).
+     */
+    public function groupMembersVisibleToStaff(): Collection
+    {
+        $members = $this->group?->members ?? collect();
+
+        return User::docuMentorGroupMembersVisibleToStaff($members);
     }
 
     public function parentProject(): BelongsTo

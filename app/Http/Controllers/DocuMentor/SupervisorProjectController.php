@@ -42,13 +42,13 @@ class SupervisorProjectController extends Controller
 
         $projects = $query->orderByDesc('created_at')->get();
 
-        $totalStudentsAcrossProjects = 0;
         $seenStudentIds = [];
         foreach ($projects as $project) {
-            foreach ($project->group?->members ?? [] as $member) {
-                if ($member && $member->id !== null) {
-                    $seenStudentIds[$member->id] = true;
-                }
+            if ($project->group && $project->group->members->isNotEmpty()) {
+                User::eagerLoadDocuMentorMemberProfiles($project->group->members);
+            }
+            foreach ($project->groupMembersVisibleToStaff() as $member) {
+                $seenStudentIds[(int) $member->id] = true;
             }
         }
         $totalStudentsAcrossProjects = count($seenStudentIds);
@@ -114,6 +114,10 @@ class SupervisorProjectController extends Controller
         $project->markCompletedIfReady(); // Step 1: set is_completed = true when both conditions met
 
         $members = $project->group?->members ?? collect();
+        if ($members->isNotEmpty()) {
+            User::eagerLoadDocuMentorMemberProfiles($members);
+        }
+        $members = User::docuMentorGroupMembersVisibleToStaff($members);
         foreach ($members as $m) {
             $docKey = "doc_{$m->id}";
             $sysKey = "sys_{$m->id}";

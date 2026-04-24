@@ -9,6 +9,10 @@
 @endsection
 
 @section('dashboard_content')
+@php
+    $staffVisibleMembers = $project->group ? $project->groupMembersVisibleToStaff() : collect();
+    $groupMemberTotal = $project->group?->members?->count() ?? 0;
+@endphp
 <div class="w-full min-w-0 max-w-full space-y-6">
     @if(session('success'))<div class="rounded-lg border border-success-200 bg-success-50 p-3 text-sm text-success-800">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
@@ -241,7 +245,10 @@
             @endif
         </div>
         @if($project->group)
-            @if(($project->group->members ?? []) !== [])
+            @if($staffVisibleMembers->isNotEmpty())
+                @if($groupMemberTotal > $staffVisibleMembers->count())
+                    <p class="text-xs text-gray-500 mb-2">{{ $groupMemberTotal - $staffVisibleMembers->count() }} member(s) are not listed until they have a published name on record.</p>
+                @endif
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
                     <table class="min-w-full text-sm">
                         <thead>
@@ -253,7 +260,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
-                            @foreach($project->group->members ?? [] as $m)
+                            @foreach($staffVisibleMembers as $m)
                                 @php
                                     $memberIndexLabel = $m->index_number ?: $m->username;
                                     $memberDisplay = $m->docuMentorMemberDisplayName();
@@ -278,6 +285,8 @@
                         </tbody>
                     </table>
                 </div>
+            @elseif($groupMemberTotal > 0)
+                <p class="text-gray-600 text-sm rounded-lg bg-slate-50/80 px-3 py-2.5 border border-slate-200">No members are listed here until they have a published name on record. Index-only placeholders stay off this list.</p>
             @else
                 <p class="text-gray-500 text-sm rounded-lg bg-slate-50/80 px-3 py-2.5 border border-slate-200">No members in this group.</p>
             @endif

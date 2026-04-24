@@ -425,6 +425,20 @@ class User extends Authenticatable
     }
 
     /**
+     * Group members coordinators/supervisors may list on assigned-project views.
+     * Omits index-only placeholders (same rule as {@see self::docuMentorMemberDisplayName()} returning "—").
+     *
+     * @param  iterable<int, self>  $members
+     * @return Collection<int, self>
+     */
+    public static function docuMentorGroupMembersVisibleToStaff(iterable $members): Collection
+    {
+        return collect($members)
+            ->filter(fn ($u) => $u instanceof self && $u->docuMentorMemberDisplayName() !== '—')
+            ->values();
+    }
+
+    /**
      * Phone for member lists: prefer users.phone; then OTP account phone_contact on students (same index hash).
      * Many logins use students.phone_contact while users.phone stays empty or pending_* until sync runs.
      */
