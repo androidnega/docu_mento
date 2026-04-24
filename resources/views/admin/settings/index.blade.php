@@ -115,11 +115,13 @@
                                     <button type="submit" form="stall-lock-form" class="text-xs font-medium text-amber-900 underline hover:no-underline bg-transparent border-0 cursor-pointer p-0">Lock section</button>
                                 </div>
                                 <p class="text-xs text-gray-600">When enabled, only index numbers in the list below receive a response that leaves the student login UI in a permanent &quot;loading&quot; state (no advance to phone or OTP). All other students are unaffected. Turn off for normal login behavior.</p>
-                                <label class="flex items-start gap-3 cursor-pointer group">
-                                    <input type="checkbox" name="student_login_stall_enabled" value="1" {{ old('student_login_stall_enabled', $student_login_stall_enabled ?? false) ? 'checked' : '' }} class="w-4 h-4 mt-0.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 shrink-0">
+                                <input type="hidden" name="student_login_stall_enabled" value="0">
+                                <label class="flex flex-wrap items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" name="student_login_stall_enabled" value="1" id="stall-enabled-toggle" {{ old('student_login_stall_enabled', $student_login_stall_enabled ?? false) ? 'checked' : '' }} class="w-4 h-4 mt-0.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 shrink-0">
                                     <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">Enable simulated stall for listed indices only</span>
+                                    <span id="stall-enabled-save-status" class="text-xs font-medium hidden min-w-[4rem]" aria-live="polite"></span>
                                 </label>
-                                <p class="text-xs text-gray-600 ml-7">Off = everyone uses the normal index → phone → OTP flow. On = only listed indices stall after Continue (and on send OTP / verify OTP if they reach those steps). Use <strong>Save all settings</strong> below to persist the toggle.</p>
+                                <p class="text-xs text-gray-600 ml-7">Off = everyone uses the normal index → phone → OTP flow. On = only listed indices stall after Continue (and on send OTP / verify OTP if they reach those steps). The toggle saves automatically when you change it.</p>
 
                                 <div class="pt-3 border-t border-amber-200/80 space-y-3">
                                     <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Listed indices</p>
@@ -658,6 +660,69 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             e.stopPropagation();
             stallTryUnlock();
+        });
+    }
+
+    var stallToggle = document.getElementById('stall-enabled-toggle');
+    if (stallToggle) {
+        var stallTogglePrev = stallToggle.checked;
+        var stallSaveStatusEl = document.getElementById('stall-enabled-save-status');
+        var stallSaveStatusTimer = null;
+        function stallShowToggleFeedback(ok, text) {
+            if (!stallSaveStatusEl) {
+                return;
+            }
+            stallSaveStatusEl.classList.remove('hidden', 'text-primary-700', 'text-red-700');
+            stallSaveStatusEl.textContent = text || (ok ? 'Saved' : 'Error');
+            stallSaveStatusEl.classList.add(ok ? 'text-primary-700' : 'text-red-700');
+            if (stallSaveStatusTimer) {
+                clearTimeout(stallSaveStatusTimer);
+            }
+            stallSaveStatusTimer = setTimeout(function() {
+                stallSaveStatusEl.classList.add('hidden');
+            }, ok ? 2000 : 5000);
+        }
+        stallToggle.addEventListener('change', function() {
+            var want = stallToggle.checked;
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            var token = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            var fd = new FormData();
+            fd.append('_token', token);
+            fd.append('enabled', want ? '1' : '0');
+            stallToggle.disabled = true;
+            fetch('{{ route('dashboard.settings.student-login-stall-enabled') }}', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': token || ''
+                },
+                body: fd,
+                credentials: 'same-origin'
+            })
+                .then(function(r) {
+                    return r.json().then(function(j) {
+                        return { ok: r.ok, j: j };
+                    }).catch(function() {
+                        return { ok: false, j: null };
+                    });
+                })
+                .then(function(res) {
+                    stallToggle.disabled = false;
+                    if (res.ok && res.j && res.j.success) {
+                        stallTogglePrev = want;
+                        stallShowToggleFeedback(true, 'Saved');
+                        return;
+                    }
+                    stallToggle.checked = stallTogglePrev;
+                    var msg = (res.j && res.j.message) ? res.j.message : 'Could not save.';
+                    stallShowToggleFeedback(false, msg);
+                })
+                .catch(function() {
+                    stallToggle.disabled = false;
+                    stallToggle.checked = stallTogglePrev;
+                    stallShowToggleFeedback(false, 'Network error.');
+                });
         });
     }
 

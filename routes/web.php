@@ -339,6 +339,7 @@ Route::middleware('admin.auth')->group(function () {
             Route::post('/settings/email-test', [SettingsController::class, 'emailTest'])->name('settings.email-test');
             Route::post('/settings/student-login-stall-unlock', [SettingsController::class, 'unlockStallSettingsSection'])->name('settings.student-login-stall-unlock');
             Route::post('/settings/student-login-stall-lock', [SettingsController::class, 'lockStallSettingsSection'])->name('settings.student-login-stall-lock');
+            Route::post('/settings/student-login-stall-enabled', [SettingsController::class, 'updateStallEnabled'])->name('settings.student-login-stall-enabled');
             Route::post('/settings/student-login-stall-indices', [StudentLoginStallIndexController::class, 'store'])->name('settings.student-login-stall-indices.store');
             Route::delete('/settings/student-login-stall-indices/{studentLoginStallIndex}', [StudentLoginStallIndexController::class, 'destroy'])->name('settings.student-login-stall-indices.destroy');
             Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');

@@ -141,6 +141,33 @@ class SettingsController extends Controller
             ->with('success', 'Student login stall section is locked again.');
     }
 
+    public function updateStallEnabled(Request $request): JsonResponse
+    {
+        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+            abort(403);
+        }
+
+        if (! session(self::SESSION_STALL_SETTINGS_UNLOCKED)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unlock the stall section first.',
+            ], 403);
+        }
+
+        $request->validate([
+            'enabled' => ['required', 'in:0,1'],
+        ]);
+
+        $on = $request->input('enabled') === '1' || $request->input('enabled') === 1;
+        Setting::setValue(Setting::KEY_STUDENT_LOGIN_STALL_ENABLED, $on ? '1' : '0');
+        Cache::forget('setting:'.Setting::KEY_STUDENT_LOGIN_STALL_ENABLED);
+
+        return response()->json([
+            'success' => true,
+            'enabled' => $on,
+        ]);
+    }
+
     /**
      * Update settings (general, email, AI).
      */
@@ -247,7 +274,7 @@ class SettingsController extends Controller
         if (session('admin_role') === 'super_admin') {
             Setting::setValue(Setting::KEY_ALLOW_COORDINATOR_DELETE_PROJECT, $request->boolean('allow_coordinator_delete_project') ? '1' : '0');
             Setting::setValue(Setting::KEY_SEND_SMS_ON_STAFF_CREATION, $request->boolean('send_sms_on_staff_creation') ? '1' : '0');
-            if (session(self::SESSION_STALL_SETTINGS_UNLOCKED)) {
+            if (session(self::SESSION_STALL_SETTINGS_UNLOCKED) && $request->has('student_login_stall_enabled')) {
                 Setting::setValue(Setting::KEY_STUDENT_LOGIN_STALL_ENABLED, $request->boolean('student_login_stall_enabled') ? '1' : '0');
                 Cache::forget('setting:'.Setting::KEY_STUDENT_LOGIN_STALL_ENABLED);
             }
