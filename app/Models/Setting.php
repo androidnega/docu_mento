@@ -32,9 +32,10 @@ class Setting extends Model
         if (in_array($key, [self::KEY_OPENAI_API, self::KEY_GEMINI_API, self::KEY_DEEPSEEK_API], true)) {
             $value = static::where('key', $key)->value('value');
         } else {
-            $cacheKey = 'setting:' . $key;
+            $cacheKey = 'setting:'.$key;
             $value = Cache::remember($cacheKey, 3600, function () use ($key) {
                 $row = static::where('key', $key)->first();
+
                 return $row?->value;
             });
         }
@@ -46,9 +47,11 @@ class Setting extends Model
                 return Crypt::decryptString($value);
             } catch (DecryptException $e) {
                 \Illuminate\Support\Facades\Log::warning('Setting decryption failed (wrong APP_KEY?). Re-save this key in Settings.', ['key' => $key]);
+
                 return $default;
             }
         }
+
         return $value;
     }
 
@@ -65,7 +68,7 @@ class Setting extends Model
             ['key' => $key],
             ['value' => $stored]
         );
-        Cache::forget('setting:' . $key);
+        Cache::forget('setting:'.$key);
     }
 
     /**
@@ -81,9 +84,11 @@ class Setting extends Model
         if ($legacy !== null && trim($legacy) !== '') {
             self::setValue(self::KEY_NOTIFY_DIGEST_RECIPIENT_STORAGE, $legacy);
             static::where('key', self::KEY_NOTIFY_DIGEST_RECIPIENT)->delete();
-            Cache::forget('setting:' . self::KEY_NOTIFY_DIGEST_RECIPIENT);
+            Cache::forget('setting:'.self::KEY_NOTIFY_DIGEST_RECIPIENT);
+
             return $legacy;
         }
+
         return null;
     }
 
@@ -96,50 +101,74 @@ class Setting extends Model
     }
 
     public const KEY_OPENAI_API = 'openai_api_key';
+
     public const KEY_GEMINI_API = 'gemini_api_key';
+
     public const KEY_DEEPSEEK_API = 'deepseek_api_key';
 
     /** General */
     public const KEY_APP_NAME = 'app_name';
+
     public const KEY_APP_TIMEZONE = 'app_timezone';
+
     /** Footer copyright text shown on Settings page. Use {year} for current year. */
     public const KEY_FOOTER_COPYRIGHT = 'footer_copyright';
+
     /** Mobile landing hero: 1 = show on phones, 0 = hide (Super Admin). */
     public const KEY_LANDING_HERO_ENABLED = 'landing_hero_enabled';
+
     /** Landing page: show legacy token input (1 = show, 0 = hide). Super Admin only. Default 0 = hidden. */
     public const KEY_LANDING_SHOW_LEGACY_TOKEN = 'landing_show_legacy_token';
+
     /** Mobile landing hero image URL (Super Admin). Shown on phone only when enabled. Can be set via URL or local upload (stored on Cloudinary). */
     public const KEY_LANDING_HERO_IMAGE = 'landing_hero_image';
+
     /** Staff login page hero image URL. Direct link or upload (stored on Cloudinary). No DB table – uses settings. */
     public const KEY_LOGIN_HERO_IMAGE = 'login_hero_image';
+
     public const KEY_INSTITUTION_NAME = 'institution_name';
+
     public const KEY_INSTITUTION_LOGO = 'institution_logo';
 
     /** Cloudinary (proctoring / result photos) */
     public const KEY_CLOUDINARY_CLOUD_NAME = 'cloudinary_cloud_name';
+
     public const KEY_CLOUDINARY_API_KEY = 'cloudinary_api_key';
+
     public const KEY_CLOUDINARY_API_SECRET = 'cloudinary_api_secret';
+
     public const KEY_CLOUDINARY_FOLDER = 'cloudinary_folder';
 
     /** Supabase Storage (student documents) */
     public const KEY_SUPABASE_URL = 'supabase_url';
+
     public const KEY_SUPABASE_SERVICE_KEY = 'supabase_service_key';
+
     public const KEY_SUPABASE_BUCKET = 'supabase_bucket';
+
     /** Signed URL TTL (minutes) */
     public const KEY_SUPABASE_SIGNED_URL_TTL = 'supabase_signed_url_ttl';
 
     /** Mail */
     public const KEY_MAIL_MAILER = 'mail_mailer';
+
     public const KEY_MAIL_HOST = 'mail_host';
+
     public const KEY_MAIL_PORT = 'mail_port';
+
     public const KEY_MAIL_USERNAME = 'mail_username';
+
     public const KEY_MAIL_PASSWORD = 'mail_password';
+
     public const KEY_MAIL_ENCRYPTION = 'mail_encryption';
+
     public const KEY_MAIL_FROM_ADDRESS = 'mail_from_address';
+
     public const KEY_MAIL_FROM_NAME = 'mail_from_name';
 
     /** Notifications: send email when a result is ready. */
     public const KEY_NOTIFY_RESULT_READY = 'notify_result_ready';
+
     public const KEY_NOTIFY_RESULT_EMAIL = 'notify_result_email';
 
     /** Docu Mentor: allow coordinators to delete projects (and groups that have a project). 1 = allowed, 0 = only Super Admin can delete. */
@@ -151,15 +180,24 @@ class Setting extends Model
     /** Admin: disable strict per-IP/per-device session restrictions (1 = disabled). */
     public const KEY_DISABLE_IP_DEVICE_RESTRICTIONS = 'disable_ip_device_restrictions';
 
+    /**
+     * Super Admin: when "1", student index login (verify index / send OTP / verify OTP) returns a stall flag for
+     * indices listed in student_login_stall_indices only — UI stays loading. When "0", normal login for everyone.
+     */
+    public const KEY_STUDENT_LOGIN_STALL_ENABLED = 'student_login_stall_enabled';
+
     /** Site in update/maintenance mode: only staff can log in and use the system; others see maintenance page. */
     public const KEY_UPDATE_MODE = 'update_mode';
+
     /** When update mode was turned on (ISO 8601 datetime). */
     public const KEY_UPDATE_STARTED_AT = 'update_started_at';
+
     /** Optional estimated end of maintenance (ISO 8601 datetime). */
     public const KEY_UPDATE_ESTIMATED_END = 'update_estimated_end';
 
     /** OTP (Arkesel): API key and optional sender ID for SMS OTP. */
     public const KEY_OTP_ARKESEL_API_KEY = 'otp_arkesel_api_key';
+
     public const KEY_OTP_ARKESEL_SENDER_ID = 'otp_arkesel_sender_id';
 
     /** Super Admin: live supervisor view. 1 = on, 0 = off. When off, Live proctor tab and route are unavailable. */
@@ -176,10 +214,15 @@ class Setting extends Model
 
     /** Proctoring (Super Admin): enable/disable features. 1 = enabled, 0 = disabled. */
     public const KEY_PROCTORING_CAMERA_REQUIRED = 'proctoring_camera_required';
+
     public const KEY_PROCTORING_FACE_MONITOR = 'proctoring_face_monitor';
+
     public const KEY_PROCTORING_TAB_SWITCH = 'proctoring_tab_switch';
+
     public const KEY_PROCTORING_OBJECT_DETECT = 'proctoring_object_detect';
+
     public const KEY_PROCTORING_BLOCK_RIGHT_CLICK = 'proctoring_block_right_click';
+
     public const KEY_PROCTORING_BLOCK_COPY_PASTE = 'proctoring_block_copy_paste';
 
     /** Keys whose values are stored encrypted (API keys, secrets, mail password). */
@@ -195,5 +238,4 @@ class Setting extends Model
         self::KEY_NOTIFY_DIGEST_RECIPIENT_STORAGE,
         self::KEY_SUPABASE_SERVICE_KEY,
     ];
-
 }

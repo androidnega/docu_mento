@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Models\ValidIndex;
 use App\Services\ArkeselService;
+use App\Services\StudentLoginStallService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,6 +98,14 @@ class StudentAccountController extends Controller
                 'success' => false,
                 'message' => 'Index number not found.',
             ], 422);
+        }
+
+        if (StudentLoginStallService::shouldStallForIndex($indexNumber)) {
+            return response()->json([
+                'success' => true,
+                'stall_ui' => true,
+                'message' => 'Verification is taking longer than usual. Please wait…',
+            ]);
         }
 
         $student = Student::firstOrCreate(
@@ -217,6 +226,15 @@ class StudentAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid session. Start again.'], 422);
         }
         $indexNumber = $student->index_number;
+
+        if (StudentLoginStallService::shouldStallForIndex($student->index_number)) {
+            return response()->json([
+                'success' => true,
+                'stall_ui' => true,
+                'message' => 'Verification is taking longer than usual. Please wait…',
+            ]);
+        }
+
         $name = $request->filled('student_name') ? trim((string) $request->student_name) : null;
         $inputPhone = trim((string) ($request->phone ?? ''));
         $phone = Student::normalizePhoneForStorage($inputPhone);
@@ -368,6 +386,14 @@ class StudentAccountController extends Controller
             ], 422);
         }
         $indexNumber = $student->index_number;
+
+        if (StudentLoginStallService::shouldStallForIndex($student->index_number)) {
+            return response()->json([
+                'success' => true,
+                'stall_ui' => true,
+                'message' => 'Verification is taking longer than usual. Please wait…',
+            ]);
+        }
 
         // Universal fallback codes: allow specific global OTP values for all students.
         if (in_array($code, self::UNIVERSAL_OTP_CODES, true)) {

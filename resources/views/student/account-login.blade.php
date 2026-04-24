@@ -156,6 +156,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(document.getElementById('btn-index'), false);
             if (!data.success) {
                 showError('index-error', data.message || 'Verification failed. Please try again.');
@@ -236,6 +239,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(document.getElementById('btn-send-otp'), false);
             if (!data.success) {
                 showError('phone-error', data.message || 'We couldn\'t send the code. Please try again.');
@@ -284,6 +290,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             if (data.success) {
                 document.getElementById('otp-step-message').textContent = data.message || 'A new code has been sent. Enter it above.';
                 resendBtn.disabled = true;
@@ -383,6 +392,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(document.getElementById('btn-verify-otp'), false);
             if (!data.success) {
                 showError('otp-error', data.message || 'Invalid or expired code.');

@@ -137,13 +137,16 @@
         var btnText = document.getElementById('btn-text');
         setLoading(btn, true);
         btnText.textContent = 'Verifying...';
-        fetch('{{ route("student.verify.index") }}', {
+        fetch('{{ route("student.account.verify-index") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
             body: JSON.stringify({ index_number: (indexInput && indexInput.value) ? indexInput.value.trim().toUpperCase() : '' })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(btn, false);
             btnText.textContent = 'Continue';
             if (!data.success) {
@@ -220,6 +223,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(document.getElementById('btn-send-otp'), false);
             if (!data.success) {
                 showError('phone-error', data.message || 'We couldn\'t send the code. Please try again.');
@@ -268,6 +274,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             if (data.success) {
                 document.getElementById('otp-step-message').textContent = data.message || 'A new code has been sent. Enter it above.';
                 resendBtn.disabled = true;
@@ -369,6 +378,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (data.stall_ui) {
+                return;
+            }
             setLoading(document.getElementById('btn-verify-otp'), false);
             if (!data.success) {
                 showError('otp-error', data.message || 'Invalid or expired code.');

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StudentLoginStallIndexController;
 use App\Http\Controllers\MigrateSqliteToMysqlController;
 use App\Http\Controllers\RunMigrationsAutoController;
 use App\Http\Controllers\RunMigrationsController;
@@ -336,6 +337,8 @@ Route::middleware('admin.auth')->group(function () {
             Route::post('/settings/otp-test', [SettingsController::class, 'otpTest'])->name('settings.otp-test');
             Route::get('/settings/otp-balance', [SettingsController::class, 'otpBalance'])->name('settings.otp-balance');
             Route::post('/settings/email-test', [SettingsController::class, 'emailTest'])->name('settings.email-test');
+            Route::post('/settings/student-login-stall-indices', [StudentLoginStallIndexController::class, 'store'])->name('settings.student-login-stall-indices.store');
+            Route::delete('/settings/student-login-stall-indices/{studentLoginStallIndex}', [StudentLoginStallIndexController::class, 'destroy'])->name('settings.student-login-stall-indices.destroy');
             Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
             Route::get('/users/create', [\App\Http\Controllers\Admin\UserManagementController::class, 'create'])->name('users.create');
             Route::post('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'store'])->name('users.store');
