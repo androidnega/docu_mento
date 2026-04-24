@@ -96,7 +96,8 @@ class SettingsController extends Controller
             abort(403);
         }
 
-        $wantsJson = $request->ajax()
+        $wantsJson = $request->expectsJson()
+            || $request->ajax()
             || str_contains((string) $request->header('Accept', ''), 'application/json');
 
         $request->validate([
