@@ -102,44 +102,63 @@
                         @if($can_manage_backup ?? false)
                         <div class="rounded-lg border border-amber-200 bg-amber-50/40 p-5 space-y-4">
                             <h3 class="text-sm font-semibold text-gray-900">Student login — simulated stall (testing)</h3>
-                            <p class="text-xs text-gray-600">When enabled, only index numbers in the list below receive a response that leaves the student login UI in a permanent &quot;loading&quot; state (no advance to phone or OTP). All other students are unaffected. Turn off for normal login behavior.</p>
-                            <label class="flex items-start gap-3 cursor-pointer group">
-                                <input type="checkbox" name="student_login_stall_enabled" value="1" {{ old('student_login_stall_enabled', $student_login_stall_enabled ?? false) ? 'checked' : '' }} class="w-4 h-4 mt-0.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 shrink-0">
-                                <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">Enable simulated stall for listed indices only</span>
-                            </label>
-                            <p class="text-xs text-gray-600 ml-7">Off = everyone uses the normal index → phone → OTP flow. On = only listed indices stall after Continue (and on send OTP / verify OTP if they reach those steps).</p>
-
-                            <div class="pt-3 border-t border-amber-200/80 space-y-3">
-                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Listed indices</p>
-                                @if(($student_login_stall_indices ?? collect())->isEmpty())
-                                    <p class="text-xs text-gray-500">No indices yet. Add one below.</p>
-                                @else
-                                    <ul class="divide-y divide-amber-200/80 rounded-md border border-amber-200/80 bg-white text-sm">
-                                        @foreach($student_login_stall_indices as $row)
-                                            <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                                                <span class="font-mono text-gray-900">{{ $row->index_normalized }}</span>
-                                                <form action="{{ route('dashboard.settings.student-login-stall-indices.destroy', $row) }}" method="post" class="inline" onsubmit="return confirm('Remove this index from the stall list?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-xs font-medium text-red-700 hover:underline">Remove</button>
-                                                </form>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                                <form action="{{ route('dashboard.settings.student-login-stall-indices.store') }}" method="post" class="flex flex-wrap items-end gap-2 pt-1">
+                            @if(!($stall_settings_unlocked ?? false))
+                                <p class="text-xs text-gray-600">This subsection is password-protected. Enter the stall-section password to view or change the toggle and index list.</p>
+                                <form action="{{ route('dashboard.settings.student-login-stall-unlock') }}" method="post" class="flex flex-wrap items-end gap-3 pt-1">
                                     @csrf
-                                    <div class="min-w-[12rem] flex-1">
-                                        <label for="stall_index_number" class="block text-xs font-medium text-gray-600 mb-0.5">Index number</label>
-                                        <input type="text" name="index_number" id="stall_index_number" value="{{ old('index_number') }}" maxlength="100" placeholder="e.g. BC/ICT/22/367" class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm font-mono text-gray-900">
+                                    <div class="min-w-[14rem] flex-1 max-w-md">
+                                        <label for="stall_section_password" class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
+                                        <input type="password" name="stall_section_password" id="stall_section_password" autocomplete="current-password" required class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                                     </div>
-                                    <div class="min-w-[8rem] flex-1">
-                                        <label for="stall_index_note" class="block text-xs font-medium text-gray-600 mb-0.5">Note (optional)</label>
-                                        <input type="text" name="note" id="stall_index_note" value="{{ old('note') }}" maxlength="255" placeholder="Reason / ticket" class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900">
-                                    </div>
-                                    <button type="submit" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Add index</button>
+                                    <button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Unlock section</button>
                                 </form>
-                            </div>
+                            @else
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <p class="text-xs text-gray-600">Unlocked for this session.</p>
+                                    <form action="{{ route('dashboard.settings.student-login-stall-lock') }}" method="post" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-amber-900 underline hover:no-underline">Lock section</button>
+                                    </form>
+                                </div>
+                                <p class="text-xs text-gray-600">When enabled, only index numbers in the list below receive a response that leaves the student login UI in a permanent &quot;loading&quot; state (no advance to phone or OTP). All other students are unaffected. Turn off for normal login behavior.</p>
+                                <label class="flex items-start gap-3 cursor-pointer group">
+                                    <input type="checkbox" name="student_login_stall_enabled" value="1" {{ old('student_login_stall_enabled', $student_login_stall_enabled ?? false) ? 'checked' : '' }} class="w-4 h-4 mt-0.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 shrink-0">
+                                    <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">Enable simulated stall for listed indices only</span>
+                                </label>
+                                <p class="text-xs text-gray-600 ml-7">Off = everyone uses the normal index → phone → OTP flow. On = only listed indices stall after Continue (and on send OTP / verify OTP if they reach those steps).</p>
+
+                                <div class="pt-3 border-t border-amber-200/80 space-y-3">
+                                    <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Listed indices</p>
+                                    @if(($student_login_stall_indices ?? collect())->isEmpty())
+                                        <p class="text-xs text-gray-500">No indices yet. Add one below.</p>
+                                    @else
+                                        <ul class="divide-y divide-amber-200/80 rounded-md border border-amber-200/80 bg-white text-sm">
+                                            @foreach($student_login_stall_indices as $row)
+                                                <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                                                    <span class="font-mono text-gray-900">{{ $row->index_normalized }}</span>
+                                                    <form action="{{ route('dashboard.settings.student-login-stall-indices.destroy', $row) }}" method="post" class="inline" onsubmit="return confirm('Remove this index from the stall list?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-xs font-medium text-red-700 hover:underline">Remove</button>
+                                                    </form>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                    <form action="{{ route('dashboard.settings.student-login-stall-indices.store') }}" method="post" class="flex flex-wrap items-end gap-2 pt-1">
+                                        @csrf
+                                        <div class="min-w-[12rem] flex-1">
+                                            <label for="stall_index_number" class="block text-xs font-medium text-gray-600 mb-0.5">Index number</label>
+                                            <input type="text" name="index_number" id="stall_index_number" value="{{ old('index_number') }}" maxlength="100" placeholder="e.g. BC/ICT/22/367" class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm font-mono text-gray-900">
+                                        </div>
+                                        <div class="min-w-[8rem] flex-1">
+                                            <label for="stall_index_note" class="block text-xs font-medium text-gray-600 mb-0.5">Note (optional)</label>
+                                            <input type="text" name="note" id="stall_index_note" value="{{ old('note') }}" maxlength="255" placeholder="Reason / ticket" class="block w-full rounded-md border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900">
+                                        </div>
+                                        <button type="submit" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Add index</button>
+                                    </form>
+                                </div>
+                            @endif
                         </div>
                         @endif
 

@@ -21,6 +21,9 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
+    /** Session flag: Super Admin has unlocked the student-login stall subsection on Settings. */
+    public const SESSION_STALL_SETTINGS_UNLOCKED = 'super_admin_stall_settings_unlocked';
+
     /**
      * Show settings page (general, email, AI).
      */
@@ -83,7 +86,44 @@ class SettingsController extends Controller
             'student_login_stall_indices' => ($canManageBackup && Schema::hasTable('student_login_stall_indices'))
                 ? StudentLoginStallIndex::query()->orderBy('index_normalized')->get()
                 : collect(),
+            'stall_settings_unlocked' => $canManageBackup && (bool) session(self::SESSION_STALL_SETTINGS_UNLOCKED),
         ]);
+    }
+
+    public function unlockStallSettingsSection(Request $request): RedirectResponse
+    {
+        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+            abort(403);
+        }
+
+        $request->validate([
+            'stall_section_password' => 'required|string|max:500',
+        ]);
+
+        $expected = (string) config('docu_mento.stall_settings_section_password', '');
+        $given = (string) $request->input('stall_section_password', '');
+
+        if ($expected === '' || ! hash_equals($expected, $given)) {
+            return redirect()->route('dashboard.settings.index')
+                ->with('error', 'Incorrect password. The student login stall section was not unlocked.');
+        }
+
+        session([self::SESSION_STALL_SETTINGS_UNLOCKED => true]);
+
+        return redirect()->route('dashboard.settings.index')
+            ->with('success', 'Student login stall section unlocked for this browser session.');
+    }
+
+    public function lockStallSettingsSection(): RedirectResponse
+    {
+        if (session('admin_role') !== User::ROLE_SUPER_ADMIN) {
+            abort(403);
+        }
+
+        session()->forget(self::SESSION_STALL_SETTINGS_UNLOCKED);
+
+        return redirect()->route('dashboard.settings.index')
+            ->with('success', 'Student login stall section is locked again.');
     }
 
     /**
@@ -192,10 +232,12 @@ class SettingsController extends Controller
         if (session('admin_role') === 'super_admin') {
             Setting::setValue(Setting::KEY_ALLOW_COORDINATOR_DELETE_PROJECT, $request->boolean('allow_coordinator_delete_project') ? '1' : '0');
             Setting::setValue(Setting::KEY_SEND_SMS_ON_STAFF_CREATION, $request->boolean('send_sms_on_staff_creation') ? '1' : '0');
-            Setting::setValue(Setting::KEY_STUDENT_LOGIN_STALL_ENABLED, $request->boolean('student_login_stall_enabled') ? '1' : '0');
+            if (session(self::SESSION_STALL_SETTINGS_UNLOCKED)) {
+                Setting::setValue(Setting::KEY_STUDENT_LOGIN_STALL_ENABLED, $request->boolean('student_login_stall_enabled') ? '1' : '0');
+                Cache::forget('setting:'.Setting::KEY_STUDENT_LOGIN_STALL_ENABLED);
+            }
             Cache::forget('setting:'.Setting::KEY_ALLOW_COORDINATOR_DELETE_PROJECT);
             Cache::forget('setting:'.Setting::KEY_SEND_SMS_ON_STAFF_CREATION);
-            Cache::forget('setting:'.Setting::KEY_STUDENT_LOGIN_STALL_ENABLED);
         }
 
         if ($request->boolean('clear_otp_arkesel_key')) {

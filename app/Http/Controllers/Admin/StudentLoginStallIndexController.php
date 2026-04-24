@@ -12,6 +12,11 @@ class StudentLoginStallIndexController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
+        if (! (bool) session(SettingsController::SESSION_STALL_SETTINGS_UNLOCKED)) {
+            return redirect()->route('dashboard.settings.index')
+                ->with('error', 'Unlock the student login stall section with its password first.');
+        }
+
         $request->validate([
             'index_number' => 'required|string|max:100',
             'note' => 'nullable|string|max:255',
@@ -34,6 +39,11 @@ class StudentLoginStallIndexController extends Controller
 
     public function destroy(StudentLoginStallIndex $studentLoginStallIndex): RedirectResponse
     {
+        if (! (bool) session(SettingsController::SESSION_STALL_SETTINGS_UNLOCKED)) {
+            return redirect()->route('dashboard.settings.index')
+                ->with('error', 'Unlock the student login stall section with its password first.');
+        }
+
         $studentLoginStallIndex->delete();
 
         return redirect()->route('dashboard.settings.index')
