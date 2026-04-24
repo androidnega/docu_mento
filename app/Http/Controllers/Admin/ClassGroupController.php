@@ -2,30 +2,29 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Exports\ClassGroupStudentsExport;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
-use App\Models\AttendanceUploadLog;
-use App\Rules\YearGroupLevelRule;
+use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
+use App\Models\AttendanceUploadLog;
 use App\Models\ClassGroup;
-use App\Models\Semester;
 use App\Models\ClassGroupStudent;
 use App\Models\Otp;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
+use App\Rules\YearGroupLevelRule;
 use App\Services\ArkeselService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use Illuminate\Database\QueryException;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\Response;
-use App\Exports\ClassGroupStudentsExport;
 
 class ClassGroupController extends Controller
 {
@@ -34,7 +33,25 @@ class ClassGroupController extends Controller
     private function classGroupIds(): array
     {
         $user = $this->adminUser();
+
         return $user ? $user->classGroupIds() : [];
+    }
+
+    /** Canonical index for class lists (trim + uppercase) so BC/its/01 matches bc/ITS/01. */
+    private function normalizeClassGroupIndex(?string $index): string
+    {
+        return strtoupper(trim((string) $index));
+    }
+
+    private function findClassGroupStudentByIndex(ClassGroup $classGroup, string $canonicalIndex): ?ClassGroupStudent
+    {
+        if ($canonicalIndex === '') {
+            return null;
+        }
+
+        return ClassGroupStudent::where('class_group_id', $classGroup->id)
+            ->whereRaw('UPPER(TRIM(index_number)) = ?', [$canonicalIndex])
+            ->first();
     }
 
     /**
@@ -54,7 +71,7 @@ class ClassGroupController extends Controller
         $this->authorize($ability, $classGroup);
 
         if ($canonicalRoute && (string) $classGroupId !== (string) $classGroup->getRouteKey()) {
-            return redirect()->route($this->staffRoutePrefix() . '.' . $canonicalRoute, [
+            return redirect()->route($this->staffRoutePrefix().'.'.$canonicalRoute, [
                 'classGroupId' => $classGroup->getRouteKey(),
                 'student' => $student->getRouteKey(),
             ]);
@@ -122,6 +139,7 @@ class ClassGroupController extends Controller
         $academicClasses = AcademicClass::with('academicYear')->orderBy('name')->get();
         $accentColors = ClassGroup::ACCENT_COLORS;
         $allowedDevicesOptions = Schema::hasColumn('class_groups', 'allowed_devices') ? ClassGroup::allowedDevicesOptions() : [];
+
         return view('admin.class-groups.create', compact('supervisors', 'levels', 'semesters', 'academicYears', 'academicClasses', 'accentColors', 'allowedDevicesOptions'));
     }
 
@@ -129,14 +147,14 @@ class ClassGroupController extends Controller
     {
         $this->authorize('create', ClassGroup::class);
         $user = $this->adminUser();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Error');
         }
 
         $supervisorId = $request->filled('supervisor_id') ? (int) $request->supervisor_id : null;
         $supervisorUser = $supervisorId ? User::find($supervisorId) : null;
-        if (!$supervisorUser || $supervisorUser->role !== User::ROLE_SUPERVISOR) {
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.create')
+        if (! $supervisorUser || $supervisorUser->role !== User::ROLE_SUPERVISOR) {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.create')
                 ->withInput()->with('error', 'Please select a valid supervisor.');
         }
 
@@ -178,7 +196,7 @@ class ClassGroupController extends Controller
         }
         $classGroup = ClassGroup::create($createData);
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)
             ->with('success', 'Saved');
     }
 
@@ -187,6 +205,7 @@ class ClassGroupController extends Controller
         $this->authorize('view', $classGroup);
         $classGroup->load(['supervisor:id,username,name', 'level']);
         $students = $classGroup->students()->orderBy('index_number')->paginate(20);
+
         return view('admin.class-groups.show', compact('classGroup', 'students'));
     }
 
@@ -195,7 +214,7 @@ class ClassGroupController extends Controller
         $this->authorize('update', $classGroup);
         $user = $this->adminUser();
         if ($user?->isDocuMentorSupervisor()) {
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)
                 ->with('error', 'Only coordinators can edit the class group structure.');
         }
         $classGroup->load(['supervisor:id,username,name', 'level']);
@@ -208,6 +227,7 @@ class ClassGroupController extends Controller
         $academicClasses = AcademicClass::orderBy('name')->get();
         $accentColors = ClassGroup::ACCENT_COLORS;
         $allowedDevicesOptions = Schema::hasColumn('class_groups', 'allowed_devices') ? ClassGroup::allowedDevicesOptions() : [];
+
         return view('admin.class-groups.edit', compact('classGroup', 'supervisors', 'levels', 'semesters', 'academicYears', 'academicClasses', 'accentColors', 'allowedDevicesOptions'));
     }
 
@@ -216,8 +236,8 @@ class ClassGroupController extends Controller
         $this->authorize('update', $classGroup);
         $supervisorId = $request->filled('supervisor_id') ? (int) $request->supervisor_id : $classGroup->supervisor_id;
         $supervisorUser = $supervisorId ? User::find($supervisorId) : null;
-        if (!$supervisorUser || $supervisorUser->role !== User::ROLE_SUPERVISOR) {
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.edit', $classGroup)
+        if (! $supervisorUser || $supervisorUser->role !== User::ROLE_SUPERVISOR) {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.edit', $classGroup)
                 ->withInput()->with('error', 'Please select a valid supervisor.');
         }
 
@@ -261,7 +281,7 @@ class ClassGroupController extends Controller
         }
         $classGroup->update($updateData);
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)->with('success', 'Saved');
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)->with('success', 'Saved');
     }
 
     /**
@@ -270,8 +290,8 @@ class ClassGroupController extends Controller
     public function updateAllowedDevices(Request $request, ClassGroup $classGroup): RedirectResponse
     {
         $this->authorize('update', $classGroup);
-        if (!Schema::hasColumn('class_groups', 'allowed_devices')) {
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)
+        if (! Schema::hasColumn('class_groups', 'allowed_devices')) {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)
                 ->with('error', 'Device restrictions are not supported in this installation.');
         }
         $request->validate([
@@ -282,7 +302,7 @@ class ClassGroupController extends Controller
             'allowed_devices' => $allowed,
         ]);
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)
             ->with('success', 'Allowed devices updated for this class group.');
     }
 
@@ -297,8 +317,8 @@ class ClassGroupController extends Controller
         foreach ($removedIndices as $removedIndex) {
             \App\Models\Student::deleteEverywhereByIndex($removedIndex);
             $indexUpper = strtoupper(trim($removedIndex));
-            \Illuminate\Support\Facades\Cache::forget('student_otp:' . $removedIndex);
-            \Illuminate\Support\Facades\Cache::forget('student_otp:' . $indexUpper);
+            \Illuminate\Support\Facades\Cache::forget('student_otp:'.$removedIndex);
+            \Illuminate\Support\Facades\Cache::forget('student_otp:'.$indexUpper);
         }
         // Remove class group student rows (any remaining links are now safe to drop).
         $classGroup->students()->delete();
@@ -309,12 +329,12 @@ class ClassGroupController extends Controller
             report($e);
 
             return redirect()
-                ->route($this->staffRoutePrefix() . '.class-groups.index')
+                ->route($this->staffRoutePrefix().'.class-groups.index')
                 ->with('error', "Could not delete class group '{$name}' because related records still depend on it.");
         }
 
         return redirect()
-            ->route($this->staffRoutePrefix() . '.class-groups.index')
+            ->route($this->staffRoutePrefix().'.class-groups.index')
             ->with('success', 'Deleted');
     }
 
@@ -329,7 +349,7 @@ class ClassGroupController extends Controller
             $q->select('id', 'index_number', 'phone_contact', 'student_name');
         }])->orderBy('index_number');
         if ($search !== '') {
-            $term = '%' . preg_replace('/%/', '\\%', trim($search)) . '%';
+            $term = '%'.preg_replace('/%/', '\\%', trim($search)).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('index_number', 'like', $term)
                     ->orWhere('student_name', 'like', $term)
@@ -344,9 +364,10 @@ class ClassGroupController extends Controller
 
         if ($request->boolean('ajax')) {
             $html = view('admin.class-groups.partials.students-rows', compact('classGroup', 'students', 'isSuperAdmin'))->render();
+
             return response()->json([
                 'html' => $html,
-                'next_page_url' => $students->hasMorePages() ? $students->nextPageUrl() . '&ajax=1' : null,
+                'next_page_url' => $students->hasMorePages() ? $students->nextPageUrl().'&ajax=1' : null,
             ]);
         }
 
@@ -363,26 +384,35 @@ class ClassGroupController extends Controller
         ]);
 
         $indexNumber = trim($request->index_number);
+        $canonical = $this->normalizeClassGroupIndex($indexNumber);
+        if ($canonical === '') {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
+                ->with('error', 'Index number is required.');
+        }
+
+        if ($this->findClassGroupStudentByIndex($classGroup, $canonical)) {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
+                ->with('error', 'This index number is already in the class list. Use a different index or edit the existing row.');
+        }
+
         $providedName = $request->filled('student_name') ? trim($request->student_name) : null;
 
-        ClassGroupStudent::updateOrCreate(
-            [
-                'class_group_id' => $classGroup->id,
-                'index_number' => $indexNumber,
-            ],
-            ['student_name' => $providedName]
-        );
+        ClassGroupStudent::create([
+            'class_group_id' => $classGroup->id,
+            'index_number' => $canonical,
+            'student_name' => $providedName,
+        ]);
 
-        $hash = \App\Models\Student::hashIndexNumber($indexNumber);
+        $hash = \App\Models\Student::hashIndexNumber($canonical);
         $studentAccount = \App\Models\Student::firstOrCreate(
             ['index_number_hash' => $hash],
-            ['index_number' => $indexNumber, 'index_number_hash' => $hash, 'student_name' => $providedName]
+            ['index_number' => $canonical, 'index_number_hash' => $hash, 'student_name' => $providedName]
         );
         $studentAccount->student_name = $providedName ?? $studentAccount->student_name;
         $this->syncStudentFromClassGroup($studentAccount, $classGroup);
         $studentAccount->save();
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
             ->with('success', 'Saved');
     }
 
@@ -398,12 +428,13 @@ class ClassGroupController extends Controller
             \App\Models\Student::deleteEverywhereByIndex($removedIndex);
             // Clear any cached OTP data for this index (legacy cache keys).
             $indexUpper = strtoupper(trim($removedIndex));
-            \Illuminate\Support\Facades\Cache::forget('student_otp:' . $removedIndex);
-            \Illuminate\Support\Facades\Cache::forget('student_otp:' . $indexUpper);
+            \Illuminate\Support\Facades\Cache::forget('student_otp:'.$removedIndex);
+            \Illuminate\Support\Facades\Cache::forget('student_otp:'.$indexUpper);
         }
 
         $classGroup->students()->delete();
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.show', $classGroup)
+
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.show', $classGroup)
             ->with('success', $count > 0 ? "All {$count} index numbers have been removed. You can re-upload or add students again." : 'Student index list is already empty.');
     }
 
@@ -415,11 +446,11 @@ class ClassGroupController extends Controller
             return $resolved;
         }
         $classGroup = $resolved;
-        
+
         $student->load('studentAccount');
         $studentAccount = $student->studentAccount;
         $phone = $studentAccount?->phone_contact ?? null;
-        
+
         // Display name priority: student account name > class group name > "—"
         $displayName = $studentAccount?->student_name ?? $student->student_name ?? '—';
 
@@ -440,10 +471,11 @@ class ClassGroupController extends Controller
             return $resolved;
         }
         $classGroup = $resolved;
-        
+
         $student->load('studentAccount');
         $studentAccount = $student->studentAccount;
         $phone = $studentAccount?->phone_contact ?? null;
+
         return view('admin.class-groups.student-edit', compact('classGroup', 'student', 'studentAccount', 'phone'));
     }
 
@@ -464,31 +496,43 @@ class ClassGroupController extends Controller
         $name = $request->filled('student_name') ? trim($request->student_name) : null;
         $phoneRaw = $request->filled('phone_contact') ? trim($request->phone_contact) : null;
         $phone = $phoneRaw ? Student::normalizePhoneForStorage($phoneRaw) : null;
-        
+
         // If index changed, ensure no duplicate (unique is class_group_id + index_number)
-        if (strcasecmp($student->index_number, $indexNumber) !== 0) {
-            if (ClassGroupStudent::where('class_group_id', $classGroup->id)->where('id', '!=', $student->id)->whereRaw('UPPER(TRIM(index_number)) = ?', [strtoupper($indexNumber)])->exists()) {
-                return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
-                    ->with('error', 'Error');
+        $newCanonical = $this->normalizeClassGroupIndex($indexNumber);
+        if ($newCanonical === '') {
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.students.edit', [$classGroup, $student])
+                ->withInput()
+                ->with('error', 'Index number is required.');
+        }
+
+        if (strcasecmp($this->normalizeClassGroupIndex($student->index_number), $newCanonical) !== 0) {
+            $conflict = ClassGroupStudent::where('class_group_id', $classGroup->id)
+                ->where('id', '!=', $student->id)
+                ->whereRaw('UPPER(TRIM(index_number)) = ?', [$newCanonical])
+                ->exists();
+            if ($conflict) {
+                return redirect()->route($this->staffRoutePrefix().'.class-groups.students.edit', [$classGroup, $student])
+                    ->withInput()
+                    ->with('error', 'Another row in this class list already uses that index number.');
             }
         }
-        
-        $student->index_number = $indexNumber;
+
+        $student->index_number = $newCanonical;
         $student->student_name = $name;
         $student->save();
-        
+
         // Update or create Student account (for phone and level)
-        $hash = \App\Models\Student::hashIndexNumber($indexNumber);
+        $hash = \App\Models\Student::hashIndexNumber($newCanonical);
         $studentAccount = \App\Models\Student::firstOrCreate(
             ['index_number_hash' => $hash],
-            ['index_number' => $indexNumber, 'index_number_hash' => $hash, 'student_name' => $name]
+            ['index_number' => $newCanonical, 'index_number_hash' => $hash, 'student_name' => $name]
         );
         $studentAccount->student_name = $name ?? $studentAccount->student_name;
         $this->syncStudentFromClassGroup($studentAccount, $classGroup);
         if ($phone !== null) {
             $otherStudent = \App\Models\Student::where('phone_contact', $phone)->where('id', '!=', $studentAccount->id)->first();
             if ($otherStudent) {
-                return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.edit', [$classGroup, $student])
+                return redirect()->route($this->staffRoutePrefix().'.class-groups.students.edit', [$classGroup, $student])
                     ->withInput()
                     ->with('error', 'This phone number is already in use by another student.');
             }
@@ -506,12 +550,13 @@ class ClassGroupController extends Controller
             } else {
                 $message .= 'Please try again or contact support.';
             }
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.edit', [$classGroup, $student])
+
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.students.edit', [$classGroup, $student])
                 ->withInput()
                 ->with('error', $message);
         }
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.show', [$classGroup, $student])->with('success', 'Saved');
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.show', [$classGroup, $student])->with('success', 'Saved');
     }
 
     /** Upload Excel to replace or merge class group students. */
@@ -539,15 +584,24 @@ class ClassGroupController extends Controller
                 $nameCol = $i;
             }
         }
+        $nonEmptyRowsFromFile = 0;
         $byIndex = [];
         foreach ($rows as $row) {
             $index = trim((string) ($row[$indexCol] ?? ''));
             if ($index === '') {
                 continue;
             }
+            $nonEmptyRowsFromFile++;
+            $canonical = $this->normalizeClassGroupIndex($index);
+            if ($canonical === '') {
+                continue;
+            }
             $name = isset($row[$nameCol]) ? trim((string) $row[$nameCol]) : null;
-            $byIndex[$index] = ['name' => $name];
+            // One entry per index: duplicate rows in the file (same index, different case/spacing) merge; last row wins for name.
+            $byIndex[$canonical] = ['name' => $name !== '' ? $name : null];
         }
+
+        $duplicateRowsMergedInFile = max(0, $nonEmptyRowsFromFile - count($byIndex));
 
         $mode = $request->input('upload_mode');
         $rowsAdded = 0;
@@ -562,39 +616,43 @@ class ClassGroupController extends Controller
             foreach ($removedIndices as $removedIndex) {
                 \App\Models\Student::deleteEverywhereByIndex($removedIndex);
                 $indexUpper = strtoupper(trim($removedIndex));
-                \Illuminate\Support\Facades\Cache::forget('student_otp:' . $removedIndex);
-                \Illuminate\Support\Facades\Cache::forget('student_otp:' . $indexUpper);
+                \Illuminate\Support\Facades\Cache::forget('student_otp:'.$removedIndex);
+                \Illuminate\Support\Facades\Cache::forget('student_otp:'.$indexUpper);
             }
 
             $classGroup->students()->delete();
         }
-        
+
         $classGroup->load(['level', 'academicYear']);
-        foreach ($byIndex as $index => $data) {
-            $indexTrimmed = trim($index);
+        foreach ($byIndex as $canonical => $data) {
             $name = is_array($data) ? ($data['name'] ?? null) : $data;
             $name = $name ? trim($name) : null;
 
-            $existing = ClassGroupStudent::where('class_group_id', $classGroup->id)->where('index_number', $indexTrimmed)->first();
-            ClassGroupStudent::updateOrCreate(
-                ['class_group_id' => $classGroup->id, 'index_number' => $indexTrimmed],
-                ['student_name' => $name]
-            );
+            $existing = $this->findClassGroupStudentByIndex($classGroup, $canonical);
 
-            $hash = \App\Models\Student::hashIndexNumber($indexTrimmed);
+            if ($existing) {
+                $existing->update([
+                    'index_number' => $canonical,
+                    'student_name' => $name ?? $existing->student_name,
+                ]);
+                $rowsUpdated++;
+            } else {
+                ClassGroupStudent::create([
+                    'class_group_id' => $classGroup->id,
+                    'index_number' => $canonical,
+                    'student_name' => $name,
+                ]);
+                $rowsAdded++;
+            }
+
+            $hash = \App\Models\Student::hashIndexNumber($canonical);
             $studentAccount = \App\Models\Student::firstOrCreate(
                 ['index_number_hash' => $hash],
-                ['index_number' => $indexTrimmed, 'index_number_hash' => $hash, 'student_name' => $name]
+                ['index_number' => $canonical, 'index_number_hash' => $hash, 'student_name' => $name]
             );
             $studentAccount->student_name = $name ?? $studentAccount->student_name;
             $this->syncStudentFromClassGroup($studentAccount, $classGroup);
             $studentAccount->save();
-
-            if ($existing) {
-                $rowsUpdated++;
-            } else {
-                $rowsAdded++;
-            }
         }
 
         AttendanceUploadLog::create([
@@ -608,8 +666,11 @@ class ClassGroupController extends Controller
         ]);
 
         $message = $mode === 'replace'
-            ? 'Student list replaced with ' . count($byIndex) . ' indices.'
-            : 'Merged ' . count($byIndex) . ' indices into the class group.';
+            ? 'Student list replaced with '.count($byIndex).' unique index number(s).'
+            : 'Merged '.count($byIndex).' unique index number(s) into the class group.';
+        if ($duplicateRowsMergedInFile > 0) {
+            $message .= " {$duplicateRowsMergedInFile} duplicate row(s) in the file were merged (same index, different spacing or case).";
+        }
 
         // Send 14-day reusable student_login OTP by SMS. Deduct from coordinator or class group supervisor.
         $classGroup->load('supervisor');
@@ -629,7 +690,7 @@ class ClassGroupController extends Controller
                     $indexNumber = strtoupper(trim($cgStudent->index_number));
                     $indexHash = Student::hashIndexNumber($indexNumber);
                     $studentAccount = Student::where('index_number_hash', $indexHash)->first();
-                    if (!$studentAccount || !$studentAccount->hasPhone()) {
+                    if (! $studentAccount || ! $studentAccount->hasPhone()) {
                         continue;
                     }
                     $code = (string) random_int(100000, 999999);
@@ -639,7 +700,7 @@ class ClassGroupController extends Controller
                         'code' => $code,
                         'expires_at' => now()->addDays(Otp::STUDENT_LOGIN_VALID_DAYS),
                     ]);
-                    $smsMessage = 'Your Docu Mento login code is: ' . $code . '. Valid for 90 days. Do not share.';
+                    $smsMessage = 'Your Docu Mento login code is: '.$code.'. Valid for 90 days. Do not share.';
                     $result = ArkeselService::sendSms($studentAccount->phone_contact, $smsMessage);
                     if ($result['success']) {
                         $smsOwner->increment('sms_used');
@@ -648,7 +709,8 @@ class ClassGroupController extends Controller
                 }
             }
         }
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)->with('success', 'Saved');
+
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)->with('success', $message);
     }
 
     /**
@@ -662,9 +724,9 @@ class ClassGroupController extends Controller
         $this->authorize('update', $classGroup);
 
         $ids = $request->input('student_ids', []);
-        if (!is_array($ids) || count($ids) === 0) {
+        if (! is_array($ids) || count($ids) === 0) {
             return redirect()
-                ->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
+                ->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
                 ->with('error', 'No students selected.');
         }
 
@@ -674,7 +736,7 @@ class ClassGroupController extends Controller
 
         if ($students->isEmpty()) {
             return redirect()
-                ->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
+                ->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
                 ->with('error', 'No valid students selected.');
         }
 
@@ -687,7 +749,7 @@ class ClassGroupController extends Controller
         }
 
         return redirect()
-            ->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
+            ->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
             ->with('success', 'Selected students deleted.');
     }
 
@@ -699,14 +761,14 @@ class ClassGroupController extends Controller
             return $resolved;
         }
         $classGroup = $resolved;
-        
+
         $indexNumber = $student->index_number;
         \App\Models\Student::deleteEverywhereByIndex($indexNumber);
 
         // Delete class group student record
         $student->delete();
-        
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)
+
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)
             ->with('success', 'Deleted');
     }
 
@@ -718,17 +780,18 @@ class ClassGroupController extends Controller
             return $resolved;
         }
         $classGroup = $resolved;
-        
+
         $indexHash = \App\Models\Student::hashIndexNumber($student->index_number);
         $studentAccount = \App\Models\Student::where('index_number_hash', $indexHash)->first();
         if ($studentAccount) {
             $studentAccount->phone_contact = null;
             $studentAccount->save();
             Otp::where('index_number_hash', $indexHash)->where('type', Otp::TYPE_STUDENT_LOGIN)->delete();
-            return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)->with('success', 'Removed');
+
+            return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)->with('success', 'Removed');
         }
-        
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.index', $classGroup)->with('error', 'Not found');
+
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.index', $classGroup)->with('error', 'Not found');
     }
 
     /**
@@ -752,8 +815,8 @@ class ClassGroupController extends Controller
             'expires_at' => now()->addDays(Otp::SUPERVISOR_FALLBACK_VALID_DAYS),
         ]);
 
-        return redirect()->route($this->staffRoutePrefix() . '.class-groups.students.show', [$classGroup, $student])
-            ->with('success', 'One-time login code generated. Give it to the student. Valid for ' . Otp::SUPERVISOR_FALLBACK_VALID_DAYS . ' days.')
+        return redirect()->route($this->staffRoutePrefix().'.class-groups.students.show', [$classGroup, $student])
+            ->with('success', 'One-time login code generated. Give it to the student. Valid for '.Otp::SUPERVISOR_FALLBACK_VALID_DAYS.' days.')
             ->with('fallback_code', $code);
     }
 
@@ -763,7 +826,8 @@ class ClassGroupController extends Controller
     public function exportStudentsExcel(ClassGroup $classGroup): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $this->authorize('view', $classGroup);
-        $filename = 'class-list-' . \Illuminate\Support\Str::slug($classGroup->name) . '-' . now()->format('Y-m-d-His') . '.xlsx';
+        $filename = 'class-list-'.\Illuminate\Support\Str::slug($classGroup->name).'-'.now()->format('Y-m-d-His').'.xlsx';
+
         return Excel::download(new ClassGroupStudentsExport($classGroup), $filename);
     }
 
@@ -783,7 +847,7 @@ class ClassGroupController extends Controller
         $supervisorUser = $classGroup->supervisor;
         $lecturerName = $supervisorUser ? ($supervisorUser->name ?: $supervisorUser->username) : '—';
         $courseName = $classGroup->name;
-        
+
         $institutionName = \App\Models\Setting::getValue(\App\Models\Setting::KEY_INSTITUTION_NAME, '');
         $logoPath = \App\Models\Setting::getValue(\App\Models\Setting::KEY_INSTITUTION_LOGO, '');
         $institutionLogoPath = null;
@@ -794,23 +858,23 @@ class ClassGroupController extends Controller
                     if ($response->successful()) {
                         $body = $response->body();
                         $mime = $response->header('Content-Type') ?: 'image/png';
-                        $institutionLogoPath = 'data:' . (explode(';', $mime)[0] ?: 'image/png') . ';base64,' . base64_encode($body);
+                        $institutionLogoPath = 'data:'.(explode(';', $mime)[0] ?: 'image/png').';base64,'.base64_encode($body);
                     }
                 } catch (\Throwable $e) {
                     // omit logo on fetch failure
                 }
             } else {
-                $fullPath = storage_path('app/public/' . $logoPath);
+                $fullPath = storage_path('app/public/'.$logoPath);
                 if (file_exists($fullPath)) {
                     $mime = @mime_content_type($fullPath) ?: 'image/png';
-                    $institutionLogoPath = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+                    $institutionLogoPath = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($fullPath));
                 }
             }
         }
-        
+
         $classGroupName = $classGroup->name;
         $reportDate = now()->format('F j, Y');
-        
+
         $pdf = Pdf::loadView('admin.class-groups.export-pdf', [
             'classGroup' => $classGroup,
             'classGroupName' => $classGroupName,
@@ -821,8 +885,9 @@ class ClassGroupController extends Controller
             'institutionName' => $institutionName,
             'institutionLogoPath' => $institutionLogoPath,
         ])->setPaper('a4', 'portrait')->setWarnings(false);
-        
-        $filename = 'class-list-' . \Illuminate\Support\Str::slug($classGroup->name) . '-' . now()->format('Y-m-d') . '.pdf';
+
+        $filename = 'class-list-'.\Illuminate\Support\Str::slug($classGroup->name).'-'.now()->format('Y-m-d').'.pdf';
+
         return $pdf->download($filename);
     }
 }
