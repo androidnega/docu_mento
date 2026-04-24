@@ -3,33 +3,49 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 /**
- * Short SMS copy for supervisors: intro to Docu Mento + assignment hint + credentials.
+ * SMS copy for supervisors: Documento intro, assigned student count, login URL, credentials, help line.
  */
 final class SupervisorLoginSmsBody
 {
-    public static function build(User $supervisor, string $loginUrl, string $username, string $password, bool $forNewAccount): string
+    /**
+     * @param  bool  $forNewAccount  Kept for callers; message format is the same for new/resend flows.
+     */
+    public static function build(User $supervisor, string $loginUrl, string $username, string $password, bool $forNewAccount = true): string
     {
-        $intro = self::introLine($supervisor, $forNewAccount);
+        unset($forNewAccount);
 
-        return $intro.sprintf('URL: %s Username: %s Password: %s', $loginUrl, $username, $password);
+        $brand = (string) config('documento.brand_line', 'Documento (CS project platform)');
+        $help = (string) config('documento.support_phone', '0552477942');
+        $n = self::countAssignedStudents($supervisor);
+
+        $intro = "Welcome to {$brand}. You're assigned as a supervisor with {$n} students.";
+
+        return "{$intro}\n\nLogin: {$loginUrl}\nUser: {$username} | Pass: {$password}\nHelp: {$help}";
     }
 
-    private static function introLine(User $supervisor, bool $forNewAccount): string
+    private static function countAssignedStudents(User $supervisor): int
     {
-        $n = (int) $supervisor->supervisedProjects()->count();
-
-        if ($n > 0) {
-            return $n === 1
-                ? 'Docu Mento: 1 project assigned—sign in below. '
-                : "Docu Mento: {$n} projects assigned—sign in below. ";
+        if (! Schema::hasTable('projects') || ! Schema::hasTable('groups')) {
+            return 0;
         }
 
-        if ($forNewAccount) {
-            return 'Docu Mento: supervisor account—sign in; groups appear when linked. ';
+        $ids = collect();
+        foreach ($supervisor->supervisedProjects()->with(['group.members', 'group.leader'])->get() as $project) {
+            $group = $project->group;
+            if (! $group) {
+                continue;
+            }
+            foreach ($group->members ?? [] as $m) {
+                $ids->push((int) $m->id);
+            }
+            if ($group->leader_id) {
+                $ids->push((int) $group->leader_id);
+            }
         }
 
-        return 'Docu Mento: supervisor—sign in for your dashboard. ';
+        return $ids->unique()->filter()->count();
     }
 }

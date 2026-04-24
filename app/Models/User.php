@@ -446,6 +446,40 @@ class User extends Authenticatable
         return 'No phone';
     }
 
+    /**
+     * Best-effort phone for SMS (users.phone or students.phone_contact for same index).
+     * Returns digits-only string suitable for Arkesel, or null.
+     */
+    public function docuMentorSmsPhone(): ?string
+    {
+        $raw = trim((string) ($this->attributes['phone'] ?? ''));
+        if ($raw !== '' && ! str_starts_with($raw, 'pending_')) {
+            $digits = preg_replace('/\D/', '', $raw) ?? '';
+
+            return strlen($digits) >= 10 ? $digits : null;
+        }
+
+        if (! $this->relationLoaded('docuMentorPhoneStudent') && $this->isDocuMentorStudent() && Schema::hasTable('students')) {
+            $idx = trim((string) ($this->index_number ?? ''));
+            if ($idx !== '') {
+                $stu = Student::query()->where('index_number_hash', Student::hashIndexNumber($idx))->first();
+                $this->setRelation('docuMentorPhoneStudent', $stu);
+            }
+        }
+
+        $stu = $this->relationLoaded('docuMentorPhoneStudent') ? $this->getRelation('docuMentorPhoneStudent') : null;
+        if ($stu instanceof Student) {
+            $norm = $stu->phone_contact ? Student::normalizePhoneForStorage($stu->phone_contact) : null;
+            if ($norm) {
+                $digits = preg_replace('/\D/', '', $norm) ?? '';
+
+                return strlen($digits) >= 10 ? $digits : null;
+            }
+        }
+
+        return null;
+    }
+
     /** Docu Mentor: Groups where this user is leader */
     public function ledDocuMentorGroups(): HasMany
     {

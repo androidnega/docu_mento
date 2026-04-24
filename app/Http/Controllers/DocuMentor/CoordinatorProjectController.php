@@ -9,6 +9,7 @@ use App\Models\DocuMentor\Project;
 use App\Models\SmsLog;
 use App\Models\User;
 use App\Services\ArkeselService;
+use App\Services\ProjectGroupAlertRecipients;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -277,7 +278,11 @@ class CoordinatorProjectController extends Controller
 
     /**
      * Section 5: Alert Button. Coordinator can click to notify group + supervisor via SMS.
-     * Recipients: 2 group members + supervisor(s). Log into SMSLog.
+     *
+     * SMS entry points for projects in this codebase:
+     * - This action: students = group leader + one other random member with phone (max 2); supervisors = all assigned.
+     * - Student OTP login: StudentAccountController (separate flow, not project alerts).
+     * - New supervisor welcome / login SMS: NewSupervisorWelcomeSmsService, SupervisorCredentialSmsService, SupervisorLoginSmsBody.
      */
     public function alertProject(Project $project): RedirectResponse
     {
@@ -289,39 +294,38 @@ class CoordinatorProjectController extends Controller
             ]),
             'supervisors',
         ]);
-        if ($project->group && $project->group->members->isNotEmpty()) {
-            User::eagerLoadDocuMentorMemberProfiles($project->group->members);
-        }
-        $message = "Docu Mentor: Project \"{$project->title}\" alert. Please check your dashboard.";
+
+        $message = "Documento: Project \"{$project->title}\" alert. Please check your dashboard.";
         $sent = 0;
         $userId = request()->attributes->get('dm_user')?->id;
 
-        $members = $project->group?->members ?? collect();
-        $membersWithPhone = $members->filter(fn ($m) => ! empty($m->phone))->take(2);
-        foreach ($membersWithPhone as $m) {
-            $phone = $m->phone;
-            if (ArkeselService::hasApiKey()) {
-                $r = ArkeselService::sendSms($phone, $message);
-                $ok = $r['success'] ?? false;
-                SmsLog::logSend($phone, $message, $ok, $r['message'] ?? null, $userId);
-                if ($ok) {
-                    $sent++;
-                }
-            }
+        if (! ArkeselService::hasApiKey()) {
+            return back()->with('error', 'SMS is not configured (Arkesel). Add API credentials so alerts can be sent.');
         }
-        foreach ($project->supervisors as $s) {
-            $phone = $s->phone ?? null;
-            if ($phone && ArkeselService::hasApiKey()) {
-                $r = ArkeselService::sendSms($phone, $message);
-                $ok = $r['success'] ?? false;
-                SmsLog::logSend($phone, $message, $ok, $r['message'] ?? null, $userId);
-                if ($ok) {
-                    $sent++;
-                }
+
+        foreach (ProjectGroupAlertRecipients::studentPhones($project) as $phone) {
+            $r = ArkeselService::sendSms($phone, $message);
+            $ok = $r['success'] ?? false;
+            SmsLog::logSend($phone, $message, $ok, $r['message'] ?? null, $userId);
+            if ($ok) {
+                $sent++;
             }
         }
 
-        return back()->with('success', "Alert sent to {$sent} recipient(s) (2 group members + supervisor(s) via SMS).");
+        foreach ($project->supervisors as $s) {
+            $digits = $s->docuMentorSmsPhone();
+            if ($digits === null) {
+                continue;
+            }
+            $r = ArkeselService::sendSms($digits, $message);
+            $ok = $r['success'] ?? false;
+            SmsLog::logSend($digits, $message, $ok, $r['message'] ?? null, $userId);
+            if ($ok) {
+                $sent++;
+            }
+        }
+
+        return back()->with('success', "Alert sent to {$sent} recipient(s) (group leader + another member when possible, plus supervisors).");
     }
 
     /**

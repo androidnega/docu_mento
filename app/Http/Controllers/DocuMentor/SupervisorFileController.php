@@ -7,10 +7,11 @@ use App\Models\DocuMentor\Project;
 use App\Models\DocuMentor\ProjectFiles;
 use App\Models\DocuMentor\ProjectProposal;
 use App\Services\SupabaseStorageService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
@@ -51,11 +52,11 @@ class SupervisorFileController extends Controller
                 if (SupabaseStorageService::isConfigured()) {
                     $result = SupabaseStorageService::uploadDocument($request->file($field), 'docu-mentor/project-files');
                     if ($result['success'] ?? false) {
-                        $newPath = 'supabase:' . $result['path'];
+                        $newPath = 'supabase:'.$result['path'];
                     }
                 }
 
-                if (!$newPath) {
+                if (! $newPath) {
                     $newPath = $request->file($field)->store('docu-mentor/project-files', 'public');
                 }
 
@@ -89,10 +90,10 @@ class SupervisorFileController extends Controller
         if (SupabaseStorageService::isConfigured()) {
             $result = SupabaseStorageService::uploadDocument($request->file('final_submission'), 'docu-mentor/final-submissions');
             if ($result['success'] ?? false) {
-                $newPath = 'supabase:' . $result['path'];
+                $newPath = 'supabase:'.$result['path'];
             }
         }
-        if (!$newPath) {
+        if (! $newPath) {
             $newPath = $request->file('final_submission')->store('docu-mentor/final-submissions', 'public');
         }
 
@@ -107,7 +108,7 @@ class SupervisorFileController extends Controller
      * When file is a local path: stream from public disk.
      * Query: ?attachment=1 to force download (for remote URLs we proxy and set Content-Disposition).
      */
-    public function downloadProposal(Request $request, Project $project, ProjectProposal $proposal): StreamedResponse|RedirectResponse|\Illuminate\Http\Response
+    public function downloadProposal(Request $request, Project $project, ProjectProposal $proposal): Response
     {
         $this->authorize('view', $project);
         $path = $proposal->file ? trim((string) $proposal->file) : null;
@@ -118,13 +119,13 @@ class SupervisorFileController extends Controller
         if (str_starts_with($path, 'supabase:')) {
             $objectPath = substr($path, strlen('supabase:'));
             $result = SupabaseStorageService::createSignedUrl($objectPath);
-            if (!($result['success'] ?? false) || empty($result['url'])) {
+            if (! ($result['success'] ?? false) || empty($result['url'])) {
                 return back()->with('error', $result['message'] ?? 'Proposal file could not be fetched from storage. Please try again or contact administrator.');
             }
             $url = $result['url'];
 
             if ($request->boolean('attachment') || $request->boolean('download')) {
-                $url .= (str_contains($url, '?') ? '&' : '?') . 'download=1';
+                $url .= (str_contains($url, '?') ? '&' : '?').'download=1';
             }
 
             return redirect()->away($url);
@@ -140,16 +141,17 @@ class SupervisorFileController extends Controller
                     return back()->with('error', 'Proposal file could not be fetched from storage. Please try again or re-upload.');
                 }
 
-                $filename = 'proposal-v' . $proposal->version_number . '.pdf';
+                $filename = 'proposal-v'.$proposal->version_number.'.pdf';
                 $contentType = $response->header('Content-Type') ?: 'application/pdf';
                 $disposition = $forceDownload ? 'attachment' : 'inline';
 
                 return response($response->body(), 200, [
                     'Content-Type' => $contentType,
-                    'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
+                    'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
                 ]);
             } catch (\Throwable $e) {
                 report($e);
+
                 return back()->with('error', 'Proposal file could not be fetched. Please try again.');
             }
         }
@@ -164,7 +166,7 @@ class SupervisorFileController extends Controller
             $path = $pathAlt;
         }
 
-        $filename = 'proposal-v' . $proposal->version_number . '-' . basename($path);
+        $filename = 'proposal-v'.$proposal->version_number.'-'.basename($path);
         $forceDownload = $request->boolean('attachment') || $request->boolean('download');
 
         if ($forceDownload) {
@@ -175,15 +177,15 @@ class SupervisorFileController extends Controller
 
         return response()->file($absolutePath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
         ]);
     }
 
-    public function downloadFinalSubmission(Project $project): StreamedResponse
+    public function downloadFinalSubmission(Project $project): Response
     {
         $this->authorize('view', $project);
 
-        if (!$project->final_submission) {
+        if (! $project->final_submission) {
             abort(404, 'File not found.');
         }
 
@@ -192,21 +194,22 @@ class SupervisorFileController extends Controller
         if (str_starts_with($path, 'supabase:')) {
             $objectPath = substr($path, strlen('supabase:'));
             $result = SupabaseStorageService::createSignedUrl($objectPath);
-            if (!($result['success'] ?? false) || empty($result['url'])) {
+            if (! ($result['success'] ?? false) || empty($result['url'])) {
                 abort(404, $result['message'] ?? 'File not found.');
             }
             $url = $result['url'];
-            $url .= (str_contains($url, '?') ? '&' : '?') . 'download=1';
+            $url .= (str_contains($url, '?') ? '&' : '?').'download=1';
+
             return redirect()->away($url);
         }
 
-        if (!Storage::disk('public')->exists($path)) {
+        if (! Storage::disk('public')->exists($path)) {
             abort(404, 'File not found.');
         }
 
         return Storage::disk('public')->download(
             $path,
-            'final-submission-' . \Str::slug($project->title) . '.' . pathinfo($path, PATHINFO_EXTENSION)
+            'final-submission-'.\Str::slug($project->title).'.'.pathinfo($path, PATHINFO_EXTENSION)
         );
     }
 
@@ -215,7 +218,7 @@ class SupervisorFileController extends Controller
         $this->authorize('view', $project);
 
         $zip = new ZipArchive;
-        $zipPath = storage_path('app/temp/project-' . $project->id . '-' . time() . '.zip');
+        $zipPath = storage_path('app/temp/project-'.$project->id.'-'.time().'.zip');
         @mkdir(dirname($zipPath), 0755, true);
 
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -226,7 +229,7 @@ class SupervisorFileController extends Controller
         $added = 0;
 
         foreach ($project->proposals as $p) {
-            if (!$p->file) {
+            if (! $p->file) {
                 continue;
             }
             $filePath = $p->file;
@@ -238,7 +241,7 @@ class SupervisorFileController extends Controller
                         $resp = Http::timeout(60)->get($result['url']);
                         if ($resp->successful()) {
                             $zip->addFromString(
-                                'proposals/proposal-v' . $p->version_number . '-' . basename($objectPath),
+                                'proposals/proposal-v'.$p->version_number.'-'.basename($objectPath),
                                 $resp->body()
                             );
                             $added++;
@@ -247,8 +250,8 @@ class SupervisorFileController extends Controller
                         // Skip on error; continue adding others.
                     }
                 }
-            } elseif (file_exists($base . $filePath)) {
-                $zip->addFile($base . $filePath, 'proposals/proposal-v' . $p->version_number . '-' . basename($filePath));
+            } elseif (file_exists($base.$filePath)) {
+                $zip->addFile($base.$filePath, 'proposals/proposal-v'.$p->version_number.'-'.basename($filePath));
                 $added++;
             }
         }
@@ -257,7 +260,7 @@ class SupervisorFileController extends Controller
         if ($pf) {
             foreach (['brief_pdf', 'diary_pdf', 'assessment_file', 'assessment_form_file'] as $f) {
                 $filePath = $pf->$f;
-                if (!$filePath) {
+                if (! $filePath) {
                     continue;
                 }
                 if (str_starts_with($filePath, 'supabase:')) {
@@ -267,15 +270,15 @@ class SupervisorFileController extends Controller
                         try {
                             $resp = Http::timeout(60)->get($result['url']);
                             if ($resp->successful()) {
-                                $zip->addFromString('project-files/' . basename($objectPath), $resp->body());
+                                $zip->addFromString('project-files/'.basename($objectPath), $resp->body());
                                 $added++;
                             }
                         } catch (\Throwable $e) {
                             // ignore
                         }
                     }
-                } elseif (file_exists($base . $filePath)) {
-                    $zip->addFile($base . $filePath, 'project-files/' . basename($filePath));
+                } elseif (file_exists($base.$filePath)) {
+                    $zip->addFile($base.$filePath, 'project-files/'.basename($filePath));
                     $added++;
                 }
             }
@@ -290,22 +293,22 @@ class SupervisorFileController extends Controller
                     try {
                         $resp = Http::timeout(60)->get($result['url']);
                         if ($resp->successful()) {
-                            $zip->addFromString('final-submission.' . pathinfo($objectPath, PATHINFO_EXTENSION), $resp->body());
+                            $zip->addFromString('final-submission.'.pathinfo($objectPath, PATHINFO_EXTENSION), $resp->body());
                             $added++;
                         }
                     } catch (\Throwable $e) {
                         // ignore
                     }
                 }
-            } elseif (file_exists($base . $filePath)) {
-                $zip->addFile($base . $filePath, 'final-submission.' . pathinfo($filePath, PATHINFO_EXTENSION));
+            } elseif (file_exists($base.$filePath)) {
+                $zip->addFile($base.$filePath, 'final-submission.'.pathinfo($filePath, PATHINFO_EXTENSION));
                 $added++;
             }
         }
 
         foreach ($project->chapters as $ch) {
             foreach ($ch->submissions as $s) {
-                if (!$s->file) {
+                if (! $s->file) {
                     continue;
                 }
                 $filePath = $s->file;
@@ -317,7 +320,7 @@ class SupervisorFileController extends Controller
                             $resp = Http::timeout(60)->get($result['url']);
                             if ($resp->successful()) {
                                 $zip->addFromString(
-                                    'chapters/ch' . $ch->order . '-' . basename($objectPath),
+                                    'chapters/ch'.$ch->order.'-'.basename($objectPath),
                                     $resp->body()
                                 );
                                 $added++;
@@ -326,8 +329,8 @@ class SupervisorFileController extends Controller
                             // ignore
                         }
                     }
-                } elseif (file_exists($base . $filePath)) {
-                    $zip->addFile($base . $filePath, 'chapters/ch' . $ch->order . '-' . basename($filePath));
+                } elseif (file_exists($base.$filePath)) {
+                    $zip->addFile($base.$filePath, 'chapters/ch'.$ch->order.'-'.basename($filePath));
                     $added++;
                 }
             }
@@ -343,6 +346,6 @@ class SupervisorFileController extends Controller
         return response()->streamDownload(function () use ($zipPath) {
             echo file_get_contents($zipPath);
             @unlink($zipPath);
-        }, 'project-' . \Str::slug($project->title) . '.zip', ['Content-Type' => 'application/zip']);
+        }, 'project-'.\Str::slug($project->title).'.zip', ['Content-Type' => 'application/zip']);
     }
 }
