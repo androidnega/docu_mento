@@ -22,12 +22,25 @@ use Illuminate\View\View;
  */
 class SupervisorProjectController extends Controller
 {
+    private function currentDocuMentorUser(): User
+    {
+        $user = request()->attributes->get('dm_user');
+        if (! $user instanceof User) {
+            $user = auth()->user();
+        }
+        if (! $user instanceof User) {
+            abort(403, 'Not authorized.');
+        }
+
+        return $user;
+    }
+
     /**
      * Supervisor Dashboard: all assigned projects, progress (Completed Chapters / 6), tagged previous project access.
      */
     public function index(): View
     {
-        $user = request()->attributes->get('dm_user');
+        $user = $this->currentDocuMentorUser();
         $query = $user->isDocuMentorCoordinator()
             ? Project::query()
             : $user->supervisedProjects();
@@ -61,7 +74,7 @@ class SupervisorProjectController extends Controller
      */
     public function supervisorsIndex(): View
     {
-        $user = request()->attributes->get('dm_user');
+        $user = $this->currentDocuMentorUser();
         $supervisors = $this->buildSupervisorDirectory();
 
         return view('docu-mentor.supervisors.index', compact('user', 'supervisors'));
@@ -69,7 +82,7 @@ class SupervisorProjectController extends Controller
 
     public function show(Project $project): View
     {
-        $user = request()->attributes->get('dm_user');
+        $user = $this->currentDocuMentorUser();
         $this->authorize('view', $project);
 
         $with = [
@@ -112,7 +125,7 @@ class SupervisorProjectController extends Controller
      */
     public function storeScores(Request $request, Project $project): RedirectResponse
     {
-        $user = request()->attributes->get('dm_user');
+        $user = $this->currentDocuMentorUser();
         $this->authorize('view', $project);
 
         // WHEN CAN SUPERVISORS GRADE? Only when project.is_completed = true AND all supervisors have approved.
@@ -160,7 +173,7 @@ class SupervisorProjectController extends Controller
      */
     public function approveProject(Project $project): RedirectResponse
     {
-        $user = request()->attributes->get('dm_user');
+        $user = $this->currentDocuMentorUser();
         $this->authorize('view', $project);
         if (! $project->supervisors()->where('users.id', $user->id)->exists()) {
             return back()->with('error', 'You are not a supervisor of this project.');
