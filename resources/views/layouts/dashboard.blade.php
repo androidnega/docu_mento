@@ -136,6 +136,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('dashboard.docu-mentor.supervisors.index') }}" class="staff-nav-link {{ request()->routeIs('dashboard.docu-mentor.supervisors.index') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="All supervisors">
+                            <svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5.33-3.8M9 20H4v-2a4 4 0 015.33-3.8M12 12a4 4 0 100-8 4 4 0 000 8z"/></svg>
+                            <span class="staff-nav-text truncate">Supervisors</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('dashboard.docu-mentor.projects.index', ['pending' => 1]) }}" class="staff-nav-link {{ request()->routeIs('dashboard.docu-mentor.projects.index') && request()->get('pending') ? 'staff-nav-link--active' : '' }} group flex items-center gap-3 rounded-lg py-3 px-3 text-sm font-medium min-w-0 transition-all border-l-4" title="Pending reviews">
                             <svg class="staff-nav-icon h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <span class="staff-nav-text truncate">Pending Reviews</span>

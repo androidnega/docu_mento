@@ -56,6 +56,17 @@ class SupervisorProjectController extends Controller
         return view('docu-mentor.supervisors.projects.index', compact('user', 'projects', 'totalStudentsAcrossProjects'));
     }
 
+    /**
+     * Supervisor directory visible to all supervisors.
+     */
+    public function supervisorsIndex(): View
+    {
+        $user = request()->attributes->get('dm_user');
+        $supervisors = $this->buildSupervisorDirectory();
+
+        return view('docu-mentor.supervisors.index', compact('user', 'supervisors'));
+    }
+
     public function show(Project $project): View
     {
         $user = request()->attributes->get('dm_user');
@@ -170,5 +181,35 @@ class SupervisorProjectController extends Controller
         }
 
         return back()->with('info', 'You have already approved this project.');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function buildSupervisorDirectory(): \Illuminate\Support\Collection
+    {
+        $supervisors = User::query()
+            ->whereIn('role', [User::ROLE_SUPERVISOR, User::DM_ROLE_SUPERVISOR])
+            ->with(['supervisedProjects.group.members'])
+            ->orderBy('name')
+            ->orderBy('username')
+            ->get();
+
+        foreach ($supervisors as $supervisor) {
+            $studentIds = [];
+            foreach ($supervisor->supervisedProjects as $project) {
+                if ($project->group && $project->group->members->isNotEmpty()) {
+                    User::eagerLoadDocuMentorMemberProfiles($project->group->members);
+                }
+                foreach ($project->groupMembersVisibleToStaff() as $member) {
+                    $studentIds[(int) $member->id] = true;
+                }
+            }
+
+            $supervisor->setAttribute('allocated_projects_count', $supervisor->supervisedProjects->count());
+            $supervisor->setAttribute('allocated_students_count', count($studentIds));
+        }
+
+        return $supervisors;
     }
 }

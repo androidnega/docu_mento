@@ -191,6 +191,30 @@ class AdminDashboardController extends Controller
             }
         }
 
+        $supervisorsDirectory = collect();
+        if ($user && $user->isDocuMentorSupervisor()) {
+            $supervisorsDirectory = User::query()
+                ->whereIn('role', [User::ROLE_SUPERVISOR, User::DM_ROLE_SUPERVISOR])
+                ->with(['supervisedProjects.group.members'])
+                ->orderBy('name')
+                ->orderBy('username')
+                ->get();
+
+            foreach ($supervisorsDirectory as $supervisor) {
+                $studentIds = [];
+                foreach ($supervisor->supervisedProjects as $project) {
+                    if ($project->group && $project->group->members->isNotEmpty()) {
+                        User::eagerLoadDocuMentorMemberProfiles($project->group->members);
+                    }
+                    foreach ($project->groupMembersVisibleToStaff() as $member) {
+                        $studentIds[(int) $member->id] = true;
+                    }
+                }
+                $supervisor->setAttribute('allocated_projects_count', $supervisor->supervisedProjects->count());
+                $supervisor->setAttribute('allocated_students_count', count($studentIds));
+            }
+        }
+
         $activeAcademicYear = \App\Models\DocuMentor\AcademicYear::active();
 
         return view('admin.dashboard-supervisor', compact(
@@ -198,7 +222,8 @@ class AdminDashboardController extends Controller
             'assignedProjects',
             'pendingSubmissionsCount',
             'commentsFollowUpCount',
-            'activeAcademicYear'
+            'activeAcademicYear',
+            'supervisorsDirectory'
         ));
     }
 }

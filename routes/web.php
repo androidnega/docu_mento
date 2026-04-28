@@ -289,6 +289,7 @@ Route::middleware('admin.auth')->group(function () {
 
         // Supervisor project area: clean /dashboard/projects... slugs (no /supervisor prefix)
         Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
+            Route::get('supervisors', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'supervisorsIndex'])->name('supervisors.index');
             Route::get('projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
             Route::get('projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
             Route::get('projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->whereNumber('chapterRef');

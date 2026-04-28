@@ -1,12 +1,10 @@
-@extends('layouts.staff')
+@extends('layouts.dashboard')
 
-@section('title', 'Docu Mentor – Supervisor')
+@section('title', trim($__env->yieldContent('title')) !== '' ? trim($__env->yieldContent('title')) : 'Docu Mentor')
+@section('dashboard_heading', 'Docu Mentor')
 
-@section('staff_heading', 'Docu Mentor')
-
-@section('staff_content')
-    {{-- Flash (success/error) shown once via layouts.app toast --}}
-    <div class="mt-2 md:mt-4">
-        @yield('content')
-    </div>
+@section('dashboard_content')
+<div class="mt-2 md:mt-4">
+    @yield('content')
+</div>
 @endsection
