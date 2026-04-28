@@ -5,12 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
 use App\Http\Controllers\Controller;
 use App\Models\DocuMentor\AcademicYear;
-use App\Models\DocuMentor\Chapter;
 use App\Models\DocuMentor\Project;
-use App\Models\DocuMentor\Submission;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CloudinaryService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -157,73 +156,9 @@ class AdminDashboardController extends Controller
         ));
     }
 
-    /**
-     * Supervisor dashboard: assigned projects (via project_supervisors), pending submissions, comments needing follow-up.
-     * Supervisor can: review submissions, comment, mark reviewed. Cannot: create project, approve final project.
-     */
-    public function supervisorDashboard(): View
+    /** Supervisor entrypoint uses the unified projects flow with shared sidebar. */
+    public function supervisorDashboard(): RedirectResponse
     {
-        $user = $this->adminUser();
-        $needsSchoolDepartment = $user && $user->isDocuMentorSupervisor() && ! $user->department_id;
-
-        $assignedProjects = collect();
-        $pendingSubmissionsCount = 0;
-        $commentsFollowUpCount = 0;
-
-        if ($user && $user->isDocuMentorSupervisor()) {
-            $projectIds = $user->supervisedProjects()->pluck('projects.id')->all();
-            $assignedProjects = $user->supervisedProjects()
-                ->with(['group', 'academicYear', 'category'])
-                ->orderByDesc('created_at')
-                ->get();
-
-            if (! empty($projectIds)) {
-                $chapterIds = Chapter::whereIn('project_id', $projectIds)->pluck('id')->all();
-                if (! empty($chapterIds)) {
-                    $baseSubmissions = Submission::whereIn('chapter_id', $chapterIds);
-                    $pendingSubmissionsCount = (clone $baseSubmissions)
-                        ->whereDoesntHave('comments', fn ($q) => $q->where('user_id', $user->id))
-                        ->count();
-                    $commentsFollowUpCount = (clone $baseSubmissions)
-                        ->whereHas('comments', fn ($q) => $q->where('user_id', $user->id))
-                        ->count();
-                }
-            }
-        }
-
-        $supervisorsDirectory = collect();
-        if ($user && $user->isDocuMentorSupervisor()) {
-            $supervisorsDirectory = User::query()
-                ->whereIn('role', [User::ROLE_SUPERVISOR, User::DM_ROLE_SUPERVISOR])
-                ->with(['supervisedProjects.group.members'])
-                ->orderBy('name')
-                ->orderBy('username')
-                ->get();
-
-            foreach ($supervisorsDirectory as $supervisor) {
-                $studentIds = [];
-                foreach ($supervisor->supervisedProjects as $project) {
-                    if ($project->group && $project->group->members->isNotEmpty()) {
-                        User::eagerLoadDocuMentorMemberProfiles($project->group->members);
-                    }
-                    foreach ($project->groupMembersVisibleToStaff() as $member) {
-                        $studentIds[(int) $member->id] = true;
-                    }
-                }
-                $supervisor->setAttribute('allocated_projects_count', $supervisor->supervisedProjects->count());
-                $supervisor->setAttribute('allocated_students_count', count($studentIds));
-            }
-        }
-
-        $activeAcademicYear = \App\Models\DocuMentor\AcademicYear::active();
-
-        return view('admin.dashboard-supervisor', compact(
-            'needsSchoolDepartment',
-            'assignedProjects',
-            'pendingSubmissionsCount',
-            'commentsFollowUpCount',
-            'activeAcademicYear',
-            'supervisorsDirectory'
-        ));
+        return redirect()->route('dashboard.docu-mentor.projects.index');
     }
 }
