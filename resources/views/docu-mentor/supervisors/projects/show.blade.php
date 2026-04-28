@@ -1,8 +1,9 @@
-@extends('docu-mentor.layout')
+@extends('layouts.dashboard')
 
 @section('title', $project->title . ' – Docu Mentor')
+@section('dashboard_heading', 'Project Review')
 
-@section('content')
+@section('dashboard_content')
 @php
     $canGrade = $project->canSupervisorsGrade();
     $currentUserApproval = $project->supervisorApprovals->firstWhere('user_id', $user->id);

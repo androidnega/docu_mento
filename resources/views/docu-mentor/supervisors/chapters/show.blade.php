@@ -1,8 +1,9 @@
-@extends('docu-mentor.layout')
+@extends('layouts.dashboard')
 
 @section('title', $chapter->title . ' – Docu Mentor')
+@section('dashboard_heading', 'Chapter Review')
 
-@section('content')
+@section('dashboard_content')
 @php
     $dm = $user ?? request()->attributes->get('dm_user') ?? auth()->user();
     $canManageSubmissions = $dm instanceof \App\Models\User

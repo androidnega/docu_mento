@@ -1,8 +1,9 @@
-@extends('docu-mentor.layout')
+@extends('layouts.dashboard')
 
 @section('title', 'Supervisor Dashboard – Docu Mentor')
+@section('dashboard_heading', 'Supervisor Dashboard')
 
-@section('content')
+@section('dashboard_content')
 <div class="max-w-6xl mx-auto w-full pt-4 sm:pt-6">
 <h1 class="text-2xl font-bold text-slate-900 mb-2">Supervisor Dashboard</h1>
 <p class="text-slate-500 text-sm mb-6">
