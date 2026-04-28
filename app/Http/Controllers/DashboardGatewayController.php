@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\DocuMentor\CoordinatorController;
+use App\Http\Controllers\DocuMentor\SupervisorProjectController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -26,7 +27,7 @@ class DashboardGatewayController extends Controller
             return app(StudentDashboardController::class)->index();
         }
         if ($roleName === User::ROLE_NAME_SUPERVISOR) {
-            return app(AdminDashboardController::class)->supervisorDashboard();
+            return app(SupervisorProjectController::class)->index();
         }
         if ($roleName === User::ROLE_NAME_COORDINATOR) {
             return app(CoordinatorController::class)->dashboard();

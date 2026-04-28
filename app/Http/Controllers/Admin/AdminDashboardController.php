@@ -156,9 +156,9 @@ class AdminDashboardController extends Controller
         ));
     }
 
-    /** Supervisor entrypoint uses the unified projects flow with shared sidebar. */
+    /** Legacy supervisor entrypoint: send to unified /dashboard URL. */
     public function supervisorDashboard(): RedirectResponse
     {
-        return redirect()->route('dashboard.docu-mentor.projects.index');
+        return redirect()->route('dashboard');
     }
 }

@@ -7,9 +7,9 @@ use Illuminate\Http\RedirectResponse;
 
 class SupervisorController extends Controller
 {
-    /** No separate supervisor dashboard – supervisor uses main dashboard; Docu Mentor goes to projects. */
+    /** No separate supervisor dashboard – use unified /dashboard URL. */
     public function dashboard(): RedirectResponse
     {
-        return redirect()->route('dashboard.docu-mentor.projects.index');
+        return redirect()->route('dashboard');
     }
 }
