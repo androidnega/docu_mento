@@ -83,15 +83,60 @@ class RunMigrationsController extends Controller
         if (! is_executable($git)) {
             $git = 'git';
         }
-        $run = function (string $cmd) use ($basePath, $git): string {
-            $full = 'cd '.escapeshellarg($basePath).' && '.$git.' '.$cmd.' 2>&1';
-
-            return trim((string) shell_exec($full));
-        };
         $body = "Docu Mento: Fix pull (reset to remote)\n====================================\n\n";
-        $body .= "Step 1: git fetch origin\n".$run('fetch origin')."\n\n";
-        $branch = $run('rev-parse --abbrev-ref HEAD') ?: 'main';
-        $body .= "Step 2: git reset --hard origin/{$branch}\n".$run('reset --hard origin/'.$branch)."\n\n";
+
+        // cPanel / crashed git often leaves lock files; clear stale locks before running git commands.
+        $gitDir = $basePath.DIRECTORY_SEPARATOR.'.git';
+        foreach (['index.lock', 'shallow.lock', 'HEAD.lock', 'config.lock'] as $lockName) {
+            $lock = $gitDir.DIRECTORY_SEPARATOR.$lockName;
+            if (is_file($lock)) {
+                if (@unlink($lock)) {
+                    $body .= "Removed stale .git/{$lockName}.\n\n";
+                } else {
+                    $body .= "WARNING: could not delete .git/{$lockName} — remove it manually, then run this URL again.\n\n";
+                }
+            }
+        }
+
+        // Use exec + exit codes so failures are detectable instead of always reporting success.
+        $cd = sprintf('cd %s && ', escapeshellarg($basePath));
+        $runExec = function (string $cmd) use ($cd, $git): array {
+            $out = [];
+            $code = 0;
+            exec($cd.escapeshellcmd($git).' '.$cmd.' 2>&1', $out, $code);
+
+            return [implode("\n", $out), $code];
+        };
+
+        [$fetchOut, $fetchCode] = $runExec('fetch origin');
+        $body .= "Step 1: git fetch origin\n{$fetchOut}\nExit code: {$fetchCode}\n\n";
+
+        // Safe branch handling: avoid "fatal: a branch named 'main' already exists".
+        $hasLocalMain = 1;
+        exec($cd.$git.' show-ref --verify --quiet refs/heads/main 2>&1', $_, $hasLocalMain);
+        $hasOriginMain = 1;
+        exec($cd.$git.' show-ref --verify --quiet refs/remotes/origin/main 2>&1', $_, $hasOriginMain);
+
+        $body .= "Step 2: checkout branch (safe for existing main)\n";
+        $checkoutCode = 0;
+        if ($hasOriginMain === 0) {
+            $checkoutCmd = ($hasLocalMain === 0) ? 'checkout main' : 'checkout -b main origin/main';
+            [$checkoutOut, $checkoutCode] = $runExec($checkoutCmd);
+            $body .= $checkoutOut."\n";
+            $body .= "Exit code: {$checkoutCode}\n\n";
+        } else {
+            $body .= "No origin/main detected; using current branch.\n\n";
+        }
+
+        [$branchOut, $branchCode] = $runExec('rev-parse --abbrev-ref HEAD');
+        $branch = trim($branchOut) !== '' ? trim($branchOut) : 'main';
+        if ($branchCode !== 0) {
+            $branch = 'main';
+        }
+
+        $remoteRef = ($hasOriginMain === 0) ? 'main' : $branch;
+        [$resetOut, $resetCode] = $runExec('reset --hard origin/'.escapeshellarg($remoteRef));
+        $body .= "Step 3: git reset --hard origin/{$remoteRef}\n{$resetOut}\nExit code: {$resetCode}\n\n";
 
         // Restore previous .env after reset so server configuration is not overwritten by repo.
         if ($envExisted && is_string($envBackup)) {
@@ -104,7 +149,7 @@ class RunMigrationsController extends Controller
             $body .= "WARNING: Could not read existing .env before reset; it may have been overwritten.\n\n";
         }
 
-        $body .= "Step 3: Clear caches\n";
+        $body .= "Step 4: Clear caches\n";
         try {
             Artisan::call('config:clear');
             Artisan::call('route:clear');
@@ -114,7 +159,12 @@ class RunMigrationsController extends Controller
         } catch (\Throwable $e) {
             $body .= $e->getMessage()."\n\n";
         }
-        $body .= "====================================\nSUCCESS: Code matches remote (origin/{$branch}).\n";
+        $body .= "====================================\n";
+        if ($fetchCode === 0 && $checkoutCode === 0 && $resetCode === 0) {
+            $body .= "SUCCESS: Code matches remote (origin/{$remoteRef}).\n";
+        } else {
+            $body .= "WARNING: One or more git steps failed. Check output above.\n";
+        }
 
         return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
     }
