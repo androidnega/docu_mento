@@ -16,20 +16,48 @@
 
 <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
     <article class="rounded-xl border border-slate-200 bg-white p-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Assigned projects</p>
-        <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ $assignedProjectsCount }}</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Assigned projects</p>
+                <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ $assignedProjectsCount }}</p>
+            </div>
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.5L19 8.5V19a2 2 0 0 1-2 2z"/></svg>
+            </span>
+        </div>
     </article>
     <article class="rounded-xl border border-slate-200 bg-white p-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Total students</p>
-        <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ (int) ($totalStudentsAcrossProjects ?? 0) }}</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Total students</p>
+                <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ (int) ($totalStudentsAcrossProjects ?? 0) }}</p>
+            </div>
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-5.33-3.8M9 20H4v-2a4 4 0 0 1 5.33-3.8M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+            </span>
+        </div>
     </article>
     <article class="rounded-xl border border-slate-200 bg-white p-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Approved projects</p>
-        <p class="mt-2 text-2xl font-bold text-emerald-700 tabular-nums">{{ $approvedProjectsCount }}</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Approved projects</p>
+                <p class="mt-2 text-2xl font-bold text-emerald-700 tabular-nums">{{ $approvedProjectsCount }}</p>
+            </div>
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+            </span>
+        </div>
     </article>
     <article class="rounded-xl border border-slate-200 bg-white p-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Pending projects</p>
-        <p class="mt-2 text-2xl font-bold text-amber-700 tabular-nums">{{ $pendingProjectsCount }}</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Pending projects</p>
+                <p class="mt-2 text-2xl font-bold text-amber-700 tabular-nums">{{ $pendingProjectsCount }}</p>
+            </div>
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
+            </span>
+        </div>
     </article>
 </section>
 
@@ -62,19 +90,20 @@
             <h2 class="text-sm font-semibold text-slate-900">Project portfolio</h2>
             <span class="text-xs text-slate-500">{{ $assignedProjectsCount }} project{{ $assignedProjectsCount === 1 ? '' : 's' }}</span>
         </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         @foreach($projects as $project)
             @php
                 $chaptersDone = $project->completedChaptersCount();
                 $memberCount = $project->group ? $project->groupMembersVisibleToStaff()->count() : 0;
             @endphp
-            <a href="{{ route('dashboard.docu-mentor.projects.show', $project) }}" class="block bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-300 transition">
-                <h2 class="text-base font-semibold text-slate-900">{{ $project->title }}</h2>
-                <p class="text-sm text-slate-500 mt-1">Group: {{ $project->group?->name }} · {{ $project->academicYear?->year ?? '—' }}</p>
-                @if($project->description)
-                    <p class="text-sm text-slate-600 mt-2">{{ Str::limit($project->description, 120) }}</p>
-                @endif
-                <div class="mt-3 flex flex-wrap items-center gap-2">
+            <a href="{{ route('dashboard.docu-mentor.projects.show', $project) }}" class="block bg-white rounded-lg border border-slate-200 px-4 py-3 hover:border-indigo-300 transition">
+                <div class="flex items-start justify-between gap-3">
+                    <h2 class="text-sm font-semibold text-slate-900 leading-snug line-clamp-2">{{ $project->title }}</h2>
+                    <span class="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.5L19 8.5V19a2 2 0 0 1-2 2z"/></svg>
+                    </span>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-1.5">
                     <span class="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
                         Progress: {{ $chaptersDone }}/6 completed
                     </span>
