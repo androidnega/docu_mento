@@ -5,6 +5,7 @@
 
 @section('dashboard_content')
 @php
+    $isMainDashboard = request()->routeIs('dashboard');
     $assignedProjectsCount = $projects->count();
     $approvedProjectsCount = $projects->where('approved', true)->count();
     $pendingProjectsCount = $assignedProjectsCount - $approvedProjectsCount;
@@ -14,6 +15,7 @@
 <h1 class="text-2xl font-bold text-slate-900 mb-2">Supervisor Dashboard</h1>
 <p class="text-slate-500 text-sm mb-6">Overview of your supervision workload, progress, and assigned projects.</p>
 
+@if($isMainDashboard)
 <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
     <article class="rounded-xl border border-slate-200 bg-white p-4">
         <div class="flex items-start justify-between gap-3">
@@ -78,6 +80,7 @@
         </div>
     </div>
 </section>
+@endif
 
 @if($projects->isEmpty())
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
@@ -87,7 +90,7 @@
 @else
     <section>
         <div class="flex items-center justify-between gap-3 mb-3">
-            <h2 class="text-sm font-semibold text-slate-900">Project portfolio</h2>
+            <h2 class="text-sm font-semibold text-slate-900">{{ $isMainDashboard ? 'Project portfolio' : 'Assigned projects' }}</h2>
             <span class="text-xs text-slate-500">{{ $assignedProjectsCount }} project{{ $assignedProjectsCount === 1 ? '' : 's' }}</span>
         </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
