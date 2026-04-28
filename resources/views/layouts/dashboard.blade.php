@@ -7,9 +7,10 @@
     $layoutAdminUser = auth()->user();
     $roleName = $layoutAdminUser && method_exists($layoutAdminUser, 'roleName') ? $layoutAdminUser->roleName() : '';
     $isSuperAdmin = $layoutAdminUser && $layoutAdminUser->role === \App\Models\User::ROLE_SUPER_ADMIN;
-    $isSupervisor = $roleName === 'supervisor';
-    $isCoordinatorOnly = $roleName === 'coordinator';
-    $isDocuMentorCoordinator = in_array($roleName, ['coordinator', 'admin'], true);
+    // Use capability checks (not only role-name strings) so sidebar still renders for legacy/alias supervisor roles.
+    $isSupervisor = $layoutAdminUser && method_exists($layoutAdminUser, 'isDocuMentorSupervisor') && $layoutAdminUser->isDocuMentorSupervisor();
+    $isCoordinatorOnly = $layoutAdminUser && method_exists($layoutAdminUser, 'isDocuMentorCoordinator') && $layoutAdminUser->isDocuMentorCoordinator() && ! $isSuperAdmin;
+    $isDocuMentorCoordinator = $isCoordinatorOnly || $isSuperAdmin;
     $isDocuMentorStudent = in_array($roleName, ['student', 'group_leader'], true);
     $isStudentProjectRoute = request()->routeIs('dashboard.projects.*') || request()->routeIs('dashboard.public-projects') || request()->routeIs('dashboard.group.*');
     $isStudentDashboardView = $isDocuMentorStudent || $isStudentProjectRoute;
