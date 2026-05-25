@@ -364,7 +364,11 @@ class CoordinatorStudentController extends Controller
 
         return $query
             ->withCount('supervisedProjects')
-            ->with(['supervisedProjects.group.members'])
+            ->with([
+                'supervisedProjects' => fn ($q) => $q->orderBy('title'),
+                'supervisedProjects.group.members',
+                'supervisedProjects.group.leader',
+            ])
             ->orderBy('name');
     }
 

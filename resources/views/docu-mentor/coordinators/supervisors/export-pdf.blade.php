@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Supervisors List</title>
+    <title>Supervisors Report</title>
     <style>
         @page { margin: 22px; }
         body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 0; }
@@ -19,19 +19,82 @@
         .meta { font-size: 9.5px; color: #475569; margin: 0 0 8px 0; }
         .meta strong { color: #0f172a; }
 
-        table.data { width: 100%; margin-top: 0; }
-        table.data th, table.data td { border: 1px solid #cbd5e1; padding: 5px 7px; }
-        table.data tr.head th {
-            background: #1f2937;
-            color: #ffffff;
-            font-size: 9px;
+        .supervisor-block { margin-top: 10px; }
+        .supervisor-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #0f172a;
+            text-decoration: underline;
+            border-bottom: 2px solid #1f2937;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+        .supervisor-meta { width: 100%; font-size: 10px; color: #334155; margin-bottom: 6px; }
+        .supervisor-meta td { padding: 2px 8px 2px 0; vertical-align: top; }
+        .supervisor-meta .label { color: #475569; font-weight: bold; width: 30%; }
+        .supervisor-meta .value { color: #0f172a; }
+
+        .project-card {
+            margin: 6px 0 6px 0;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #1f2937;
+            padding: 6px 8px;
+            background: #f8fafc;
+        }
+        .project-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .project-title .num {
+            color: #475569;
+            font-weight: normal;
+            font-size: 10px;
+            margin-right: 4px;
+        }
+        .students-label {
+            font-size: 9.5px;
+            font-weight: bold;
+            color: #334155;
+            margin-top: 2px;
+        }
+        table.students { width: 100%; font-size: 10px; margin: 2px 0 4px 0; }
+        table.students td { padding: 2px 6px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        table.students td.idx { width: 22px; color: #64748b; text-align: right; }
+        table.students td.phone { width: 110px; color: #475569; }
+        table.students tr.leader td { background: #fff7ed; }
+        table.students tr.leader td.name strong { color: #b45309; }
+        .leader-tag {
+            display: inline-block;
+            background: #b45309;
+            color: #fff;
+            font-size: 8px;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 4px;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.4px;
-            text-align: left;
-            font-weight: bold;
         }
-        table.data tr.alt td { background: #f8fafc; }
-        table.data td.num { text-align: right; }
+        .leader-line {
+            font-size: 9.5px;
+            color: #334155;
+            margin-top: 3px;
+            padding: 3px 6px;
+            background: #fff7ed;
+            border-left: 2px solid #b45309;
+        }
+        .leader-line strong { color: #92400e; }
+
+        .no-projects {
+            font-size: 10px;
+            color: #6b7280;
+            font-style: italic;
+            padding: 4px 0;
+        }
+
+        .divider { border-top: 1px dashed #cbd5e1; margin: 12px 0; }
 
         .summary {
             margin-top: 10px;
@@ -65,8 +128,8 @@
                 @if(!empty($institutionName))
                     <div class="institution-name">{{ $institutionName }}</div>
                 @endif
-                <div class="report-title">Supervisors List</div>
-                <div class="report-subtitle">Coordinator report &mdash; supervisor phone numbers, assigned projects, and student counts</div>
+                <div class="report-title">Supervisors Report</div>
+                <div class="report-subtitle">Supervisor contact details, assigned projects, students &amp; group leaders</div>
             </td>
             <td class="meta-cell" style="width: 120px;">
                 <div><strong>Date:</strong> {{ $reportDate }}</div>
@@ -95,40 +158,99 @@
         $totalStudents = 0;
     @endphp
 
-    <table class="data">
-        <tr class="head">
-            <th style="width: 28px;">No.</th>
-            <th>Name</th>
-            <th style="width: 100px;">Phone</th>
-            <th style="width: 72px;">Assigned Projects</th>
-            <th style="width: 56px;">Students</th>
-        </tr>
-        @foreach($supervisors as $i => $sup)
-            @php
-                $projects = (int) ($sup->supervised_projects_count ?? 0);
-                $students = (int) ($sup->total_students_count ?? 0);
-                $totalProjects += $projects;
-                $totalStudents += $students;
-            @endphp
-            <tr @class(['alt' => $i % 2 === 1])>
-                <td class="num">{{ $i + 1 }}</td>
-                <td>{{ $sup->name ?? '—' }}</td>
-                <td>{{ $sup->phone ?? '—' }}</td>
-                <td class="num">{{ $projects }}</td>
-                <td class="num">{{ $students }}</td>
-            </tr>
-        @endforeach
-    </table>
-
     @if($supervisors->isEmpty())
         <div class="meta" style="margin-top: 12px; text-align: center; font-style: italic;">No supervisors found.</div>
     @else
-        <div class="summary">
-            <span><strong>Supervisors:</strong> {{ $supervisors->count() }}</span>
-            <span><strong>Total Assigned Projects:</strong> {{ $totalProjects }}</span>
-            <span><strong>Total Students:</strong> {{ $totalStudents }}</span>
-        </div>
+        @foreach($supervisors as $supIdx => $sup)
+            @php
+                $projects = $sup->supervisedProjects ?? collect();
+                $projectCount = $projects->count();
+                $studentCount = (int) ($sup->total_students_count ?? 0);
+                $totalProjects += $projectCount;
+                $totalStudents += $studentCount;
+            @endphp
+
+            <div class="supervisor-block">
+                <div class="supervisor-name">{{ ($supIdx + 1) }}. {{ $sup->name ?? '—' }}</div>
+
+                <table class="supervisor-meta">
+                    <tr>
+                        <td class="label">Phone Number:</td>
+                        <td class="value">{{ $sup->phone ?: '—' }}</td>
+                        <td class="label" style="width: 30%;">Number of Students:</td>
+                        <td class="value">{{ $studentCount }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Number of Projects:</td>
+                        <td class="value">{{ $projectCount }}</td>
+                        <td class="label">Email:</td>
+                        <td class="value">{{ $sup->email ?: '—' }}</td>
+                    </tr>
+                </table>
+
+                @if($projectCount === 0)
+                    <div class="no-projects">No projects assigned to this supervisor.</div>
+                @else
+                    @foreach($projects as $projIdx => $project)
+                        @php
+                            $group = $project->group;
+                            $members = $group?->members ?? collect();
+                            $leaderId = $group?->leader_id;
+                            $leader = $leaderId ? $members->firstWhere('id', $leaderId) : null;
+                        @endphp
+                        <div class="project-card">
+                            <div class="project-title">
+                                <span class="num">Project {{ $projIdx + 1 }}:</span>
+                                {{ $project->title ?? 'Untitled project' }}
+                            </div>
+
+                            <div class="students-label">
+                                Students &nbsp;<span style="font-weight: normal; color: #64748b;">({{ $members->count() }})</span>
+                            </div>
+
+                            @if($members->isEmpty())
+                                <div class="no-projects" style="padding: 2px 0;">No students in this project group.</div>
+                            @else
+                                <table class="students">
+                                    @foreach($members as $mIdx => $member)
+                                        @php $isLeader = $leaderId && (int) $member->id === (int) $leaderId; @endphp
+                                        <tr @class(['leader' => $isLeader])>
+                                            <td class="idx">{{ $mIdx + 1 }}.</td>
+                                            <td class="name">
+                                                @if($isLeader)<strong>{{ $member->name ?? '—' }}</strong>@else{{ $member->name ?? '—' }}@endif
+                                                @if($isLeader)<span class="leader-tag">Group Leader</span>@endif
+                                            </td>
+                                            <td class="phone">{{ $member->phone ?: '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </table>
+                            @endif
+
+                            @if($leader)
+                                <div class="leader-line">
+                                    <strong>Group Leader:</strong> {{ $leader->name ?? '—' }} &mdash; {{ $leader->phone ?: 'No phone on file' }}
+                                </div>
+                            @elseif(! $members->isEmpty())
+                                <div class="leader-line" style="background: #fef2f2; border-left-color: #b91c1c;">
+                                    <strong style="color: #991b1b;">Group Leader:</strong> Not assigned for this project.
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+
+            @if(! $loop->last)
+                <div class="divider"></div>
+            @endif
+        @endforeach
     @endif
+
+    <div class="summary">
+        <span><strong>Supervisors:</strong> {{ $supervisors->count() }}</span>
+        <span><strong>Total Assigned Projects:</strong> {{ $totalProjects }}</span>
+        <span><strong>Total Students:</strong> {{ $totalStudents }}</span>
+    </div>
 
     <div class="doc-footer">
         Generated {{ $reportDate }} &middot; Docu Mento
