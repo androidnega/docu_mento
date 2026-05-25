@@ -32,12 +32,13 @@ class EnsureAdminAuthenticated
 
         $user->load('institution');
 
-        // Coordinators may only access dashboard, coordinators.*, docu-mentor.*, profile, logout
+        // Coordinators may only access dashboard, coordinators.*, docu-mentor.*, supervisors.*, profile, logout
         $coordinatorAllowed = $request->routeIs('dashboard')
             || $request->routeIs('dashboard.ping')
             || $request->routeIs('dashboard.profile.*')
             || $request->routeIs('dashboard.coordinators.*')
             || $request->routeIs('dashboard.docu-mentor.*')
+            || $request->routeIs('dashboard.supervisors.*')
             || $request->routeIs('dashboard.departments.by-school')
             || $request->routeIs('logout') || $request->routeIs('logout.get');
         if ($user->role === User::DM_ROLE_COORDINATOR && ! $coordinatorAllowed) {
