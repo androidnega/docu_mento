@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\DocuMentor;
 
-use App\Exports\SupervisorsListExport;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
@@ -27,9 +26,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class CoordinatorStudentController extends Controller
@@ -438,40 +435,6 @@ class CoordinatorStudentController extends Controller
         $ids = array_values(array_unique($ids));
 
         return $ids === [] ? null : $ids;
-    }
-
-    /**
-     * Download the supervisors list (name, phone, assigned projects, students) as Excel.
-     * Honors current search + projects filter so the export matches the on-screen list,
-     * and also accepts supervisor_id / supervisor_ids[] for per-row or "selected" exports.
-     */
-    public function exportSupervisorsExcel(Request $request): BinaryFileResponse
-    {
-        $user = $this->adminUser();
-        if (! $user || ! $user->isDocuMentorCoordinator()) {
-            abort(403, 'Access denied.');
-        }
-
-        $search = trim((string) $request->query('search', ''));
-        $projectsFilter = $request->query('projects');
-        $onlyIds = $this->selectedSupervisorIdsFrom($request);
-        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter, $onlyIds);
-
-        if ($onlyIds !== null && $supervisors->isEmpty()) {
-            abort(404, 'Supervisor not found or not in your scope.');
-        }
-
-        if ($onlyIds !== null && count($onlyIds) === 1 && $supervisors->count() === 1) {
-            $sup = $supervisors->first();
-            $slug = \Illuminate\Support\Str::slug((string) ($sup->name ?: $sup->username ?: 'supervisor'));
-            $filename = 'supervisor-'.($slug !== '' ? $slug : 'report').'-'.now()->format('Y-m-d-His').'.xlsx';
-        } elseif ($onlyIds !== null) {
-            $filename = 'supervisors-selected-'.now()->format('Y-m-d-His').'.xlsx';
-        } else {
-            $filename = 'supervisors-list-'.now()->format('Y-m-d-His').'.xlsx';
-        }
-
-        return Excel::download(new SupervisorsListExport($supervisors), $filename, \Maatwebsite\Excel\Excel::XLSX);
     }
 
     /**

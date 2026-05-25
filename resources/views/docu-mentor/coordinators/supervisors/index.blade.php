@@ -43,14 +43,6 @@
                 <i class="fas fa-file-pdf text-[11px]"></i>
                 <span>Download PDF</span>
             </a>
-            <a
-                href="{{ route('dashboard.supervisors.export.excel', $exportQuery) }}"
-                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                title="Download supervisors list as Excel"
-            >
-                <i class="fas fa-file-excel text-[11px]"></i>
-                <span>Download Excel</span>
-            </a>
         </div>
     </div>
 
@@ -166,6 +158,24 @@
                 <p>No supervisors yet. Upload a CSV or add one above.</p>
             </div>
         @else
+            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 dark:bg-slate-100 dark:text-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-white disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
+                    <i class="fas fa-paper-plane text-xs"></i>
+                    Send login SMS to selected
+                </button>
+                <button
+                    type="button"
+                    id="idx-download-selected-pdf"
+                    data-export-url="{{ route('dashboard.supervisors.export.pdf') }}"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                    title="Download a PDF report for the selected supervisors only"
+                >
+                    <i class="fas fa-file-pdf text-xs"></i>
+                    Download selected (PDF)
+                </button>
+                <span class="text-xs text-slate-500 dark:text-slate-400">Tick rows below, then click an action · This page only · up to 50 · no phone = SMS skipped</span>
+            </form>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead class="bg-slate-50 dark:bg-slate-900/70">
@@ -200,24 +210,14 @@
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->supervised_projects_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->total_students_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm">
-                                    <span class="inline-flex items-center gap-1">
-                                        <a
-                                            href="{{ route('dashboard.supervisors.export.pdf', ['supervisor_id' => $u->id]) }}"
-                                            class="inline-flex items-center gap-1 rounded-md border border-rose-200 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-2 py-1 text-xs font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
-                                            title="Download PDF for {{ $u->name ?? $u->username }}"
-                                        >
-                                            <i class="fas fa-file-pdf text-[10px]"></i>
-                                            <span>PDF</span>
-                                        </a>
-                                        <a
-                                            href="{{ route('dashboard.supervisors.export.excel', ['supervisor_id' => $u->id]) }}"
-                                            class="inline-flex items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                                            title="Download Excel for {{ $u->name ?? $u->username }}"
-                                        >
-                                            <i class="fas fa-file-excel text-[10px]"></i>
-                                            <span>Excel</span>
-                                        </a>
-                                    </span>
+                                    <a
+                                        href="{{ route('dashboard.supervisors.export.pdf', ['supervisor_id' => $u->id]) }}"
+                                        class="inline-flex items-center gap-1 rounded-md border border-rose-200 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-2 py-1 text-xs font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                                        title="Download PDF for {{ $u->name ?? $u->username }}"
+                                    >
+                                        <i class="fas fa-file-pdf text-[10px]"></i>
+                                        <span>PDF</span>
+                                    </a>
                                 </td>
                                 <td class="px-4 py-3 text-sm">
                                     <form method="post" action="{{ route('dashboard.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
@@ -234,34 +234,6 @@
                     </tbody>
                 </table>
             </div>
-            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
-                @csrf
-                <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 dark:bg-slate-100 dark:text-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-white disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
-                    <i class="fas fa-paper-plane text-xs"></i>
-                    Send login SMS to selected
-                </button>
-                <button
-                    type="button"
-                    id="idx-download-selected-pdf"
-                    data-export-url="{{ route('dashboard.supervisors.export.pdf') }}"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
-                    title="Download a PDF report for the selected supervisors only"
-                >
-                    <i class="fas fa-file-pdf text-xs"></i>
-                    Download selected (PDF)
-                </button>
-                <button
-                    type="button"
-                    id="idx-download-selected-excel"
-                    data-export-url="{{ route('dashboard.supervisors.export.excel') }}"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                    title="Download an Excel file for the selected supervisors only"
-                >
-                    <i class="fas fa-file-excel text-xs"></i>
-                    Download selected (Excel)
-                </button>
-                <span class="text-xs text-slate-500 dark:text-slate-400">This page only · up to 50 · no phone = SMS skipped</span>
-            </form>
             <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
                 <div>
                     Showing
@@ -339,10 +311,6 @@
     var dlPdf = document.getElementById('idx-download-selected-pdf');
     if (dlPdf) {
         dlPdf.addEventListener('click', function () { downloadSelected(dlPdf); });
-    }
-    var dlXlsx = document.getElementById('idx-download-selected-excel');
-    if (dlXlsx) {
-        dlXlsx.addEventListener('click', function () { downloadSelected(dlXlsx); });
     }
 })();
 </script>

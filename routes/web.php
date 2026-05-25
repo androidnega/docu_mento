@@ -288,7 +288,6 @@ Route::middleware('admin.auth')->group(function () {
 
         // Coordinator-only sub-routes for the supervisors management page (export, list, login-SMS, etc.).
         Route::middleware('docu-mentor.coordinator')->name('supervisors.')->group(function () {
-            Route::get('supervisors/export/excel', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsExcel'])->name('export.excel');
             Route::get('supervisors/export/pdf', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsPdf'])->name('export.pdf');
             Route::get('supervisors/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsList'])->name('list');
             Route::post('supervisors/send-login-sms-bulk', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSmsBulk'])->name('send-login-sms-bulk');
