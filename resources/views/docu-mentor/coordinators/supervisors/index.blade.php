@@ -158,7 +158,7 @@
                 <p>No supervisors yet. Upload a CSV or add one above.</p>
             </div>
         @else
-            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
+            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" style="display:none" class="flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 dark:bg-slate-100 dark:text-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-white disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
                     <i class="fas fa-paper-plane text-xs"></i>
@@ -282,12 +282,27 @@
         });
     }
 
+    var bulkBar = document.getElementById('idx-supervisor-bulk-sms-form');
+
+    function updateBulkBarVisibility() {
+        if (!bulkBar) return;
+        var anyChecked = document.querySelector('.idx-supervisor-sms-cb:checked') !== null;
+        bulkBar.style.display = anyChecked ? 'flex' : 'none';
+    }
+
     var masterIdx = document.getElementById('idx-supervisors-select-all');
     if (masterIdx) {
         masterIdx.addEventListener('change', function () {
             document.querySelectorAll('.idx-supervisor-sms-cb').forEach(function (cb) { cb.checked = masterIdx.checked; });
+            updateBulkBarVisibility();
         });
     }
+
+    document.querySelectorAll('.idx-supervisor-sms-cb').forEach(function (cb) {
+        cb.addEventListener('change', updateBulkBarVisibility);
+    });
+
+    updateBulkBarVisibility();
 
     function selectedSupervisorIds() {
         return Array.prototype.map.call(
