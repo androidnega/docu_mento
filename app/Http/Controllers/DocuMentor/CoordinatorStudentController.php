@@ -392,10 +392,17 @@ class CoordinatorStudentController extends Controller
 
     /**
      * Build the full (non-paginated) supervisors collection with project + student counts for export.
+     * Optionally restrict to a specific list of supervisor IDs (used for per-row / "selected" downloads).
+     *
+     * @param  array<int>|null  $onlyIds
      */
-    private function fetchSupervisorsForExport(User $user, string $search, ?string $projectsFilter)
+    private function fetchSupervisorsForExport(User $user, string $search, ?string $projectsFilter, ?array $onlyIds = null)
     {
-        $supervisors = $this->buildSupervisorsQuery($user, $search, $projectsFilter)->get();
+        $query = $this->buildSupervisorsQuery($user, $search, $projectsFilter);
+        if ($onlyIds !== null && $onlyIds !== []) {
+            $query->whereIn('id', $onlyIds);
+        }
+        $supervisors = $query->get();
 
         return $supervisors->each(function (User $sup) {
             $sup->total_students_count = $this->countDistinctStudentsForSupervisor($sup);
@@ -403,8 +410,40 @@ class CoordinatorStudentController extends Controller
     }
 
     /**
+     * Extract `supervisor_id` (single) and/or `supervisor_ids[]` (array) from a request,
+     * cast to ints, dedupe, and return null when nothing valid was provided.
+     *
+     * @return array<int>|null
+     */
+    private function selectedSupervisorIdsFrom(Request $request): ?array
+    {
+        $ids = [];
+
+        $single = $request->query('supervisor_id');
+        if ($single !== null && (int) $single > 0) {
+            $ids[] = (int) $single;
+        }
+
+        $list = $request->query('supervisor_ids', []);
+        if (! is_array($list)) {
+            $list = [$list];
+        }
+        foreach ($list as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        $ids = array_values(array_unique($ids));
+
+        return $ids === [] ? null : $ids;
+    }
+
+    /**
      * Download the supervisors list (name, phone, assigned projects, students) as Excel.
-     * Honors current search + projects filter so the export matches the on-screen list.
+     * Honors current search + projects filter so the export matches the on-screen list,
+     * and also accepts supervisor_id / supervisor_ids[] for per-row or "selected" exports.
      */
     public function exportSupervisorsExcel(Request $request): BinaryFileResponse
     {
@@ -415,16 +454,32 @@ class CoordinatorStudentController extends Controller
 
         $search = trim((string) $request->query('search', ''));
         $projectsFilter = $request->query('projects');
-        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter);
+        $onlyIds = $this->selectedSupervisorIdsFrom($request);
+        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter, $onlyIds);
 
-        $filename = 'supervisors-list-'.now()->format('Y-m-d-His').'.xlsx';
+        if ($onlyIds !== null && $supervisors->isEmpty()) {
+            abort(404, 'Supervisor not found or not in your scope.');
+        }
+
+        if ($onlyIds !== null && count($onlyIds) === 1 && $supervisors->count() === 1) {
+            $sup = $supervisors->first();
+            $slug = \Illuminate\Support\Str::slug((string) ($sup->name ?: $sup->username ?: 'supervisor'));
+            $filename = 'supervisor-'.($slug !== '' ? $slug : 'report').'-'.now()->format('Y-m-d-His').'.xlsx';
+        } elseif ($onlyIds !== null) {
+            $filename = 'supervisors-selected-'.now()->format('Y-m-d-His').'.xlsx';
+        } else {
+            $filename = 'supervisors-list-'.now()->format('Y-m-d-His').'.xlsx';
+        }
 
         return Excel::download(new SupervisorsListExport($supervisors), $filename, \Maatwebsite\Excel\Excel::XLSX);
     }
 
     /**
      * Download the supervisors list (name, phone, assigned projects, students) as PDF.
-     * Honors current search + projects filter so the export matches the on-screen list.
+     * Honors current search + projects filter so the export matches the on-screen list,
+     * and also accepts:
+     *   - ?supervisor_id=ID                   download a single supervisor
+     *   - ?supervisor_ids[]=ID&supervisor_ids[]=ID  download only the selected subset
      */
     public function exportSupervisorsPdf(Request $request): Response
     {
@@ -435,7 +490,12 @@ class CoordinatorStudentController extends Controller
 
         $search = trim((string) $request->query('search', ''));
         $projectsFilter = $request->query('projects');
-        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter);
+        $onlyIds = $this->selectedSupervisorIdsFrom($request);
+        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter, $onlyIds);
+
+        if ($onlyIds !== null && $supervisors->isEmpty()) {
+            abort(404, 'Supervisor not found or not in your scope.');
+        }
 
         $institutionName = (string) Setting::getValue(Setting::KEY_INSTITUTION_NAME, '');
         $institutionLogoPath = $this->resolveInstitutionLogoForPdf();
@@ -461,7 +521,15 @@ class CoordinatorStudentController extends Controller
             'reportDate' => now()->format('F j, Y'),
         ])->setPaper('a4', 'portrait')->setWarnings(false);
 
-        $filename = 'supervisors-list-'.now()->format('Y-m-d').'.pdf';
+        if ($onlyIds !== null && count($onlyIds) === 1 && $supervisors->count() === 1) {
+            $sup = $supervisors->first();
+            $slug = \Illuminate\Support\Str::slug((string) ($sup->name ?: $sup->username ?: 'supervisor'));
+            $filename = 'supervisor-'.($slug !== '' ? $slug : 'report').'-'.now()->format('Y-m-d').'.pdf';
+        } elseif ($onlyIds !== null) {
+            $filename = 'supervisors-selected-'.now()->format('Y-m-d').'.pdf';
+        } else {
+            $filename = 'supervisors-list-'.now()->format('Y-m-d').'.pdf';
+        }
 
         return $pdf->download($filename);
     }

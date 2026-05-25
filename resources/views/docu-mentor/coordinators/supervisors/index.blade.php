@@ -177,6 +177,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Phone</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Assigned projects</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Students</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Download</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Login SMS</th>
                         </tr>
                     </thead>
@@ -199,6 +200,26 @@
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->supervised_projects_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->total_students_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm">
+                                    <span class="inline-flex items-center gap-1">
+                                        <a
+                                            href="{{ route('dashboard.supervisors.export.pdf', ['supervisor_id' => $u->id]) }}"
+                                            class="inline-flex items-center gap-1 rounded-md border border-rose-200 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-2 py-1 text-xs font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                                            title="Download PDF for {{ $u->name ?? $u->username }}"
+                                        >
+                                            <i class="fas fa-file-pdf text-[10px]"></i>
+                                            <span>PDF</span>
+                                        </a>
+                                        <a
+                                            href="{{ route('dashboard.supervisors.export.excel', ['supervisor_id' => $u->id]) }}"
+                                            class="inline-flex items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                                            title="Download Excel for {{ $u->name ?? $u->username }}"
+                                        >
+                                            <i class="fas fa-file-excel text-[10px]"></i>
+                                            <span>Excel</span>
+                                        </a>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm">
                                     <form method="post" action="{{ route('dashboard.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
                                         @csrf
                                         <button
@@ -219,7 +240,27 @@
                     <i class="fas fa-paper-plane text-xs"></i>
                     Send login SMS to selected
                 </button>
-                <span class="text-xs text-slate-500 dark:text-slate-400">This page only · up to 50 · no phone = skipped</span>
+                <button
+                    type="button"
+                    id="idx-download-selected-pdf"
+                    data-export-url="{{ route('dashboard.supervisors.export.pdf') }}"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                    title="Download a PDF report for the selected supervisors only"
+                >
+                    <i class="fas fa-file-pdf text-xs"></i>
+                    Download selected (PDF)
+                </button>
+                <button
+                    type="button"
+                    id="idx-download-selected-excel"
+                    data-export-url="{{ route('dashboard.supervisors.export.excel') }}"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                    title="Download an Excel file for the selected supervisors only"
+                >
+                    <i class="fas fa-file-excel text-xs"></i>
+                    Download selected (Excel)
+                </button>
+                <span class="text-xs text-slate-500 dark:text-slate-400">This page only · up to 50 · no phone = SMS skipped</span>
             </form>
             <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
                 <div>
@@ -274,6 +315,34 @@
         masterIdx.addEventListener('change', function () {
             document.querySelectorAll('.idx-supervisor-sms-cb').forEach(function (cb) { cb.checked = masterIdx.checked; });
         });
+    }
+
+    function selectedSupervisorIds() {
+        return Array.prototype.map.call(
+            document.querySelectorAll('.idx-supervisor-sms-cb:checked'),
+            function (cb) { return cb.value; }
+        );
+    }
+
+    function downloadSelected(button) {
+        var ids = selectedSupervisorIds();
+        if (ids.length === 0) {
+            alert('Select at least one supervisor (use the checkboxes in the first column).');
+            return;
+        }
+        var url = button.getAttribute('data-export-url');
+        var sep = url.indexOf('?') === -1 ? '?' : '&';
+        var qs = ids.map(function (id) { return 'supervisor_ids%5B%5D=' + encodeURIComponent(id); }).join('&');
+        window.location.href = url + sep + qs;
+    }
+
+    var dlPdf = document.getElementById('idx-download-selected-pdf');
+    if (dlPdf) {
+        dlPdf.addEventListener('click', function () { downloadSelected(dlPdf); });
+    }
+    var dlXlsx = document.getElementById('idx-download-selected-excel');
+    if (dlXlsx) {
+        dlXlsx.addEventListener('click', function () { downloadSelected(dlXlsx); });
     }
 })();
 </script>
