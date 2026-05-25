@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\DocuMentor;
 
+use App\Exports\SupervisorsListExport;
 use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
@@ -10,12 +11,14 @@ use App\Models\ClassGroupStudent;
 use App\Models\DocuMentor\AcademicYear;
 use App\Models\Role;
 use App\Models\Semester;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\User;
 use App\Services\ArkeselService;
 use App\Services\NewSupervisorWelcomeSmsService;
 use App\Services\SupervisorCredentialSmsService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +27,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class CoordinatorStudentController extends Controller
 {
@@ -307,47 +313,16 @@ class CoordinatorStudentController extends Controller
         if (! $user || ! $user->isDocuMentorCoordinator()) {
             abort(403, 'Access denied.');
         }
-        $deptId = $user->coordinatorDepartmentId();
-        $query = User::where('role', User::DM_ROLE_SUPERVISOR);
-        if ($deptId !== null) {
-            $query->where('department_id', $deptId);
-        }
 
         $search = trim((string) $request->query('search', ''));
-        if ($search !== '') {
-            $term = '%'.$search.'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', $term)
-                    ->orWhere('phone', 'like', $term)
-                    ->orWhere('email', 'like', $term);
-            });
-        }
-
         $projectsFilter = $request->query('projects');
-        if ($projectsFilter === 'with') {
-            $query->whereHas('supervisedProjects');
-        } elseif ($projectsFilter === 'without') {
-            $query->whereDoesntHave('supervisedProjects');
-        }
 
-        $supervisors = $query
-            ->withCount('supervisedProjects')
-            ->with(['supervisedProjects.group.members'])
-            ->orderBy('name')
+        $supervisors = $this->buildSupervisorsQuery($user, $search, $projectsFilter)
             ->paginate(25)
             ->withQueryString();
 
         $supervisors->getCollection()->transform(function (User $sup) {
-            $studentIds = [];
-            foreach ($sup->supervisedProjects as $project) {
-                $members = $project->group?->members ?? collect();
-                foreach ($members as $member) {
-                    if ($member && $member->id !== null) {
-                        $studentIds[$member->id] = true;
-                    }
-                }
-            }
-            $sup->total_students_count = count($studentIds);
+            $sup->total_students_count = $this->countDistinctStudentsForSupervisor($sup);
 
             return $sup;
         });
@@ -359,6 +334,166 @@ class CoordinatorStudentController extends Controller
             'arkeselConfigured' => ArkeselService::hasApiKey(),
             'coordinatorSmsRemaining' => $user->sms_remaining,
         ]);
+    }
+
+    /**
+     * Build the base supervisors listing query (coordinator scope + search + filters).
+     */
+    private function buildSupervisorsQuery(User $user, string $search, ?string $projectsFilter)
+    {
+        $deptId = $user->coordinatorDepartmentId();
+        $query = User::where('role', User::DM_ROLE_SUPERVISOR);
+        if ($deptId !== null) {
+            $query->where('department_id', $deptId);
+        }
+
+        if ($search !== '') {
+            $term = '%'.$search.'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('phone', 'like', $term)
+                    ->orWhere('email', 'like', $term);
+            });
+        }
+
+        if ($projectsFilter === 'with') {
+            $query->whereHas('supervisedProjects');
+        } elseif ($projectsFilter === 'without') {
+            $query->whereDoesntHave('supervisedProjects');
+        }
+
+        return $query
+            ->withCount('supervisedProjects')
+            ->with(['supervisedProjects.group.members'])
+            ->orderBy('name');
+    }
+
+    /**
+     * Count distinct students across all projects supervised by a given supervisor.
+     */
+    private function countDistinctStudentsForSupervisor(User $supervisor): int
+    {
+        $studentIds = [];
+        foreach ($supervisor->supervisedProjects as $project) {
+            $members = $project->group?->members ?? collect();
+            foreach ($members as $member) {
+                if ($member && $member->id !== null) {
+                    $studentIds[$member->id] = true;
+                }
+            }
+        }
+
+        return count($studentIds);
+    }
+
+    /**
+     * Build the full (non-paginated) supervisors collection with project + student counts for export.
+     */
+    private function fetchSupervisorsForExport(User $user, string $search, ?string $projectsFilter)
+    {
+        $supervisors = $this->buildSupervisorsQuery($user, $search, $projectsFilter)->get();
+
+        return $supervisors->each(function (User $sup) {
+            $sup->total_students_count = $this->countDistinctStudentsForSupervisor($sup);
+        });
+    }
+
+    /**
+     * Download the supervisors list (name, phone, assigned projects, students) as Excel.
+     * Honors current search + projects filter so the export matches the on-screen list.
+     */
+    public function exportSupervisorsExcel(Request $request): BinaryFileResponse
+    {
+        $user = $this->adminUser();
+        if (! $user || ! $user->isDocuMentorCoordinator()) {
+            abort(403, 'Access denied.');
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        $projectsFilter = $request->query('projects');
+        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter);
+
+        $filename = 'supervisors-list-'.now()->format('Y-m-d-His').'.xlsx';
+
+        return Excel::download(new SupervisorsListExport($supervisors), $filename, \Maatwebsite\Excel\Excel::XLSX);
+    }
+
+    /**
+     * Download the supervisors list (name, phone, assigned projects, students) as PDF.
+     * Honors current search + projects filter so the export matches the on-screen list.
+     */
+    public function exportSupervisorsPdf(Request $request): Response
+    {
+        $user = $this->adminUser();
+        if (! $user || ! $user->isDocuMentorCoordinator()) {
+            abort(403, 'Access denied.');
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        $projectsFilter = $request->query('projects');
+        $supervisors = $this->fetchSupervisorsForExport($user, $search, $projectsFilter);
+
+        $institutionName = (string) Setting::getValue(Setting::KEY_INSTITUTION_NAME, '');
+        $institutionLogoPath = $this->resolveInstitutionLogoForPdf();
+
+        $deptId = $user->coordinatorDepartmentId();
+        $departmentName = $user->roleModel?->department?->name
+            ?? ($deptId ? \App\Models\Department::find($deptId)?->name : null);
+
+        $projectsFilterLabel = match ($projectsFilter) {
+            'with' => 'With projects',
+            'without' => 'Without projects',
+            default => null,
+        };
+
+        $pdf = Pdf::loadView('docu-mentor.coordinators.supervisors.export-pdf', [
+            'supervisors' => $supervisors,
+            'institutionName' => $institutionName,
+            'institutionLogoPath' => $institutionLogoPath,
+            'coordinatorName' => $user->name ?? $user->username,
+            'departmentName' => $departmentName,
+            'searchTerm' => $search,
+            'projectsFilterLabel' => $projectsFilterLabel,
+            'reportDate' => now()->format('F j, Y'),
+        ])->setPaper('a4', 'portrait')->setWarnings(false);
+
+        $filename = 'supervisors-list-'.now()->format('Y-m-d').'.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Resolve the institution logo for embedding inside a PDF (data URI), or null if unavailable.
+     */
+    private function resolveInstitutionLogoForPdf(): ?string
+    {
+        $logoPath = (string) Setting::getValue(Setting::KEY_INSTITUTION_LOGO, '');
+        if ($logoPath === '') {
+            return null;
+        }
+
+        if (str_starts_with($logoPath, 'http')) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($logoPath);
+                if ($response->successful()) {
+                    $mime = explode(';', $response->header('Content-Type') ?: 'image/png')[0] ?: 'image/png';
+
+                    return 'data:'.$mime.';base64,'.base64_encode($response->body());
+                }
+            } catch (\Throwable $e) {
+                return null;
+            }
+
+            return null;
+        }
+
+        $fullPath = storage_path('app/public/'.$logoPath);
+        if (! file_exists($fullPath)) {
+            return null;
+        }
+        $mime = @mime_content_type($fullPath) ?: 'image/png';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($fullPath));
     }
 
     /** Add a single user: index number + academic year + role (student or supervisor). */

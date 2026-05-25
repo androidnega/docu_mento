@@ -29,6 +29,28 @@
                 <i class="fas fa-users text-[11px]"></i>
                 <span>Total: <span class="tabular-nums">{{ $supervisors->total() }}</span></span>
             </span>
+            @php
+                $exportQuery = array_filter([
+                    'search' => $search ?? request('search'),
+                    'projects' => $projectsFilter ?? request('projects'),
+                ], fn ($v) => $v !== null && $v !== '');
+            @endphp
+            <a
+                href="{{ route('dashboard.coordinators.supervisors.export.pdf', $exportQuery) }}"
+                class="inline-flex items-center gap-1.5 rounded-full border border-rose-200 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-3 py-1 font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                title="Download supervisors list as PDF"
+            >
+                <i class="fas fa-file-pdf text-[11px]"></i>
+                <span>Download PDF</span>
+            </a>
+            <a
+                href="{{ route('dashboard.coordinators.supervisors.export.excel', $exportQuery) }}"
+                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                title="Download supervisors list as Excel"
+            >
+                <i class="fas fa-file-excel text-[11px]"></i>
+                <span>Download Excel</span>
+            </a>
         </div>
     </div>
 

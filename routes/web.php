@@ -244,6 +244,8 @@ Route::middleware('admin.auth')->group(function () {
             Route::get('academic-years/{academicYear}/supervisors', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsByYear'])->name('academic-years.supervisors');
             Route::get('students/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'studentsList'])->name('students.list');
             Route::get('supervisors', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsIndex'])->name('supervisors.index');
+            Route::get('supervisors/export/excel', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsExcel'])->name('supervisors.export.excel');
+            Route::get('supervisors/export/pdf', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsPdf'])->name('supervisors.export.pdf');
             Route::get('supervisors/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsList'])->name('supervisors.list');
             Route::post('supervisors/send-login-sms-bulk', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSmsBulk'])->name('supervisors.send-login-sms-bulk');
             Route::post('supervisors/{user}/send-login-sms', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSms'])->name('supervisors.send-login-sms');
