@@ -112,7 +112,7 @@
                                 <td class="px-4 py-3 text-sm text-slate-600">{{ $u->email ?? '—' }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700">{{ $u->supervised_projects_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm">
-                                    <form method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
+                                    <form method="post" action="{{ route('dashboard.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
                                         @csrf
                                         <button
                                             type="submit"
@@ -126,7 +126,7 @@
                     </tbody>
                 </table>
             </div>
-            <form id="ay-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50/80" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor? (1 SMS credit per successful send.)');">
+            <form id="ay-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50/80" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor? (1 SMS credit per successful send.)');">
                 @csrf
                 <input type="hidden" name="academic_year_id" value="{{ $academicYear->id }}">
                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>

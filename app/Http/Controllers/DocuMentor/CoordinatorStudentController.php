@@ -663,7 +663,7 @@ class CoordinatorStudentController extends Controller
     private function redirectAfterStore(?int $academicYearId, string $role): string
     {
         if ($role === 'supervisor' && (! $academicYearId || $academicYearId <= 0)) {
-            return route('dashboard.coordinators.supervisors.index');
+            return route('dashboard.supervisors.index');
         }
         if ($academicYearId && $academicYearId > 0) {
             return $role === 'supervisor'

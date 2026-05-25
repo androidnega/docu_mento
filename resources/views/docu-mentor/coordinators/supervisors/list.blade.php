@@ -12,7 +12,7 @@
 
     {{-- Year filter --}}
     <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <form method="get" action="{{ route('dashboard.coordinators.supervisors.list') }}" class="flex flex-wrap items-end gap-3">
+        <form method="get" action="{{ route('dashboard.supervisors.list') }}" class="flex flex-wrap items-end gap-3">
             <label for="academic_year_id" class="block text-xs font-medium text-slate-600">Academic year</label>
             <select name="academic_year_id" id="academic_year_id" onchange="this.form.submit()" class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                 <option value="">— Select year —</option>

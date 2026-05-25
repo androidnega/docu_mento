@@ -243,12 +243,6 @@ Route::middleware('admin.auth')->group(function () {
             Route::get('academic-years/{academicYear}/students', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'studentsByYear'])->name('academic-years.students');
             Route::get('academic-years/{academicYear}/supervisors', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsByYear'])->name('academic-years.supervisors');
             Route::get('students/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'studentsList'])->name('students.list');
-            Route::get('supervisors', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsIndex'])->name('supervisors.index');
-            Route::get('supervisors/export/excel', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsExcel'])->name('supervisors.export.excel');
-            Route::get('supervisors/export/pdf', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsPdf'])->name('supervisors.export.pdf');
-            Route::get('supervisors/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsList'])->name('supervisors.list');
-            Route::post('supervisors/send-login-sms-bulk', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSmsBulk'])->name('supervisors.send-login-sms-bulk');
-            Route::post('supervisors/{user}/send-login-sms', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSms'])->name('supervisors.send-login-sms');
             Route::resource('academic-years', \App\Http\Controllers\DocuMentor\AcademicYearController::class)->parameters(['academic-years' => 'academicYear']);
             Route::resource('categories', \App\Http\Controllers\DocuMentor\CategoryController::class);
             Route::resource('semesters', \App\Http\Controllers\Admin\SemesterController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
@@ -289,9 +283,20 @@ Route::middleware('admin.auth')->group(function () {
             Route::delete('students/{encodedIndex}', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'destroy'])->name('students.destroy');
         });
 
+        // Unified /dashboard/supervisors gateway: coordinator sees management list, supervisor sees directory.
+        Route::get('supervisors', [\App\Http\Controllers\DashboardGatewayController::class, 'supervisors'])->name('supervisors.index');
+
+        // Coordinator-only sub-routes for the supervisors management page (export, list, login-SMS, etc.).
+        Route::middleware('docu-mentor.coordinator')->name('supervisors.')->group(function () {
+            Route::get('supervisors/export/excel', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsExcel'])->name('export.excel');
+            Route::get('supervisors/export/pdf', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'exportSupervisorsPdf'])->name('export.pdf');
+            Route::get('supervisors/list', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'supervisorsList'])->name('list');
+            Route::post('supervisors/send-login-sms-bulk', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSmsBulk'])->name('send-login-sms-bulk');
+            Route::post('supervisors/{user}/send-login-sms', [\App\Http\Controllers\DocuMentor\CoordinatorStudentController::class, 'sendSupervisorLoginSms'])->name('send-login-sms');
+        });
+
         // Supervisor project area: clean /dashboard/projects... slugs (no /supervisor prefix)
         Route::middleware('docu-mentor.supervisor')->name('docu-mentor.')->group(function () {
-            Route::get('supervisors', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'supervisorsIndex'])->name('supervisors.index');
             Route::get('projects', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'index'])->name('projects.index');
             Route::get('projects/{project}', [\App\Http\Controllers\DocuMentor\SupervisorProjectController::class, 'show'])->name('projects.show');
             Route::get('projects/{project}/chapters/{chapterRef}/submissions', [\App\Http\Controllers\DocuMentor\SupervisorChapterController::class, 'show'])->whereNumber('chapterRef');

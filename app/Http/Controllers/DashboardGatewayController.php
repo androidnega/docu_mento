@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\DocuMentor\CoordinatorController;
+use App\Http\Controllers\DocuMentor\CoordinatorStudentController;
 use App\Http\Controllers\DocuMentor\SupervisorProjectController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class DashboardGatewayController extends Controller
 {
@@ -37,5 +39,26 @@ class DashboardGatewayController extends Controller
         }
 
         return app(AdminDashboardController::class)->index();
+    }
+
+    /**
+     * Unified /dashboard/supervisors gateway: coordinators see the management list (with downloads),
+     * supervisors see the supervisor directory. Anyone else is denied.
+     */
+    public function supervisors(Request $request): View|RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user instanceof User) {
+            return redirect()->route('login')->with('error', 'Please log in.');
+        }
+
+        if ($user->isDocuMentorCoordinator()) {
+            return app(CoordinatorStudentController::class)->supervisorsIndex($request);
+        }
+        if ($user->isDocuMentorSupervisor()) {
+            return app(SupervisorProjectController::class)->supervisorsIndex();
+        }
+
+        abort(403, 'Access denied.');
     }
 }

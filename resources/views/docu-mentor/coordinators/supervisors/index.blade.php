@@ -36,7 +36,7 @@
                 ], fn ($v) => $v !== null && $v !== '');
             @endphp
             <a
-                href="{{ route('dashboard.coordinators.supervisors.export.pdf', $exportQuery) }}"
+                href="{{ route('dashboard.supervisors.export.pdf', $exportQuery) }}"
                 class="inline-flex items-center gap-1.5 rounded-full border border-rose-200 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 px-3 py-1 font-medium text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
                 title="Download supervisors list as PDF"
             >
@@ -44,7 +44,7 @@
                 <span>Download PDF</span>
             </a>
             <a
-                href="{{ route('dashboard.coordinators.supervisors.export.excel', $exportQuery) }}"
+                href="{{ route('dashboard.supervisors.export.excel', $exportQuery) }}"
                 class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
                 title="Download supervisors list as Excel"
             >
@@ -131,7 +131,7 @@
                     <span>Projects per supervisor</span>
                 </span>
             </div>
-            <form id="supervisors-filter-form" method="get" action="{{ route('dashboard.coordinators.supervisors.index') }}" class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <form id="supervisors-filter-form" method="get" action="{{ route('dashboard.supervisors.index') }}" class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <div class="relative">
                     <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-slate-400 dark:text-slate-500">
                         <i class="fas fa-search text-[11px]"></i>
@@ -199,7 +199,7 @@
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->supervised_projects_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm tabular-nums text-slate-700 dark:text-slate-200">{{ $u->total_students_count ?? 0 }}</td>
                                 <td class="px-4 py-3 text-sm">
-                                    <form method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
+                                    <form method="post" action="{{ route('dashboard.supervisors.send-login-sms', $u) }}" class="inline" onsubmit="return confirm('Send a new random password, username, and login link by SMS to this supervisor? Their old password will stop working.');">
                                         @csrf
                                         <button
                                             type="submit"
@@ -213,7 +213,7 @@
                     </tbody>
                 </table>
             </div>
-            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.coordinators.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
+            <form id="idx-supervisor-bulk-sms-form" method="post" action="{{ route('dashboard.supervisors.send-login-sms-bulk') }}" class="flex flex-wrap items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70" onsubmit="return confirm('Send a new random password and login link by SMS to each selected supervisor on this page? (1 SMS credit per successful send.)');">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 dark:bg-slate-100 dark:text-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-white disabled:cursor-not-allowed disabled:opacity-50" @if(! $arkeselConfigured || $coordinatorSmsRemaining < 1) disabled title="{{ ! $arkeselConfigured ? 'Configure Arkesel first.' : 'No SMS credits.' }}" @endif>
                     <i class="fas fa-paper-plane text-xs"></i>

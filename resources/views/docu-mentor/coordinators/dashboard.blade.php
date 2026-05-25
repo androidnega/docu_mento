@@ -178,7 +178,7 @@
                 </span>
             </a>
 
-            <a href="{{ route('dashboard.coordinators.supervisors.index') }}"
+            <a href="{{ route('dashboard.supervisors.index') }}"
                class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 no-underline flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
                 <div class="min-w-0">
                     <p class="text-[11px] sm:text-xs font-medium uppercase tracking-wide text-slate-700">Supervisors</p>
