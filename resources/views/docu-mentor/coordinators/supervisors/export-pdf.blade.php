@@ -60,8 +60,11 @@
             margin-top: 2px;
         }
         table.students { width: 100%; font-size: 10px; margin: 2px 0 4px 0; }
-        table.students td { padding: 2px 6px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        table.students td, table.students th { padding: 2px 6px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        table.students th { background: #f1f5f9; color: #475569; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px; text-align: left; font-weight: bold; }
+        table.students th.num, table.students td.num { text-align: right; }
         table.students td.idx { width: 22px; color: #64748b; text-align: right; }
+        table.students td.index-no { width: 90px; color: #0f172a; font-family: DejaVu Sans Mono, monospace; font-size: 9.5px; }
         table.students td.phone { width: 110px; color: #475569; }
         table.students tr.leader td { background: #fff7ed; }
         table.students tr.leader td.name strong { color: #b45309; }
@@ -212,10 +215,17 @@
                                 <div class="no-projects" style="padding: 2px 0;">No students in this project group.</div>
                             @else
                                 <table class="students">
+                                    <tr>
+                                        <th class="num" style="width: 22px;">#</th>
+                                        <th style="width: 90px;">Index No.</th>
+                                        <th>Name</th>
+                                        <th style="width: 110px;">Phone</th>
+                                    </tr>
                                     @foreach($members as $mIdx => $member)
                                         @php $isLeader = $leaderId && (int) $member->id === (int) $leaderId; @endphp
                                         <tr @class(['leader' => $isLeader])>
                                             <td class="idx">{{ $mIdx + 1 }}.</td>
+                                            <td class="index-no">{{ $member->index_number ?: '—' }}</td>
                                             <td class="name">
                                                 @if($isLeader)<strong>{{ $member->name ?? '—' }}</strong>@else{{ $member->name ?? '—' }}@endif
                                                 @if($isLeader)<span class="leader-tag">Group Leader</span>@endif
@@ -228,7 +238,11 @@
 
                             @if($leader)
                                 <div class="leader-line">
-                                    <strong>Group Leader:</strong> {{ $leader->name ?? '—' }} &mdash; {{ $leader->phone ?: 'No phone on file' }}
+                                    <strong>Group Leader:</strong> {{ $leader->name ?? '—' }}
+                                    @if($leader->index_number)
+                                        ({{ $leader->index_number }})
+                                    @endif
+                                    &mdash; {{ $leader->phone ?: 'No phone on file' }}
                                 </div>
                             @elseif(! $members->isEmpty())
                                 <div class="leader-line" style="background: #fef2f2; border-left-color: #b91c1c;">
