@@ -464,6 +464,7 @@ class CoordinatorStudentController extends Controller
 
     /**
      * Resolve the institution logo for embedding inside a PDF (data URI), or null if unavailable.
+     * Skips anything that isn't a real, reasonably-sized image so DomPDF can't blow up the layout.
      */
     private function resolveInstitutionLogoForPdf(): ?string
     {
@@ -472,28 +473,47 @@ class CoordinatorStudentController extends Controller
             return null;
         }
 
+        $maxBytes = 1024 * 1024;
+        $binary = null;
+        $mime = 'image/png';
+
         if (str_starts_with($logoPath, 'http')) {
             try {
                 $response = \Illuminate\Support\Facades\Http::timeout(10)->get($logoPath);
-                if ($response->successful()) {
-                    $mime = explode(';', $response->header('Content-Type') ?: 'image/png')[0] ?: 'image/png';
-
-                    return 'data:'.$mime.';base64,'.base64_encode($response->body());
+                if (! $response->successful()) {
+                    return null;
+                }
+                $binary = (string) $response->body();
+                $headerMime = (string) ($response->header('Content-Type') ?: '');
+                if ($headerMime !== '') {
+                    $mime = trim(explode(';', $headerMime)[0]) ?: 'image/png';
                 }
             } catch (\Throwable $e) {
                 return null;
             }
+        } else {
+            $fullPath = storage_path('app/public/'.$logoPath);
+            if (! file_exists($fullPath)) {
+                return null;
+            }
+            $binary = (string) file_get_contents($fullPath);
+            $mime = @mime_content_type($fullPath) ?: 'image/png';
+        }
 
+        if ($binary === null || $binary === '' || strlen($binary) > $maxBytes) {
             return null;
         }
 
-        $fullPath = storage_path('app/public/'.$logoPath);
-        if (! file_exists($fullPath)) {
+        $info = @getimagesizefromstring($binary);
+        if ($info === false) {
             return null;
         }
-        $mime = @mime_content_type($fullPath) ?: 'image/png';
+        $detectedMime = (string) ($info['mime'] ?? '');
+        if (! in_array($detectedMime, ['image/png', 'image/jpeg', 'image/gif'], true)) {
+            return null;
+        }
 
-        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($fullPath));
+        return 'data:'.$detectedMime.';base64,'.base64_encode($binary);
     }
 
     /** Add a single user: index number + academic year + role (student or supervisor). */
