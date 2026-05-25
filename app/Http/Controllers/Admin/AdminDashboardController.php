@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Concerns\InteractsWithAdminSession;
 use App\Http\Controllers\Controller;
 use App\Models\DocuMentor\AcademicYear;
 use App\Models\DocuMentor\Project;
+use App\Models\DocuMentor\Submission;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CloudinaryService;
